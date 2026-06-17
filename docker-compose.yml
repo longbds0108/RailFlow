@@ -1,12 +1,12 @@
-name: arcflow
+name: railflow
 
 services:
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    image: arcflow-backend
-    container_name: arcflow-backend
+    image: railflow-backend
+    container_name: railflow-backend
     env_file: .env
     environment:
       PORT: 4000
@@ -32,24 +32,11 @@ services:
         NEXT_PUBLIC_KIT_KEY: ${NEXT_PUBLIC_KIT_KEY}
         NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE}
         NEXT_PUBLIC_PAYMENT_RECEIVER: ${NEXT_PUBLIC_PAYMENT_RECEIVER}
-    image: arcflow-frontend
-    container_name: arcflow-frontend
+    image: railflow-frontend
+    container_name: railflow-frontend
     ports:
       - "3000:3000"
     depends_on:
-      - backend
-    restart: unless-stopped
-
-  cloudflared:
-    image: cloudflare/cloudflared:2026.6.0
-    container_name: arcflow-tunnel
-    command: tunnel --config /etc/cloudflared/config.yml run arcflow
-    volumes:
-      - ./deploy/cloudflared/config.yml:/etc/cloudflared/config.yml:ro
-      # tunnel credentials (created on the host by `cloudflared tunnel login` + setup)
-      - ${HOME}/.cloudflared/15ba4a4d-08be-44cb-833f-79c01f1961d2.json:/etc/cloudflared/creds.json:ro
-    depends_on:
-      - frontend
       - backend
     restart: unless-stopped
 

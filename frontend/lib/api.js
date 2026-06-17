@@ -1,4 +1,4 @@
-// Thin client for the ArcFlow backend REST API.
+// Thin client for the RailFlow backend REST API.
 import { ENV } from "./config";
 
 const BASE = ENV.apiBase;

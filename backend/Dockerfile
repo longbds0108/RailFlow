@@ -1,4 +1,4 @@
-# ArcFlow backend — build context MUST be the repo root (needs ../config).
+# RailFlow backend — build context MUST be the repo root (needs ../config).
 # ---- builder: install deps (better-sqlite3 native build) ----
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app/backend

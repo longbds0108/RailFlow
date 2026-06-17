@@ -1,4 +1,4 @@
-# ArcFlow frontend (Next.js standalone) — build context MUST be the repo root.
+# RailFlow frontend (Next.js standalone) — build context MUST be the repo root.
 # ---- builder ----
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app/frontend

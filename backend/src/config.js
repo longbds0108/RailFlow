@@ -48,9 +48,9 @@ export function publicConfig() {
 
 export const env = {
   port: Number(process.env.PORT || 4000),
-  databasePath: resolve(__dirname, "..", process.env.DATABASE_PATH || "./data/arcflow.sqlite"),
+  databasePath: resolve(__dirname, "..", process.env.DATABASE_PATH || "./data/railflow.sqlite"),
   paymentReceiver: (process.env.PAYMENT_RECEIVER_ADDRESS || arc.payment.receiver).toLowerCase(),
-  // Comma-separated list of allowed CORS origins (e.g. "https://arcflow.click,http://localhost:3000").
+  // Comma-separated list of allowed CORS origins (e.g. "https://railflow.xyz,http://localhost:3000").
   frontendOrigin: (process.env.FRONTEND_ORIGIN || "http://localhost:3000")
     .split(",")
     .map((o) => o.trim())

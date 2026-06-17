@@ -1,4 +1,4 @@
-# ArcFlow — Integration Spec (single source of truth)
+# RailFlow — Integration Spec (single source of truth)
 
 Testnet demo dApp on **Arc Testnet** (Circle's chain). Four modules: **Payment, Swap, Staking, Bridge**, plus user **History** and an **Admin dashboard**. Everything in **English**.
 

@@ -1,6 +1,6 @@
-# ArcFlow Contracts
+# RailFlow Contracts
 
-Hardhat (JavaScript) package for the ArcFlow demo on **Arc Testnet**. Contains a
+Hardhat (JavaScript) package for the RailFlow demo on **Arc Testnet**. Contains a
 single custom contract, `ArcStaking`, plus a deploy script and tests.
 
 ## ArcStaking

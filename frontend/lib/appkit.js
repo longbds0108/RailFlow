@@ -1,5 +1,5 @@
 // ===========================================================================
-// Circle App Kit wrapper for ArcFlow (browser / self-custody).
+// Circle App Kit wrapper for RailFlow (browser / self-custody).
 //
 // The user signs every transaction in MetaMask. We build a ViemAdapter over the
 // wallet's EIP-1193 provider via createViemAdapterFromProvider (NOT the
@@ -48,7 +48,7 @@ let _loadError = null;
 // (/api/cproxy) which forwards server-side (no CORS). Patched once, client-side.
 const CIRCLE_HOST_RE = /^https:\/\/[a-z0-9.-]+\.circle\.com\//i;
 function patchCircleFetch() {
-  if (typeof window === "undefined" || window.__arcflowCircleFetchPatched) return;
+  if (typeof window === "undefined" || window.__railflowCircleFetchPatched) return;
   const orig = window.fetch.bind(window);
   window.fetch = (input, init) => {
     try {
@@ -64,7 +64,7 @@ function patchCircleFetch() {
     }
     return orig(input, init);
   };
-  window.__arcflowCircleFetchPatched = true;
+  window.__railflowCircleFetchPatched = true;
 }
 
 function getProvider() {

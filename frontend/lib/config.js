@@ -1,4 +1,4 @@
-// Static chain/config constants for ArcFlow frontend.
+// Static chain/config constants for RailFlow frontend.
 // Live config (packages, staking params, disclaimer, stakingAddress) is fetched
 // from the backend GET /api/config. These constants mirror config/arc.json for
 // the values we need before/without a backend round-trip (chain definition, env).

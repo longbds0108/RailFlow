@@ -26,6 +26,6 @@ backend/data/
 .DS_Store
 *.log
 # internal docs (local-only, not for public repo)
-ArcFlow-Presentation.pdf
+RailFlow-Presentation.pdf
 REQUIREMENTS.docx
 ke_hoach_arc_testnet_dapp_payment_swap_staking_bridge.txt

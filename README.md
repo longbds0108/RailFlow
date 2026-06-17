@@ -1,4 +1,4 @@
-# ArcFlow
+# RailFlow
 
 Testnet demo dApp on **Arc Testnet** (Circle's chain). Four modules — **Payment, Swap, Staking, Bridge** — plus user **History** and an **Admin dashboard**. Self-custody: the browser never holds a private key; the user signs every transaction in MetaMask. The backend only verifies on-chain transactions and records state.
 
@@ -48,15 +48,15 @@ docker compose down               # stop
 ```
 Secrets are injected into the backend at runtime via `env_file: .env`; the frontend image only contains `NEXT_PUBLIC_*` (no private key). SQLite persists in the `backend-data` volume.
 
-## Expose at arcflow.click (Cloudflare Tunnel — no VPS)
+## Expose at railflow.xyz (Cloudflare Tunnel — no VPS)
 Domain is on Cloudflare. `cloudflared` config + helper are in `deploy/`.
 ```bash
-cloudflared tunnel login          # interactive: pick the arcflow.click zone
-./deploy/tunnel-setup.sh          # creates tunnel + DNS (arcflow.click, www, api.arcflow.click)
-cloudflared tunnel run arcflow    # start; or: sudo cloudflared service install (run on boot)
+cloudflared tunnel login          # interactive: pick the railflow.xyz zone
+./deploy/tunnel-setup.sh          # creates tunnel + DNS (railflow.xyz, www, api.railflow.xyz)
+cloudflared tunnel run railflow    # start; or: sudo cloudflared service install (run on boot)
 ```
-Routing: `arcflow.click` → frontend `:3000`, `api.arcflow.click` → backend `:4000` (HTTPS auto).
-The frontend is built with `NEXT_PUBLIC_API_BASE=https://api.arcflow.click` and the backend CORS allows `https://arcflow.click` (both via `.env`). If you change these, rebuild the frontend image (`docker compose up -d --build frontend`).
+Routing: `railflow.xyz` → frontend `:3000`, `api.railflow.xyz` → backend `:4000` (HTTPS auto).
+The frontend is built with `NEXT_PUBLIC_API_BASE=https://api.railflow.xyz` and the backend CORS allows `https://railflow.xyz` (both via `.env`). If you change these, rebuild the frontend image (`docker compose up -d --build frontend`).
 
 ## Admin
 Sign in at `/admin` with an `ADMIN_ADDRESSES` wallet (default: the operator wallet) via Sign-In-With-Ethereum.

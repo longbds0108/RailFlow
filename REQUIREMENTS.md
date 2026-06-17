@@ -1,4 +1,4 @@
-# ArcFlow — Required Information Checklist
+# RailFlow — Required Information Checklist
 
 Fill in every value below. Anything left as `<TODO>` blocks a fully-working build.
 Stack: **Next.js + wagmi/viem (frontend) + Hardhat (contracts) + Node backend/indexer**.
@@ -70,7 +70,7 @@ Bridge: **real integration (Circle CCTP for USDC; cirBTC has no real bridge — 
 - Allowed admin addresses/users: `<TODO>`
 
 ## 10. Deployment & branding
-- App name: `<TODO>`  (working title: "ArcFlow")
+- App name: `<TODO>`  (working title: "RailFlow")
 - Logo / primary color: `<TODO>`
 - Frontend host: [ ] Vercel  [ ] local only  — domain: `<TODO>`
 - Disclaimer: use the EN/VI text from the plan (§12). Override: `<TODO>`

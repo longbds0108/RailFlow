@@ -1,4 +1,4 @@
-// ArcFlow backend entrypoint: Express app wiring (CORS, routes).
+// RailFlow backend entrypoint: Express app wiring (CORS, routes).
 import express from "express";
 import cors from "cors";
 import { env } from "./config.js";
@@ -64,5 +64,5 @@ app.use((err, _req, res, _next) => {
 });
 
 app.listen(env.port, () => {
-  console.log(`ArcFlow backend listening on http://localhost:${env.port}`);
+  console.log(`RailFlow backend listening on http://localhost:${env.port}`);
 });

@@ -1,7 +1,7 @@
 {
-  "name": "arcflow-contracts",
+  "name": "railflow-contracts",
   "version": "1.0.0",
-  "description": "ArcFlow smart contracts — ArcStaking on Arc Testnet",
+  "description": "RailFlow smart contracts — ArcStaking on Arc Testnet",
   "license": "MIT",
   "private": true,
   "scripts": {

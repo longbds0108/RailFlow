@@ -1,6 +1,6 @@
-# ArcFlow Backend
+# RailFlow Backend
 
-Express REST API + SQLite store + read-only viem verifier + SIWE admin auth for the ArcFlow testnet dApp (Arc Testnet, chainId `5042002`).
+Express REST API + SQLite store + read-only viem verifier + SIWE admin auth for the RailFlow testnet dApp (Arc Testnet, chainId `5042002`).
 
 The backend never holds a private key. It verifies user-submitted transaction hashes on-chain (read-only) and records state.
 
@@ -16,14 +16,14 @@ Server listens on `http://localhost:${PORT}` (default `4000`).
 
 - Shared chain/token config is read from `../config/arc.json`.
 - Staking address is read from `../config/deployed.json` (optional; `stakingAddress` is `null` until staking is deployed).
-- The SQLite file is created at `backend/data/arcflow.sqlite` (the `data/` dir is created on boot).
+- The SQLite file is created at `backend/data/railflow.sqlite` (the `data/` dir is created on boot).
 
 ## Environment (`../.env`, loaded via dotenv)
 
 | Var | Purpose |
 | --- | --- |
 | `PORT` | HTTP port (default `4000`) |
-| `DATABASE_PATH` | SQLite path relative to `backend/` (default `./data/arcflow.sqlite`) |
+| `DATABASE_PATH` | SQLite path relative to `backend/` (default `./data/railflow.sqlite`) |
 | `SESSION_SECRET` | Cookie session signing secret |
 | `ADMIN_ADDRESSES` | Comma-separated admin addresses allowed to sign in via SIWE |
 | `PAYMENT_RECEIVER_ADDRESS` | Address that must receive the USDC payment (falls back to `arc.json` payment.receiver) |

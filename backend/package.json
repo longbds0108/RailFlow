@@ -1,9 +1,9 @@
 {
-  "name": "@arcflow/backend",
+  "name": "@railflow/backend",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "ArcFlow backend — Express REST API, SQLite store, viem on-chain verifier (Arc Testnet demo).",
+  "description": "RailFlow backend — Express REST API, SQLite store, viem on-chain verifier (Arc Testnet demo).",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
