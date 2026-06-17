@@ -1,0 +1,28 @@
+# secrets
+.env
+.env.local
+*.local
+
+# deps
+node_modules/
+**/node_modules/
+
+# builds
+.next/
+dist/
+build/
+out/
+artifacts/
+cache/
+typechain-types/
+
+# db
+*.sqlite
+*.sqlite3
+*.db
+backend/data/
+
+# misc
+.DS_Store
+*.log
+coverage/

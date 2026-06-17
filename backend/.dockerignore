@@ -1,0 +1,9 @@
+node_modules
+data
+*.sqlite
+*.sqlite3
+*.log
+.env
+.env.local
+Dockerfile
+.dockerignore

@@ -1,0 +1,22 @@
+# Cloudflare Tunnel config for ArcFlow.
+# Single source of truth — consumed directly by the `cloudflared` service in
+# docker-compose.yml (bind-mounted to /etc/cloudflared/config.yml). The tunnel
+# runs inside Docker, so services use compose network names (frontend/backend),
+# and credentials are bind-mounted to /etc/cloudflared/creds.json.
+tunnel: 15ba4a4d-08be-44cb-833f-79c01f1961d2
+credentials-file: /etc/cloudflared/creds.json
+
+# Mạng chặn UDP 7844 (QUIC) -> ép dùng HTTP/2 qua TCP 443 cho ổn định.
+protocol: http2
+
+ingress:
+  # Frontend (Next.js container) — reached over the compose network.
+  - hostname: arcflow.click
+    service: http://frontend:3000
+  - hostname: www.arcflow.click
+    service: http://frontend:3000
+  # Backend API (Express container).
+  - hostname: api.arcflow.click
+    service: http://backend:4000
+  # Everything else -> 404
+  - service: http_status:404

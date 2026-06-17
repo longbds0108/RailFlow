@@ -1,0 +1,61 @@
+{
+  "network": {
+    "name": "Arc Testnet",
+    "chainId": 5042002,
+    "rpcUrl": "https://rpc.testnet.arc.network",
+    "wsUrl": "wss://rpc.testnet.arc.network",
+    "explorerUrl": "https://testnet.arcscan.app",
+    "nativeCurrency": { "name": "USDC", "symbol": "USDC", "decimals": 18 },
+    "faucetUrl": "https://faucet.circle.com"
+  },
+  "appKitChainName": "Arc_Testnet",
+  "tokens": {
+    "USDC": { "address": "0x3600000000000000000000000000000000000000", "decimals": 6, "symbol": "USDC", "appKitSymbol": "USDC", "displayBalance": true },
+    "EURC": { "address": "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a", "decimals": 6, "symbol": "EURC", "appKitSymbol": "EURC", "displayBalance": true },
+    "cirBTC": { "address": "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF", "decimals": 8, "symbol": "cirBTC", "appKitSymbol": "cirBTC", "displayBalance": true, "note": "Real cirBTC address on Arc Testnet (from Circle swap route). Pool is thin/mispriced so swaps need high slippage." }
+  },
+  "cctp": {
+    "domain": 26,
+    "tokenMessengerV2": "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA",
+    "messageTransmitterV2": "0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275",
+    "tokenMinterV2": "0xb43db544E2c27092c107639Ad201b3dEfAbcF192"
+  },
+  "bridge": {
+    "supportedChains": [
+      { "appKitName": "Arc_Testnet", "label": "Arc Testnet" },
+      { "appKitName": "Ethereum_Sepolia", "label": "Ethereum Sepolia" },
+      { "appKitName": "Base_Sepolia", "label": "Base Sepolia" }
+    ],
+    "tokens": ["USDC"]
+  },
+  "swap": {
+    "pairs": [
+      ["USDC", "EURC"],
+      ["USDC", "cirBTC"],
+      ["EURC", "cirBTC"]
+    ],
+    "defaultSlippageBps": 50
+  },
+  "payment": {
+    "receiver": "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0",
+    "token": "USDC",
+    "orderTimeoutMinutes": 30,
+    "packages": [
+      { "id": "starter", "name": "Starter Demo", "priceUsdc": "1.00", "description": "Entry demo package to test USDC checkout on Arc Testnet." },
+      { "id": "pro", "name": "Pro Demo", "priceUsdc": "5.00", "description": "Mid-tier demo package with more sample items." },
+      { "id": "premium", "name": "Premium Demo", "priceUsdc": "10.00", "description": "Top demo package showcasing a larger USDC payment." }
+    ]
+  },
+  "staking": {
+    "rewardToken": "USDC",
+    "apyBps": 1000,
+    "lockSeconds": 0,
+    "minStake": "1.00",
+    "rewardPoolFund": "10.00",
+    "stakableTokens": ["USDC", "EURC"]
+  },
+  "disclaimer": {
+    "en": "This is a testnet demo. All tokens used in this application, including testnet USDC, EURC, and cirBTC, have no real-world value. This application is not a payment service, exchange, investment product, or yield product, and does not provide any real financial return.",
+    "vi": "Đây là bản demo trên môi trường testnet. Tất cả token sử dụng trong ứng dụng, bao gồm USDC, EURC và cirBTC testnet, không có giá trị thật. Ứng dụng không phải cổng thanh toán chính thức, không phải sàn giao dịch, không phải sản phẩm đầu tư, không cam kết lợi nhuận và không dùng cho giao dịch thương mại thật."
+  }
+}

@@ -1,0 +1,21 @@
+# Build context is the repo root for both images — keep it lean & secret-free.
+**/node_modules
+**/.next
+**/data
+**/*.sqlite
+**/*.sqlite3
+**/*.log
+# secrets: backend gets env via compose env_file; frontend via build args
+.env
+**/.env
+**/.env.local
+# contracts build artifacts (not needed in app images)
+contracts/artifacts
+contracts/cache
+contracts/typechain-types
+# misc
+.git
+.DS_Store
+*.docx
+REQUIREMENTS.*
+ke_hoach_*.txt
