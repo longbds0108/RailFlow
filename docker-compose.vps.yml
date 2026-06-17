@@ -1,0 +1,65 @@
+# VPS deployment for ArcFlow at railflow.xyz.
+#
+# Differs from docker-compose.yml (local) in three ways:
+#   1. No host port publishing — port 3000 is already taken by another app on
+#      the VPS. Containers are reached only over the shared `docker_default`
+#      network by the existing Caddy reverse proxy (skinlab-caddy).
+#   2. No cloudflared service — ingress is Cloudflare (proxied) -> Caddy on the
+#      VPS, not an Argo tunnel.
+#   3. Joins the external `docker_default` network so Caddy can reverse-proxy to
+#      arcflow-frontend:3000 and arcflow-backend:4000 by container name.
+#
+# Caddy site block (added to /srv/skinlab/infra/docker/caddy/Caddyfile):
+#   railflow.xyz, www.railflow.xyz {
+#       tls internal
+#       @api path /api/*
+#       reverse_proxy @api arcflow-backend:4000
+#       reverse_proxy arcflow-frontend:3000
+#   }
+#
+# Deploy:  docker compose -f docker-compose.vps.yml up -d --build
+name: arcflow
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: arcflow-backend
+    container_name: arcflow-backend
+    env_file: .env
+    environment:
+      PORT: 4000
+    volumes:
+      - ./config:/app/config:ro
+      - backend-data:/app/backend/data
+    networks: [edge]
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_ARC_CHAIN_ID: ${NEXT_PUBLIC_ARC_CHAIN_ID}
+        NEXT_PUBLIC_ARC_RPC_URL: ${NEXT_PUBLIC_ARC_RPC_URL}
+        NEXT_PUBLIC_ARC_EXPLORER_URL: ${NEXT_PUBLIC_ARC_EXPLORER_URL}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME}
+        NEXT_PUBLIC_KIT_KEY: ${NEXT_PUBLIC_KIT_KEY}
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE}
+        NEXT_PUBLIC_PAYMENT_RECEIVER: ${NEXT_PUBLIC_PAYMENT_RECEIVER}
+    image: arcflow-frontend
+    container_name: arcflow-frontend
+    depends_on:
+      - backend
+    networks: [edge]
+    restart: unless-stopped
+
+networks:
+  # The reverse-proxy network created by the skinlab compose project.
+  edge:
+    external: true
+    name: docker_default
+
+volumes:
+  backend-data:
