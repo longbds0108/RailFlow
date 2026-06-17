@@ -21,7 +21,7 @@ export default function HomePage() {
           <span style={{ color: "var(--color-accent)" }}>Arc Testnet</span>.
         </h1>
         <p>
-          ArcFlow is a self-custody demo built on Circle App Kit. You sign every
+          RailFlow is a self-custody demo built on Circle App Kit. You sign every
           transaction in MetaMask — the app never holds your keys.
         </p>
         <div className="row mt-5">

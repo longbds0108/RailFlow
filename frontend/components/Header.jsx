@@ -34,7 +34,7 @@ export default function Header() {
       <div className="container header-inner">
         <Link href="/" className="wordmark" aria-label={`${ENV.appName} home`}>
           <img className="mark" src={BRAND_LOGO} alt="" aria-hidden="true" />
-          <span className="arc">Arc</span>
+          <span className="arc">Rail</span>
           <span className="flow">Flow</span>
         </Link>
 

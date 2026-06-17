@@ -7,7 +7,7 @@ export const ENV = {
   chainId: Number(process.env.NEXT_PUBLIC_ARC_CHAIN_ID || 5042002),
   rpcUrl: process.env.NEXT_PUBLIC_ARC_RPC_URL || "https://rpc.testnet.arc.network",
   explorerUrl: process.env.NEXT_PUBLIC_ARC_EXPLORER_URL || "https://testnet.arcscan.app",
-  appName: process.env.NEXT_PUBLIC_APP_NAME || "ArcFlow",
+  appName: process.env.NEXT_PUBLIC_APP_NAME || "RailFlow",
   kitKey: process.env.NEXT_PUBLIC_KIT_KEY || "",
   apiBase: process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000",
   paymentReceiver: process.env.NEXT_PUBLIC_PAYMENT_RECEIVER || "",

@@ -4,9 +4,9 @@ import Header from "../components/Header";
 import { ENV } from "../lib/config";
 
 export const metadata = {
-  title: "ArcFlow — Testnet dApp on Arc",
+  title: "RailFlow — Testnet dApp on Arc",
   description:
-    "ArcFlow is a self-custody testnet demo on Arc Testnet for USDC payments, swaps, staking and cross-chain bridging via Circle App Kit.",
+    "RailFlow is a self-custody testnet demo on Arc Testnet for USDC payments, swaps, staking and cross-chain bridging via Circle App Kit.",
   icons: {
     icon: "/logos/arc.svg",
   },

@@ -17,7 +17,7 @@ export default function WalletGate({ children }) {
       <div className="card">
         <h3>MetaMask not detected</h3>
         <p className="muted">
-          ArcFlow is self-custody: you sign every transaction in your own wallet. Install
+          RailFlow is self-custody: you sign every transaction in your own wallet. Install
           MetaMask to continue.
         </p>
         <a
