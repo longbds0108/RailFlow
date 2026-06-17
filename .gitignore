@@ -25,8 +25,7 @@ backend/data/
 # misc
 .DS_Store
 *.log
-coverage/
+# internal docs (local-only, not for public repo)
 ArcFlow-Presentation.pdf
-REQUIREMENTS.docx
 REQUIREMENTS.docx
 ke_hoach_arc_testnet_dapp_payment_swap_staking_bridge.txt
