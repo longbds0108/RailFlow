@@ -124,7 +124,9 @@ export async function appkitSwap({ tokenIn, tokenOut, amountIn, slippageBps }) {
     tokenIn,
     tokenOut,
     amountIn,
-    config: { ...kitConfig(), slippageBps },
+    // allowanceStrategy 'approve': the SDK default 'permit' (EIP-2612) reverts at
+    // simulation on Arc Testnet, so force the plain ERC-20 approve+swap path.
+    config: { ...kitConfig(), slippageBps, allowanceStrategy: "approve" },
   });
   return { txHash: result?.txHash, amountOut: result?.amountOut, raw: result };
 }
@@ -139,7 +141,7 @@ export async function appkitEstimateSwap({ tokenIn, tokenOut, amountIn, slippage
       tokenIn,
       tokenOut,
       amountIn,
-      config: { ...kitConfig(), slippageBps },
+      config: { ...kitConfig(), slippageBps, allowanceStrategy: "approve" },
     });
     return est || null;
   } catch {

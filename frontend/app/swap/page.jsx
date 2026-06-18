@@ -14,10 +14,10 @@ import { TokenLogo } from "../../components/Logo";
 
 const ALL_TOKENS = ["USDC", "EURC", "cirBTC"];
 
-// The cirBTC pool on Arc Testnet is very thin and badly mispriced, so the
-// on-chain execution price differs hugely from Circle's off-chain quote. With
-// the normal 0.5% slippage the swap reverts ("Simulation failed"); a high
-// tolerance lets it through. We auto-raise slippage whenever cirBTC is involved.
+// Arc Testnet pools are thin, so on-chain execution price drifts from Circle's
+// off-chain quote. Too-tight slippage makes the swap revert ("Simulation
+// failed"). Stablecoin pairs (USDC/EURC) use the config default (500 bps = 5%);
+// the cirBTC pool is far thinner/mispriced so it needs a much higher tolerance.
 const CIRBTC_SLIPPAGE_BPS = 5000; // 50%
 const slippageFor = (tokenIn, tokenOut, base) =>
   tokenIn === "cirBTC" || tokenOut === "cirBTC" ? CIRBTC_SLIPPAGE_BPS : base;
@@ -43,7 +43,7 @@ export default function SwapPage() {
 function SwapForm() {
   const { config } = useConfig();
   const { address } = useWallet();
-  const baseSlippageBps = config?.swap?.defaultSlippageBps ?? 50;
+  const baseSlippageBps = config?.swap?.defaultSlippageBps ?? 500;
 
   const [tokenIn, setTokenIn] = useState("USDC");
   const [tokenOut, setTokenOut] = useState("EURC");

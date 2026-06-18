@@ -34,7 +34,7 @@
       ["USDC", "cirBTC"],
       ["EURC", "cirBTC"]
     ],
-    "defaultSlippageBps": 50
+    "defaultSlippageBps": 500
   },
   "payment": {
     "receiver": "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0",
