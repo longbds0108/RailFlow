@@ -34,7 +34,12 @@
       ["USDC", "cirBTC"],
       ["EURC", "cirBTC"]
     ],
-    "defaultSlippageBps": 500
+    "defaultSlippageBps": 500,
+    "ownPool": {
+      "note": "RailFlowAMM fallback pool. Frontend tries Circle App Kit swap first; if Circle's testnet pool reverts, it routes through this self-seeded on-chain AMM (USDC/EURC).",
+      "seedUSDC": "30",
+      "seedEURC": "27"
+    }
   },
   "payment": {
     "receiver": "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0",

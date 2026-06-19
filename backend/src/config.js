@@ -26,6 +26,17 @@ export function getStakingAddress() {
   }
 }
 
+/** Read deployed RailFlowAMM fallback-swap pool address; null if absent. */
+export function getSwapPoolAddress() {
+  try {
+    if (!existsSync(deployedPath)) return null;
+    const deployed = JSON.parse(readFileSync(deployedPath, "utf8"));
+    return deployed?.swapPool ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Safe subset of arc.json for the public /api/config endpoint. */
 export function publicConfig() {
   return {
@@ -43,6 +54,7 @@ export function publicConfig() {
     bridge: arc.bridge,
     disclaimer: arc.disclaimer,
     stakingAddress: getStakingAddress(),
+    swapPoolAddress: getSwapPoolAddress(),
   };
 }
 

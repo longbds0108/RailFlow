@@ -9,6 +9,7 @@ import Preview from "../../components/Preview";
 import TxResult from "../../components/TxResult";
 import { api } from "../../lib/api";
 import { appkitSwap, appkitEstimateSwap, AppKitUnavailableError } from "../../lib/appkit";
+import { ammSwap, ammSupportsPair } from "../../lib/ammSwap";
 import { bpsToPct } from "../../lib/format";
 import { TokenLogo } from "../../components/Logo";
 
@@ -44,6 +45,8 @@ function SwapForm() {
   const { config } = useConfig();
   const { address } = useWallet();
   const baseSlippageBps = config?.swap?.defaultSlippageBps ?? 500;
+  const swapPoolAddress = config?.swapPoolAddress;
+  const tokens = config?.tokens;
 
   const [tokenIn, setTokenIn] = useState("USDC");
   const [tokenOut, setTokenOut] = useState("EURC");
@@ -74,13 +77,34 @@ function SwapForm() {
   const confirmSwap = async () => {
     setError(null);
     setPhase("signing");
+    // Hybrid routing: try Circle App Kit first; if Circle's testnet pool reverts,
+    // fall back to the self-deployed RailFlow on-chain pool (USDC/EURC only).
+    let route = "circle";
     try {
-      const { txHash, amountOut } = await appkitSwap({
-        tokenIn,
-        tokenOut,
-        amountIn,
-        slippageBps,
-      });
+      let txHash, amountOut;
+      try {
+        ({ txHash, amountOut } = await appkitSwap({
+          tokenIn,
+          tokenOut,
+          amountIn,
+          slippageBps,
+        }));
+      } catch (circleErr) {
+        // SDK can't run at all -> outer catch records the intent (no on-chain tx).
+        if (circleErr instanceof AppKitUnavailableError) throw circleErr;
+        // No fallback pool for this pair -> surface Circle's original error.
+        if (!ammSupportsPair(swapPoolAddress, tokenIn, tokenOut)) throw circleErr;
+        route = "railflow";
+        ({ txHash, amountOut } = await ammSwap({
+          address,
+          tokenIn,
+          tokenOut,
+          amountIn,
+          slippageBps,
+          poolAddress: swapPoolAddress,
+          tokens,
+        }));
+      }
       setPhase("recording");
       let record = null;
       try {
@@ -96,7 +120,7 @@ function SwapForm() {
         // record failure shouldn't lose the on-chain success
         record = { status: "success" };
       }
-      setResult({ txHash, amountOut, status: record?.status || "success" });
+      setResult({ txHash, amountOut, status: record?.status || "success", route });
       setPhase("done");
     } catch (e) {
       if (e instanceof AppKitUnavailableError) {
@@ -202,6 +226,12 @@ function SwapForm() {
           the swap go through.
         </p>
       )}
+      {ammSupportsPair(swapPoolAddress, tokenIn, tokenOut) && (
+        <p className="text-xs muted" style={{ marginTop: "var(--space-2)" }}>
+          Routed via Circle App Kit — if Circle&apos;s testnet pool is unavailable, the
+          swap automatically falls back to the on-chain RailFlow pool.
+        </p>
+      )}
 
       {phase === "form" && (
         <button
@@ -277,6 +307,11 @@ function SwapForm() {
             {amountIn} {tokenIn} →{" "}
             {result.amountOut ? `${result.amountOut} ${tokenOut}` : tokenOut} ·{" "}
             <span className="badge badge-info">{result.status}</span>
+            {result.route && (
+              <span className="badge" style={{ marginLeft: "var(--space-2)" }}>
+                {result.route === "railflow" ? "via RailFlow pool" : "via Circle"}
+              </span>
+            )}
           </div>
           <button className="btn btn-ghost btn-sm mt-3" onClick={reset}>
             New swap
