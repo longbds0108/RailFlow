@@ -221,10 +221,26 @@ main.container {
   color: var(--color-text);
 }
 .wordmark .flow {
-  background: linear-gradient(95deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(
+    95deg,
+    var(--color-primary),
+    var(--color-accent),
+    var(--color-primary)
+  );
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  animation: gradientShift 6s ease infinite;
+}
+@keyframes gradientShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 .wordmark .mark {
   display: inline-block;
@@ -318,11 +334,35 @@ main.container {
 
 /* ===== Cards & surfaces ===== */
 .card {
-  background: var(--color-surface);
+  position: relative;
+  /* translucent glass so the animated ambient orbs glow through */
+  background: rgba(22, 29, 49, 0.72);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  backdrop-filter: blur(14px) saturate(1.15);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition), box-shadow var(--transition),
+    transform var(--transition);
+}
+/* hairline sheen along the top edge — the classic glass-card highlight */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0) 36%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
 }
 .card + .card {
   margin-top: var(--space-4);
@@ -396,9 +436,32 @@ main.container {
   cursor: not-allowed;
 }
 .btn-primary {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(135deg, var(--color-primary), #6f7bff);
   color: var(--color-primary-contrast);
   box-shadow: 0 4px 14px rgba(91, 140, 255, 0.28);
+}
+/* light sweep that glides across the button on hover */
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+.btn-primary:hover:not(:disabled)::after {
+  left: 140%;
 }
 .btn-primary:hover:not(:disabled) {
   filter: brightness(1.08);
@@ -785,6 +848,95 @@ tr:last-child td {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   margin: 0;
+}
+
+/* ===== Ambient animated background (floating aurora orbs) ===== */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ambient-orb {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  filter: blur(85px);
+  opacity: 0.55;
+  will-change: transform;
+}
+.ambient-orb-1 {
+  width: 520px;
+  height: 520px;
+  top: -170px;
+  left: -120px;
+  background: radial-gradient(circle at 30% 30%, rgba(91, 140, 255, 0.55), transparent 70%);
+  animation: floatA 24s ease-in-out infinite;
+}
+.ambient-orb-2 {
+  width: 440px;
+  height: 440px;
+  top: 8%;
+  right: -150px;
+  background: radial-gradient(circle at 30% 30%, rgba(52, 224, 214, 0.42), transparent 70%);
+  animation: floatB 28s ease-in-out infinite;
+}
+.ambient-orb-3 {
+  width: 620px;
+  height: 620px;
+  bottom: -260px;
+  left: 28%;
+  background: radial-gradient(circle at 30% 30%, rgba(111, 123, 255, 0.34), transparent 70%);
+  animation: floatC 32s ease-in-out infinite;
+}
+@keyframes floatA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(60px, 50px) scale(1.12); }
+}
+@keyframes floatB {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-70px, 40px) scale(1.08); }
+}
+@keyframes floatC {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, -60px) scale(1.15); }
+}
+
+/* ===== Card hover lift (applies to plain .card surfaces) ===== */
+.card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== Staggered entrance for feature cards ===== */
+.feature-card {
+  animation: cardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.feature-card:nth-child(1) { animation-delay: 0.04s; }
+.feature-card:nth-child(2) { animation-delay: 0.10s; }
+.feature-card:nth-child(3) { animation-delay: 0.16s; }
+.feature-card:nth-child(4) { animation-delay: 0.22s; }
+.feature-card:nth-child(5) { animation-delay: 0.28s; }
+.feature-card:nth-child(6) { animation-delay: 0.34s; }
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Badge micro-interaction */
+.badge {
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+.badge-info:hover,
+.badge-success:hover {
+  transform: translateY(-1px);
 }
 
 @media (prefers-reduced-motion: reduce) {

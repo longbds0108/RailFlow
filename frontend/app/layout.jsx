@@ -22,6 +22,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
+        <div className="ambient" aria-hidden="true">
+          <span className="ambient-orb ambient-orb-1" />
+          <span className="ambient-orb ambient-orb-2" />
+          <span className="ambient-orb ambient-orb-3" />
+        </div>
         <Providers>
           <div className="app-shell">
             <Header />
