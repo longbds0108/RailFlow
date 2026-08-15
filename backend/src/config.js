@@ -37,6 +37,17 @@ export function getSwapPoolAddress() {
   }
 }
 
+/** Read the registered ERC-8004 agent identity (see scripts/registerAgentIdentity.js); null if not yet registered. */
+export function getAgentIdentity() {
+  try {
+    if (!existsSync(deployedPath)) return null;
+    const deployed = JSON.parse(readFileSync(deployedPath, "utf8"));
+    return deployed?.agentIdentity ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Safe subset of arc.json for the public /api/config endpoint. */
 export function publicConfig() {
   return {
@@ -67,6 +78,14 @@ export const env = {
     .split(",")
     .map((o) => o.trim())
     .filter(Boolean),
+  // Backend-only secret for the AI agent (Claude API). Never sent to the frontend.
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY || "",
+  // Circle Developer-Controlled Wallets — a different Circle product from the
+  // App Kit key (NEXT_PUBLIC_KIT_KEY). Only used by scripts/registerAgentIdentity.js.
+  circleApiKey: process.env.CIRCLE_API_KEY || "",
+  circleEntitySecret: process.env.CIRCLE_ENTITY_SECRET || "",
+  // ipfs:// URI of config/agentMetadata.json, filled in after a manual IPFS upload.
+  metadataUri: process.env.METADATA_URI || "",
 };
 
 export const chain = {

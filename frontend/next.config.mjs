@@ -12,20 +12,15 @@ const nextConfig = {
       tls: false,
     };
     config.externals.push("pino-pretty", "lokijs", "encoding");
-    // Optional wallet connector deps that we don't use — stub them so the
-    // bundler doesn't fail on missing peer packages.
+    // wagmi's optional "Base Account" connector pulls in Coinbase's CDP SDK for
+    // x402 payments, whose @x402/* deps aren't installed and aren't needed for
+    // wallet connect — stub the one package that reaches for them.
     config.resolve.alias = {
       ...config.resolve.alias,
-      "porto/internal": false,
-      porto: false,
-      "@coinbase/wallet-sdk": false,
-      "@metamask/connect-evm": false,
-      "@metamask/sdk": false,
-      "@safe-global/safe-apps-sdk": false,
-      "@safe-global/safe-apps-provider": false,
-      "@walletconnect/ethereum-provider": false,
-      "@base-org/account": false,
-      accounts: false,
+      "@coinbase/cdp-sdk": false,
+      // React Native-only storage backend that @metamask/sdk references for its
+      // mobile deep-linking path; unused and unresolvable in a web bundle.
+      "@react-native-async-storage/async-storage": false,
     };
     return config;
   },

@@ -1,8 +1,9 @@
 // Public REST endpoints: health, config, sends, history, record endpoints.
 import { Router } from "express";
 import { db } from "../db.js";
-import { arc, publicConfig } from "../config.js";
+import { arc, publicConfig, env, getAgentIdentity } from "../config.js";
 import { verifyTokenTransfer, txSucceeded } from "../chain.js";
+import { runAgentTurn } from "../agent.js";
 
 const router = Router();
 
@@ -15,6 +16,22 @@ router.get("/health", (_req, res) => {
 
 router.get("/config", (_req, res) => {
   res.json(publicConfig());
+});
+
+// ERC-8004 identity for the Assistant (see scripts/registerAgentIdentity.js).
+// Read-only — no secrets in this shape (wallet addresses + agent ID are public
+// on-chain facts once registered).
+router.get("/agent/identity", (_req, res) => {
+  const identity = getAgentIdentity();
+  if (!identity) return res.json({ registered: false });
+  res.json({
+    registered: true,
+    agentId: identity.agentId,
+    ownerWalletAddress: identity.ownerWalletAddress,
+    metadataURI: identity.metadataURI,
+    registerTxHash: identity.registerTxHash,
+    registeredAt: identity.registeredAt,
+  });
 });
 
 // --- Sends ----------------------------------------------------------------
@@ -148,6 +165,45 @@ router.post("/stakes", async (req, res) => {
     )
     .run(address.toLowerCase(), action, String(token), String(amount), txHash, status, Date.now());
   res.status(201).json(db.prepare("SELECT * FROM stakes WHERE id = ?").get(info.lastInsertRowid));
+});
+
+// --- AI agent -----------------------------------------------------------
+// Chat conversation state (Anthropic message array) is held by the client and
+// sent whole each turn — the backend keeps no chat session. Read tools run
+// here; propose_* tool calls are handed back untouched for the frontend to
+// preview and the user to sign — the agent never executes a transaction.
+//
+// Streamed as newline-delimited JSON so the client can render assistant text
+// as it's generated: zero or more {"type":"delta","text":"..."} lines, then
+// exactly one {"type":"final",...} or {"type":"error",...} line.
+
+router.post("/agent/chat", async (req, res) => {
+  const { address, messages } = req.body || {};
+  if (!isAddress(address)) return res.status(400).json({ error: "invalid_address" });
+  if (!Array.isArray(messages) || messages.length === 0 || messages.length > 40) {
+    return res.status(400).json({ error: "invalid_messages" });
+  }
+  if (!env.anthropicApiKey) return res.status(503).json({ error: "agent_not_configured" });
+
+  res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("X-Accel-Buffering", "no");
+
+  const write = (event) => res.write(JSON.stringify(event) + "\n");
+
+  try {
+    const result = await runAgentTurn({
+      address,
+      messages,
+      onTextDelta: (text) => write({ type: "delta", text }),
+    });
+    write({ type: "final", ...result });
+  } catch (e) {
+    console.error(e);
+    write({ type: "error", error: "agent_request_failed" });
+  } finally {
+    res.end();
+  }
 });
 
 export default router;

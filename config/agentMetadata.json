@@ -1,0 +1,14 @@
+{
+  "name": "RailFlow Assistant",
+  "description": "Self-custody chat assistant for RailFlow, a testnet demo on Arc Testnet (Circle). Helps users check balances and history, and prepares Payment, Swap, Staking, and Bridge transactions for the user to review and sign themselves in MetaMask. Never holds a private key and never signs on the user's behalf.",
+  "agent_type": "defi_assistant",
+  "capabilities": [
+    "balance_lookup",
+    "history_lookup",
+    "payment_preparation",
+    "swap_preparation",
+    "staking_preparation",
+    "bridge_preparation"
+  ],
+  "version": "1.0.0"
+}

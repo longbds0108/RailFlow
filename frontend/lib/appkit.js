@@ -27,6 +27,8 @@
 // SDK succeeding at runtime.
 // ===========================================================================
 
+import { getAccount } from "wagmi/actions";
+import { wagmiConfig } from "./wagmi";
 import { ENV, APPKIT_CHAIN } from "./config";
 
 export class AppKitUnavailableError extends Error {
@@ -67,11 +69,24 @@ function patchCircleFetch() {
   window.__railflowCircleFetchPatched = true;
 }
 
-function getProvider() {
-  if (typeof window === "undefined" || !window.ethereum) {
-    throw new AppKitUnavailableError("No EIP-1193 wallet provider (window.ethereum) found.");
+// Resolve the EIP-1193 provider for whichever wallet RainbowKit connected —
+// not just window.ethereum. connector.getProvider() is the correct source for
+// every connector type (injected, WalletConnect, Coinbase Wallet, ...); a
+// raw window.ethereum grab breaks Circle App Kit signing for anything that
+// isn't a browser-injected wallet, and is ambiguous when multiple extensions
+// are installed. Falls back to window.ethereum if no connector is active.
+async function getProvider() {
+  const { connector, isConnected } = getAccount(wagmiConfig);
+  if (isConnected && connector) {
+    try {
+      const provider = await connector.getProvider();
+      if (provider) return provider;
+    } catch {
+      /* fall through to window.ethereum */
+    }
   }
-  return window.ethereum;
+  if (typeof window !== "undefined" && window.ethereum) return window.ethereum;
+  throw new AppKitUnavailableError("No EIP-1193 wallet provider found. Connect a wallet first.");
 }
 
 // Lazily load + instantiate the SDK (client-side only, dynamic import so the
@@ -86,7 +101,7 @@ async function ensureKit() {
       import("@circle-fin/adapter-viem-v2"),
     ]);
     _kit = new AppKit();
-    _adapter = await createViemAdapterFromProvider({ provider: getProvider() });
+    _adapter = await createViemAdapterFromProvider({ provider: await getProvider() });
     return { kit: _kit, adapter: _adapter };
   } catch (err) {
     // TODO: if a future SDK version changes the factory/method signatures,

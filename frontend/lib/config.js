@@ -11,6 +11,8 @@ export const ENV = {
   kitKey: process.env.NEXT_PUBLIC_KIT_KEY || "",
   apiBase: process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000",
   paymentReceiver: process.env.NEXT_PUBLIC_PAYMENT_RECEIVER || "",
+  // WalletConnect Cloud project ID for RainbowKit (free, from cloud.walletconnect.com).
+  walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "",
 };
 
 // Arc Testnet chain definition for wagmi/viem (from config/arc.json).

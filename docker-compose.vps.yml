@@ -48,6 +48,7 @@ services:
         NEXT_PUBLIC_KIT_KEY: ${NEXT_PUBLIC_KIT_KEY}
         NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE}
         NEXT_PUBLIC_PAYMENT_RECEIVER: ${NEXT_PUBLIC_PAYMENT_RECEIVER}
+        NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID}
     image: railflow-frontend
     container_name: railflow-frontend
     depends_on:

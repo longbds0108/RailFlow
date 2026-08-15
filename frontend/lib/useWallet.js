@@ -1,17 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  useAccount,
-  useConnect,
-  useDisconnect,
-  useChainId,
-  useConfig as useWagmiConfig,
-} from "wagmi";
+import { useEffect, useMemo, useState } from "react";
+import { useAccount, useChainId, useConfig as useWagmiConfig } from "wagmi";
 import { getPublicClient } from "wagmi/actions";
-import { ENV, ARC_CHAIN_ID_HEX, ARC_ADD_CHAIN_PARAMS, TOKENS } from "./config";
+import { ENV, TOKENS } from "./config";
 import { erc20Abi } from "./erc20";
 
+// Read-only wallet state. Connecting, disconnecting, and switching networks
+// are handled by RainbowKit's <ConnectButton /> (see Header.jsx / WalletGate.jsx).
 export function useWallet() {
   // IMPORTANT: useAccount().chainId is the wallet's ACTUAL connected chain.
   // useChainId() only reflects the wagmi config's chain (always Arc here), so it
@@ -19,8 +15,6 @@ export function useWallet() {
   const { address, isConnected, chainId: accountChainId } = useAccount();
   const configChainId = useChainId();
   const chainId = accountChainId ?? configChainId;
-  const { connect, connectors, isPending: isConnecting, error: connectError } = useConnect();
-  const { disconnect } = useDisconnect();
 
   const [hasProvider, setHasProvider] = useState(true);
 
@@ -29,35 +23,6 @@ export function useWallet() {
   }, []);
 
   const correctNetwork = isConnected && chainId === ENV.chainId;
-
-  const connectMetaMask = useCallback(() => {
-    const injectedConnector =
-      connectors.find((c) => c.id === "metaMask" || c.id === "io.metamask") ||
-      connectors.find((c) => c.type === "injected") ||
-      connectors[0];
-    if (injectedConnector) connect({ connector: injectedConnector });
-  }, [connect, connectors]);
-
-  // Switch / add Arc Testnet via wallet RPC (EIP-3085/3326).
-  const switchToArc = useCallback(async () => {
-    if (typeof window === "undefined" || !window.ethereum) return;
-    try {
-      await window.ethereum.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: ARC_CHAIN_ID_HEX }],
-      });
-    } catch (err) {
-      // 4902 = chain not added → add it, then switch happens automatically.
-      if (err && (err.code === 4902 || err.code === -32603)) {
-        await window.ethereum.request({
-          method: "wallet_addEthereumChain",
-          params: [ARC_ADD_CHAIN_PARAMS],
-        });
-      } else {
-        throw err;
-      }
-    }
-  }, []);
 
   const status = useMemo(() => {
     if (!hasProvider) return "no-wallet";
@@ -73,11 +38,6 @@ export function useWallet() {
     correctNetwork,
     hasProvider,
     status,
-    isConnecting,
-    connectError,
-    connectMetaMask,
-    disconnect,
-    switchToArc,
   };
 }
 
