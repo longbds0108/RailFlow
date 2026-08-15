@@ -703,6 +703,16 @@ main.container {
   overflow-wrap: anywhere;
 }
 
+/* Inline code chip used inside chat bubbles (addresses, tx hashes) */
+.chat-code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 1px 5px;
+  cursor: default;
+}
+
 /* ===== Tables ===== */
 .table-wrap {
   overflow-x: auto;

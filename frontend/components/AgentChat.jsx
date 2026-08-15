@@ -61,6 +61,76 @@ function textOf(content) {
     .trim();
 }
 
+// Addresses/hashes read a lot cleaner shortened, with the full value still
+// available on hover — same convention as shortAddr() elsewhere in the app.
+function shortHex(s) {
+  return s.length > 14 ? `${s.slice(0, 8)}…${s.slice(-6)}` : s;
+}
+
+// Minimal inline-markdown pass for chat text: **bold**, `code`, and bare
+// 0x… addresses/hashes — all auto-shortened. Keeps chat bubbles from
+// showing raw asterisks/backticks/full-length hex (RailFlow addresses are
+// 40 hex chars, tx hashes 64 — both unreadably long inline).
+function renderInline(text, keyPrefix) {
+  const out = [];
+  const re = /\*\*(.+?)\*\*|`([^`]+)`|\b(0x[a-fA-F0-9]{12,})\b/g;
+  let last = 0;
+  let m;
+  let i = 0;
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    if (m[1] !== undefined) {
+      out.push(<strong key={`${keyPrefix}-${i}`}>{m[1]}</strong>);
+    } else {
+      const raw = m[2] ?? m[3];
+      const isHex = /^0x[a-fA-F0-9]{12,}$/.test(raw);
+      out.push(
+        <code key={`${keyPrefix}-${i}`} className="chat-code" title={isHex ? raw : undefined}>
+          {isHex ? shortHex(raw) : raw}
+        </code>
+      );
+    }
+    i += 1;
+    last = re.lastIndex;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
+// Renders a chat message as tight paragraphs/lists instead of raw
+// whitespace-preserved text — collapses the blank-line-heavy formatting the
+// model tends to produce down to compact blocks.
+function MessageBody({ text }) {
+  const blocks = text.trim().split(/\n{2,}/);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+      {blocks.map((block, bi) => {
+        const lines = block.split("\n").filter((l) => l.trim());
+        const isList = lines.length > 0 && lines.every((l) => /^[-*]\s+/.test(l.trim()));
+        if (isList) {
+          return (
+            <ul key={bi} style={{ margin: 0, paddingLeft: "1.1em" }}>
+              {lines.map((l, li) => (
+                <li key={li}>{renderInline(l.trim().replace(/^[-*]\s+/, ""), `${bi}-${li}`)}</li>
+              ))}
+            </ul>
+          );
+        }
+        return (
+          <p key={bi} style={{ margin: 0 }}>
+            {lines.map((l, li) => (
+              <span key={li}>
+                {renderInline(l, `${bi}-${li}`)}
+                {li < lines.length - 1 && <br />}
+              </span>
+            ))}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 function Bubble({ isUser, children }) {
   return (
     <div
@@ -68,14 +138,14 @@ function Bubble({ isUser, children }) {
       style={{
         alignSelf: isUser ? "flex-end" : "flex-start",
         maxWidth: "85%",
-        padding: "var(--space-3) var(--space-4)",
+        padding: "var(--space-2) var(--space-3)",
         borderRadius: "var(--radius-md)",
         background: isUser ? "var(--color-primary)" : "var(--color-bg-elev)",
         color: isUser ? "var(--color-primary-contrast)" : "var(--color-text)",
-        whiteSpace: "pre-wrap",
+        lineHeight: 1.45,
       }}
     >
-      {children}
+      <MessageBody text={children} />
     </div>
   );
 }
@@ -232,21 +302,25 @@ export default function AgentChat() {
   };
 
   return (
-    <div className="card" style={{ maxWidth: 640, display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-      {identity && (
-        <a
-          className="badge badge-success text-xs"
-          href={explorerTxUrl(identity.registerTxHash) || undefined}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ alignSelf: "flex-start", textDecoration: "none" }}
-        >
-          ✓ Verified on-chain agent · ID #{identity.agentId}
-        </a>
-      )}
-
-      <div className="row row-between">
-        <span className="muted text-xs">Chat is saved on this device for your connected wallet.</span>
+    <div
+      className="card"
+      style={{ maxWidth: 640, padding: "var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-3)" }}
+    >
+      <div className="row row-between" style={{ gap: "var(--space-2)" }}>
+        <div className="row" style={{ gap: "var(--space-2)" }}>
+          {identity && (
+            <a
+              className="badge badge-success text-xs"
+              href={explorerTxUrl(identity.registerTxHash) || undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "none" }}
+            >
+              ✓ Verified · ID #{identity.agentId}
+            </a>
+          )}
+          <span className="faint text-xs">Saved on this device</span>
+        </div>
         {messages.length > 0 && (
           <button className="btn btn-ghost btn-sm" onClick={clearChat} disabled={sending}>
             Clear chat
@@ -254,7 +328,7 @@ export default function AgentChat() {
         )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)", minHeight: 220 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", minHeight: 140 }}>
         {messages.length === 0 && !streamingText && (
           <p className="muted text-sm">
             Ask me to check your balances or history, or to send, swap, stake, or bridge — I&apos;ll
