@@ -68,6 +68,22 @@ CREATE TABLE IF NOT EXISTS stakes (
   status       TEXT NOT NULL,          -- no_stake|active|claimable|unstaking|completed|failed
   createdAt    INTEGER NOT NULL
 );
+
+-- ERC-8183 jobs (AgenticCommerce). One row per on-chain jobId, kept in sync by
+-- re-reading getJob() on-chain (see POST /api/jobs/sync) — this table is a
+-- cache/index for listing "jobs involving me", not the source of truth.
+CREATE TABLE IF NOT EXISTS jobs (
+  jobId        TEXT PRIMARY KEY,
+  client       TEXT NOT NULL,
+  provider     TEXT NOT NULL,
+  evaluator    TEXT NOT NULL,
+  description  TEXT,
+  budget       TEXT NOT NULL,          -- human USDC string, "0" until set
+  status       TEXT NOT NULL,          -- open|funded|submitted|completed|rejected|expired
+  expiredAt    INTEGER,
+  createdAt    INTEGER NOT NULL,
+  updatedAt    INTEGER NOT NULL
+);
 `);
 
 export default db;

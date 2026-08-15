@@ -46,6 +46,7 @@ const STATUS_KIND = {
   claimable: "info",
   source_confirmed: "info",
   destination_processing: "info",
+  funded: "info",
   // pending-ish
   pending: "warning",
   processing: "warning",
@@ -56,10 +57,13 @@ const STATUS_KIND = {
   pending_source: "warning",
   unstaking: "warning",
   no_stake: "warning",
+  open: "warning",
+  submitted: "warning",
   // bad
   failed: "danger",
   expired: "danger",
   cancelled: "danger",
+  rejected: "danger",
 };
 
 export function statusKind(status) {

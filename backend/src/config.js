@@ -61,6 +61,7 @@ export function publicConfig() {
       orderTimeoutMinutes: arc.payment.orderTimeoutMinutes,
     },
     staking: arc.staking,
+    jobs: arc.jobs,
     swap: arc.swap,
     bridge: arc.bridge,
     disclaimer: arc.disclaimer,

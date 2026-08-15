@@ -92,4 +92,8 @@ export const api = {
   // AI agent
   agentChatStream,
   getAgentIdentity: () => request("/api/agent/identity"),
+
+  // ERC-8183 jobs
+  syncJob: (jobId) => request("/api/jobs/sync", { method: "POST", body: { jobId } }),
+  getJobs: (address) => request(`/api/jobs?address=${encodeURIComponent(address)}`),
 };

@@ -59,6 +59,12 @@
     "rewardPoolFund": "10.00",
     "stakableTokens": ["USDC", "EURC"]
   },
+  "jobs": {
+    "note": "ERC-8183 reference AgenticCommerce contract, already deployed on Arc Testnet (not deployed by RailFlow).",
+    "agenticCommerceContract": "0x0747EEf0706327138c69792bF28Cd525089e4583",
+    "statusNames": ["open", "funded", "submitted", "completed", "rejected", "expired"],
+    "defaultExpirySeconds": 3600
+  },
   "disclaimer": {
     "en": "This is a testnet demo. All tokens used in this application, including testnet USDC, EURC, and cirBTC, have no real-world value. This application is not a payment service, exchange, investment product, or yield product, and does not provide any real financial return.",
     "vi": "Đây là bản demo trên môi trường testnet. Tất cả token sử dụng trong ứng dụng, bao gồm USDC, EURC và cirBTC testnet, không có giá trị thật. Ứng dụng không phải cổng thanh toán chính thức, không phải sàn giao dịch, không phải sản phẩm đầu tư, không cam kết lợi nhuận và không dùng cho giao dịch thương mại thật."

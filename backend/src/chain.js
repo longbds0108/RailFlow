@@ -68,4 +68,41 @@ export async function verifyTokenTransfer({ txHash, receiver, amountHuman, token
   return { ok: false, reason: "no_matching_transfer" };
 }
 
+// ERC-8183 AgenticCommerce — read-only ABI subset (backend only ever reads
+// job state; every write happens client-side in the user's own wallet).
+export const agenticCommerceAbi = [
+  {
+    type: "function",
+    name: "getJob",
+    stateMutability: "view",
+    inputs: [{ name: "jobId", type: "uint256" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "id", type: "uint256" },
+          { name: "client", type: "address" },
+          { name: "provider", type: "address" },
+          { name: "evaluator", type: "address" },
+          { name: "description", type: "string" },
+          { name: "budget", type: "uint256" },
+          { name: "expiredAt", type: "uint256" },
+          { name: "status", type: "uint8" },
+          { name: "hook", type: "address" },
+        ],
+      },
+    ],
+  },
+];
+
+/** Read a job's current on-chain state. Throws if the call reverts (job doesn't exist). */
+export async function getJobOnChain(agenticCommerceContract, jobId) {
+  return publicClient.readContract({
+    address: agenticCommerceContract,
+    abi: agenticCommerceAbi,
+    functionName: "getJob",
+    args: [BigInt(jobId)],
+  });
+}
+
 export { getAddress };
