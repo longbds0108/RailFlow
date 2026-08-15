@@ -312,7 +312,15 @@ export async function runAgentTurn({ address, messages, onTextDelta }) {
     if (onTextDelta) stream.on("text", onTextDelta);
     const response = await stream.finalMessage();
 
-    convo = [...convo, { role: "assistant", content: response.content }];
+    // claude-opus-5 can return an unsolicited stub thinking block (empty
+    // `thinking`/`signature`) ahead of tool_use even though we never request
+    // extended thinking. Echoing it back verbatim fails Anthropic's
+    // "each thinking block must contain thinking" validation, so drop it —
+    // there's no reasoning content in it to preserve.
+    const contentForHistory = response.content.filter(
+      (b) => b.type !== "thinking" && b.type !== "redacted_thinking"
+    );
+    convo = [...convo, { role: "assistant", content: contentForHistory }];
 
     if (response.stop_reason !== "tool_use") {
       return { messages: convo, status: "final" };
