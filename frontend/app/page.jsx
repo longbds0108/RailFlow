@@ -4,6 +4,25 @@ import { TokenLogo, ChainLogo } from "../components/Logo";
 const ASSETS = ["USDC", "EURC", "cirBTC"];
 const NETWORKS = ["Arc_Testnet", "Ethereum_Sepolia", "Base_Sepolia"];
 
+const BADGES = [
+  ...ASSETS.map((key) => ({ kind: "token", key })),
+  ...NETWORKS.map((key) => ({ kind: "chain", key })),
+];
+
+function Badge({ kind, badgeKey, hidden }) {
+  const label = kind === "token" ? badgeKey : badgeKey.replace(/_/g, " ");
+  return (
+    <span className="badge" aria-hidden={hidden || undefined}>
+      {kind === "token" ? (
+        <TokenLogo symbol={badgeKey} size={16} />
+      ) : (
+        <ChainLogo name={badgeKey} size={16} />
+      )}
+      {label}
+    </span>
+  );
+}
+
 const FEATURES = [
   { href: "/send", title: "Send", desc: "Send USDC, EURC or cirBTC to any wallet address on Arc Testnet." },
   { href: "/swap", title: "Swap", desc: "Same-chain swaps between USDC, EURC and cirBTC via Circle App Kit." },
@@ -33,21 +52,13 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="row mt-5" style={{ gap: "var(--space-4)", flexWrap: "wrap" }}>
-          <div className="row" style={{ gap: "var(--space-2)" }} aria-label="Supported tokens">
-            {ASSETS.map((t) => (
-              <span className="badge" key={t}>
-                <TokenLogo symbol={t} size={16} />
-                {t}
-              </span>
+        <div className="badge-ticker mt-5" aria-label="Supported tokens and networks">
+          <div className="badge-ticker-track">
+            {BADGES.map((b) => (
+              <Badge key={b.key} kind={b.kind} badgeKey={b.key} />
             ))}
-          </div>
-          <div className="row" style={{ gap: "var(--space-2)" }} aria-label="Supported networks">
-            {NETWORKS.map((n) => (
-              <span className="badge" key={n}>
-                <ChainLogo name={n} size={16} />
-                {n.replace(/_/g, " ")}
-              </span>
+            {BADGES.map((b) => (
+              <Badge key={`${b.key}-dup`} kind={b.kind} badgeKey={b.key} hidden />
             ))}
           </div>
         </div>

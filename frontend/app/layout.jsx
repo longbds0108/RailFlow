@@ -22,6 +22,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
+        <div className="bg-photo" aria-hidden="true" />
         <div className="ambient" aria-hidden="true">
           <span className="ambient-orb ambient-orb-1" />
           <span className="ambient-orb ambient-orb-2" />

@@ -75,12 +75,6 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--color-bg);
-  /* layered radial glows give the flat canvas depth */
-  background-image:
-    radial-gradient(1100px 620px at 50% -240px, rgba(91, 140, 255, 0.12), transparent 70%),
-    radial-gradient(900px 520px at 100% -80px, rgba(52, 224, 214, 0.07), transparent 70%);
-  background-attachment: fixed;
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: var(--text-base);
@@ -89,6 +83,12 @@ body {
   text-rendering: optimizeLegibility;
   /* guard against accidental horizontal scroll on mobile (safe for sticky header) */
   overflow-x: hidden;
+}
+
+body {
+  /* only body (not html) declares this, so it propagates to the canvas and
+     paints *before* .bg-photo's negative z-index instead of over it */
+  background-color: var(--color-bg);
 }
 
 ::selection {
@@ -579,6 +579,12 @@ main.container {
   font-weight: 600;
   border: 1px solid var(--color-border-strong);
   color: var(--color-text-muted);
+  /* solid dark chip so it stays legible over the photo background */
+  background: rgba(9, 13, 22, 0.82);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 .badge-dot::before {
   content: "";
@@ -606,6 +612,32 @@ main.container {
   color: var(--color-primary);
   background: rgba(91, 140, 255, 0.14);
   border-color: transparent;
+}
+
+/* ===== Badge ticker (continuous horizontal scroll strip) ===== */
+.badge-ticker {
+  overflow: hidden;
+  width: 100%;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.badge-ticker-track {
+  display: flex;
+  width: max-content;
+  gap: var(--space-3);
+  animation: badgeMarquee 24s linear infinite;
+}
+.badge-ticker:hover .badge-ticker-track {
+  animation-play-state: paused;
+}
+@keyframes badgeMarquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    /* track holds the badge list twice, so -50% is exactly one full loop */
+    transform: translateX(-50%);
+  }
 }
 
 /* ===== Notices ===== */
@@ -848,6 +880,20 @@ tr:last-child td {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   margin: 0;
+}
+
+/* ===== Photo background (site-wide skyline behind every page) ===== */
+.bg-photo {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    linear-gradient(180deg, rgba(11, 15, 26, 0.42) 0%, rgba(11, 15, 26, 0.55) 45%, rgba(11, 15, 26, 0.82) 100%),
+    url("/hero-bg.jpg");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  pointer-events: none;
 }
 
 /* ===== Ambient animated background (floating aurora orbs) ===== */
