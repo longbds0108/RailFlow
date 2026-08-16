@@ -80,9 +80,6 @@ export const api = {
   health: () => request("/api/health"),
   getConfig: () => request("/api/config"),
 
-  // History
-  getHistory: (address) => request(`/api/history?address=${encodeURIComponent(address)}`),
-
   // Records
   recordSend: (payload) => request("/api/sends", { method: "POST", body: payload }),
   recordSwap: (payload) => request("/api/swaps", { method: "POST", body: payload }),

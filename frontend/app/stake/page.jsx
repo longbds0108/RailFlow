@@ -8,6 +8,7 @@ import { useConfig } from "../../components/ConfigProvider";
 import { useWallet } from "../../lib/useWallet";
 import WalletGate from "../../components/WalletGate";
 import Balances from "../../components/Balances";
+import StakeAnalytics from "../../components/StakeAnalytics";
 import Preview from "../../components/Preview";
 import TxResult from "../../components/TxResult";
 import { api } from "../../lib/api";
@@ -175,6 +176,7 @@ function StakeModule() {
   };
 
   return (
+    <>
     <div className="grid grid-cols-3" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
       <div className="card">
         <div className="field">
@@ -346,5 +348,15 @@ function StakeModule() {
         </button>
       </div>
     </div>
+
+    <StakeAnalytics
+      stakingAddress={stakingAddress}
+      staking={staking}
+      token={token}
+      userStakedRaw={info?.staked}
+      userPendingRaw={info?.pending}
+      refreshKey={refreshKey}
+    />
+    </>
   );
 }

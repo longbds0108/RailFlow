@@ -44,6 +44,32 @@ export function ammSupportsPair(poolAddress, tokenIn, tokenOut) {
 }
 
 /**
+ * Read-only quote from the RailFlow pool's real on-chain reserves — no wallet
+ * needed. Used as a fallback when Circle's estimate is unavailable, so the
+ * UI still shows a genuine number instead of a placeholder.
+ */
+export async function ammEstimateSwap({ tokenIn, tokenOut, amountIn, poolAddress, tokens }) {
+  if (!ammSupportsPair(poolAddress, tokenIn, tokenOut)) return null;
+  const inMeta = tokens?.[tokenIn];
+  const outMeta = tokens?.[tokenOut];
+  if (!inMeta?.address || !outMeta?.address || !amountIn || Number(amountIn) <= 0) return null;
+  try {
+    const publicClient = getPublicClient(wagmiCfg, { chainId: ENV.chainId });
+    const amt = parseUnits(String(amountIn), inMeta.decimals);
+    const out = await publicClient.readContract({
+      address: poolAddress,
+      abi: railflowAmmAbi,
+      functionName: "getAmountOut",
+      args: [inMeta.address, outMeta.address, amt],
+    });
+    if (out === 0n) return null;
+    return { estimatedOutput: { amount: formatUnits(out, outMeta.decimals), token: tokenOut }, source: "railflow" };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Execute a swap through RailFlowAMM. Returns { txHash, amountOut }.
  * @param tokens  config.tokens map (symbol -> { address, decimals })
  */

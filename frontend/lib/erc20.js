@@ -84,6 +84,13 @@ export const arcStakingAbi = [
     ],
   },
   {
+    type: "function",
+    name: "rewardPoolBalance",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
     type: "event",
     name: "Staked",
     inputs: [

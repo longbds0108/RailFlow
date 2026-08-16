@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b0f1a">
+<title>RailFlow — Documentation</title>
+<link rel="icon" href="/logos/arc.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f1a;
+  --bg-2:#0e1320;
+  --surface:#121828;
+  --surface-2:#161d2f;
+  --line:#1d2637;
+  --line-2:#27324a;
+  --text:#e9edf6;
+  --text-2:#a5b0c4;
+  --muted:#6f7b91;
+  --accent:#5b8cff;
+  --accent-2:#34e0d6;
+  --accent-dim:#2a3f77;
+  --mint:#4ade9f;
+  --amber:#f0b429;
+  --radius:10px;
+  --sidebar-w:264px;
+  --topbar-h:64px;
+  --content-max:760px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:15px;
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* ---------- top bar ---------- */
+.rf-topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--topbar-h);z-index:50;
+  display:flex;align-items:center;gap:28px;
+  padding:0 24px;
+  background:rgba(11,15,26,.82);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+/* Brand wordmark — matches the app header's .wordmark exactly: real logo
+   mark + "Rail" in plain text + "Flow" in the gradient brand text. */
+.rf-brand{display:inline-flex;align-items:center;gap:2px;font-size:19px;font-weight:750;letter-spacing:-.02em;white-space:nowrap}
+.rf-mark{
+  display:inline-block;width:24px;height:24px;margin-right:8px;
+  border-radius:7px;object-fit:contain;flex:none;
+  box-shadow:0 0 0 1px rgba(91,140,255,.4),0 8px 30px rgba(91,140,255,.18);
+  transition:transform .18s ease;
+}
+.rf-brand:hover .rf-mark{transform:rotate(-12deg) scale(1.08)}
+.rf-brand .arc{color:var(--text)}
+.rf-brand .flow{
+  background:linear-gradient(95deg,var(--accent),var(--accent-2),var(--accent));
+  background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:gradientShift 6s ease infinite;
+}
+@keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.rf-nav{display:flex;gap:26px;font-size:13.5px;color:var(--text-2)}
+.rf-nav a:hover{color:var(--text)}
+.rf-nav a.is-here{color:var(--text)}
+.rf-topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.rf-cta{
+  background:var(--text);color:#0b0f1a;
+  font-size:13px;font-weight:600;
+  padding:8px 16px;border-radius:7px;
+  transition:opacity .15s;
+}
+.rf-cta:hover{opacity:.86}
+.rf-menu-btn{
+  display:none;background:none;border:1px solid var(--line-2);color:var(--text-2);
+  border-radius:7px;padding:6px 10px;font-size:13px;cursor:pointer;font-family:inherit;
+}
+
+/* ---------- shell ---------- */
+.rf-shell{display:flex;padding-top:var(--topbar-h)}
+
+/* ---------- sidebar ---------- */
+.rf-side{
+  width:var(--sidebar-w);flex:none;
+  position:sticky;top:var(--topbar-h);
+  height:calc(100vh - var(--topbar-h));
+  border-right:1px solid var(--line);
+  padding:28px 16px 20px 24px;
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+}
+.rf-side-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:14px;padding-left:10px;
+}
+.rf-toc{display:flex;flex-direction:column;gap:1px}
+.rf-toc button{
+  display:flex;align-items:baseline;gap:10px;
+  width:100%;text-align:left;cursor:pointer;
+  background:none;border:0;border-radius:7px;
+  padding:7px 10px;
+  font-family:inherit;font-size:13.5px;color:var(--text-2);
+  transition:background .13s,color .13s;
+}
+.rf-toc button:hover{background:var(--surface);color:var(--text)}
+.rf-toc button.is-active{background:var(--surface-2);color:var(--text);font-weight:500}
+.rf-toc button.is-active .rf-num{color:var(--accent)}
+.rf-num{
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;
+  color:var(--muted);flex:none;width:16px;
+}
+.rf-side-foot{margin-top:auto;padding-top:22px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.rf-side-foot a{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 10px;border-radius:7px;
+  font-size:12.5px;color:var(--muted);
+}
+.rf-side-foot a:hover{background:var(--surface);color:var(--text-2)}
+.rf-side-foot span{font-size:11px;opacity:.55}
+
+/* ---------- main ---------- */
+.rf-main{flex:1;min-width:0;padding:56px 40px 80px}
+.rf-doc{max-width:var(--content-max);margin:0 auto}
+.rf-page{display:none;animation:rf-fade .22s ease}
+.rf-page.is-active{display:block}
+@keyframes rf-fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+.rf-eyebrow{
+  display:flex;align-items:center;gap:10px;margin-bottom:16px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+}
+.rf-eyebrow b{color:var(--accent);font-weight:500}
+.rf-eyebrow i{flex:1;height:1px;background:var(--line);font-style:normal;max-width:52px}
+
+h1.rf-h1{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:38px;line-height:1.15;font-weight:600;letter-spacing:-.02em;
+  margin-bottom:18px;
+}
+.rf-lead{font-size:16.5px;color:var(--text-2);line-height:1.72;margin-bottom:14px}
+.rf-doc p{color:var(--text-2);margin-bottom:15px}
+.rf-doc p strong{color:var(--text);font-weight:600}
+h2.rf-h2{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:20px;font-weight:600;letter-spacing:-.01em;
+  margin:40px 0 14px;padding-top:24px;border-top:1px solid var(--line);
+}
+h3.rf-h3{font-family:'Space Grotesk',sans-serif;font-size:15.5px;font-weight:600;margin:26px 0 8px}
+.rf-doc ul{list-style:none;margin:0 0 16px}
+.rf-doc li{
+  position:relative;padding-left:18px;margin-bottom:8px;color:var(--text-2);
+}
+.rf-doc li::before{
+  content:"";position:absolute;left:2px;top:11px;
+  width:4px;height:4px;border-radius:50%;background:var(--line-2);
+}
+code{
+  font-family:'JetBrains Mono',monospace;font-size:12.5px;
+  background:var(--surface);border:1px solid var(--line);
+  padding:1.5px 5px;border-radius:4px;color:#b9c6e4;
+}
+pre{
+  background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 18px;overflow-x:auto;margin:0 0 18px;
+}
+pre code{background:none;border:0;padding:0;font-size:12.5px;line-height:1.75;color:#c4d0ea}
+.tk{color:#7d9dff}.ts{color:#7fd6a8}.tc{color:var(--muted);font-style:italic}
+
+/* cards */
+.rf-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:22px 0}
+.rf-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 17px;transition:border-color .15s,background .15s;
+}
+.rf-card:hover{border-color:var(--line-2);background:var(--surface-2)}
+.rf-card h4{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.rf-card p{font-size:13.5px;line-height:1.62;color:var(--muted);margin:0}
+.rf-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex:none}
+
+/* asset chips — real token/chain logos, same assets the app itself uses */
+.rf-chips{display:flex;flex-wrap:wrap;gap:9px;margin:16px 0 4px}
+.rf-chip{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface);border:1px solid var(--line);
+  padding:7px 14px 7px 10px;border-radius:99px;font-size:13px;font-weight:500;
+}
+.rf-chip img{
+  width:18px;height:18px;border-radius:50%;flex:none;
+  object-fit:contain;display:block;
+}
+
+/* callout */
+.rf-note{
+  border:1px solid var(--line);border-left:2px solid var(--accent);
+  background:var(--bg-2);border-radius:0 var(--radius) var(--radius) 0;
+  padding:14px 18px;margin:20px 0;
+}
+.rf-note.is-warn{border-left-color:var(--amber)}
+.rf-note.is-good{border-left-color:var(--mint)}
+.rf-note-t{
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:6px;
+}
+.rf-note p{margin:0;font-size:14px;color:var(--text-2)}
+
+/* steps */
+.rf-steps{counter-reset:s;margin:20px 0}
+.rf-step{position:relative;padding-left:40px;padding-bottom:22px;counter-increment:s}
+.rf-step:not(:last-child)::after{
+  content:"";position:absolute;left:12px;top:26px;bottom:0;width:1px;background:var(--line);
+}
+.rf-step::before{
+  content:counter(s,decimal-leading-zero);
+  position:absolute;left:0;top:1px;
+  width:25px;height:25px;border-radius:50%;
+  background:var(--surface);border:1px solid var(--line-2);
+  display:grid;place-items:center;
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);
+}
+.rf-step h4{font-family:'Space Grotesk',sans-serif;font-size:14.5px;font-weight:600;margin-bottom:5px}
+.rf-step p{font-size:14px;margin:0}
+
+/* table */
+.rf-table{width:100%;border-collapse:collapse;margin:20px 0;font-size:13.5px}
+.rf-table th{
+  text-align:left;padding:9px 12px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);font-weight:400;
+  border-bottom:1px solid var(--line-2);
+}
+.rf-table td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--text-2);vertical-align:top}
+.rf-table td:first-child{color:var(--text);font-weight:500;white-space:nowrap}
+
+/* next */
+.rf-next{
+  display:flex;align-items:center;justify-content:flex-end;gap:12px;
+  margin-top:48px;padding:18px 20px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface);cursor:pointer;width:100%;text-align:right;
+  font-family:inherit;transition:border-color .15s;
+}
+.rf-next:hover{border-color:var(--accent-dim)}
+.rf-next-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px}
+.rf-next-t{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:var(--text)}
+.rf-arrow{color:var(--accent);font-size:16px}
+
+.rf-foot{
+  margin-top:44px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--muted);
+}
+
+@media(max-width:900px){
+  .rf-nav{display:none}
+  .rf-menu-btn{display:block}
+  .rf-side{
+    position:fixed;left:0;top:var(--topbar-h);z-index:40;
+    background:var(--bg);transform:translateX(-100%);
+    transition:transform .22s ease;width:280px;
+  }
+  .rf-side.is-open{transform:none}
+  .rf-main{padding:36px 22px 64px}
+  h1.rf-h1{font-size:29px}
+  .rf-cards{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<header class="rf-topbar">
+  <button class="rf-menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+  <a class="rf-brand" href="/" aria-label="RailFlow home">
+    <img class="rf-mark" src="/logos/arc.svg" alt="">
+    <span class="arc">Rail</span><span class="flow">Flow</span>
+  </a>
+  <nav class="rf-nav">
+    <a href="/">Product</a>
+    <a href="#" data-go="1">How it works</a>
+    <a href="#" data-go="8">Security</a>
+    <a href="#" class="is-here">Docs</a>
+  </nav>
+  <div class="rf-topbar-right">
+    <a class="rf-cta" href="/send">Enter app</a>
+  </div>
+</header>
+
+<div class="rf-shell">
+
+  <aside class="rf-side" id="side">
+    <div class="rf-side-label">Documentation</div>
+    <nav class="rf-toc" id="toc"></nav>
+    <div class="rf-side-foot">
+      <a href="https://testnet.arcscan.app" target="_blank" rel="noopener">ArcScan <span>↗</span></a>
+      <a href="https://faucet.circle.com" target="_blank" rel="noopener">Testnet faucet <span>↗</span></a>
+      <a href="https://docs.arc.network" target="_blank" rel="noopener">Arc docs <span>↗</span></a>
+    </div>
+  </aside>
+
+  <main class="rf-main">
+    <div class="rf-doc" id="doc">
+
+      <!-- 01 -->
+      <section class="rf-page is-active" data-i="0">
+        <div class="rf-eyebrow"><span>RailFlow protocol</span><i></i><b>01</b></div>
+        <h1 class="rf-h1">What is RailFlow?</h1>
+        <p class="rf-lead">RailFlow is a stablecoin app on Arc Testnet that does five things: send, swap, stake, bridge — and schedule any of those to run later. You keep your keys the whole time.</p>
+        <p>Think of it as a payments account you actually own. A bank moves your money for you, on its schedule, with its permission. RailFlow prepares the transaction and hands it to your wallet — nothing moves until you sign it in MetaMask. The app never holds your funds and has no way to move them.</p>
+
+        <h2 class="rf-h2">What you can do</h2>
+        <div class="rf-cards">
+          <div class="rf-card"><h4><span class="rf-dot"></span>Send</h4><p>Move USDC, EURC or cirBTC to any wallet address on Arc Testnet.</p></div>
+          <div class="rf-card"><h4><span class="rf-dot"></span>Swap</h4><p>Trade between USDC, EURC and cirBTC on Arc. Priced by the pool, not an order book.</p></div>
+          <div class="rf-card"><h4><span class="rf-dot"></span>Stake</h4><p>Put idle USDC or EURC to work and earn USDC rewards at a fixed demo rate.</p></div>
+          <div class="rf-card"><h4><span class="rf-dot"></span>Bridge</h4><p>Move USDC between Arc, Ethereum Sepolia and Base Sepolia over Circle's CCTP. Always native USDC — never wrapped.</p></div>
+          <div class="rf-card"><h4><span class="rf-dot"></span>Jobs</h4><p>Set an action once — "500 USDC on the 1st of every month" — and RailFlow prepares each run for you to sign.</p></div>
+          <div class="rf-card"><h4><span class="rf-dot"></span>Assistant</h4><p>Describe what you want in plain language. Get back a transaction plan you can read before you approve it.</p></div>
+        </div>
+
+        <h2 class="rf-h2">Supported assets</h2>
+        <div class="rf-chips">
+          <span class="rf-chip c-usdc"><img src="/logos/usdc.svg" alt="">USDC</span>
+          <span class="rf-chip c-eurc"><img src="/logos/eurc.png" alt="">EURC</span>
+          <span class="rf-chip c-btc"><img src="/logos/cirbtc.svg" alt="">cirBTC</span>
+        </div>
+        <h3 class="rf-h3">Networks</h3>
+        <div class="rf-chips">
+          <span class="rf-chip c-net"><img src="/logos/arc-testnet.jpg" alt="">Arc Testnet</span>
+          <span class="rf-chip c-net"><img src="/logos/eth.svg" alt="">Ethereum Sepolia</span>
+          <span class="rf-chip c-net"><img src="/logos/base.png" alt="">Base Sepolia</span>
+        </div>
+        <p style="margin-top:14px">Arc Testnet is home. Sepolia and Base Sepolia are bridge endpoints — you can move USDC to and from them, but swapping, staking and jobs all run on Arc.</p>
+
+        <div class="rf-note is-warn">
+          <div class="rf-note-t">Testnet only</div>
+          <p>Every asset here is a test asset with no market value. The staking rate is a fixed demo number, not real yield. Don't send anything you'd miss.</p>
+        </div>
+      </section>
+
+      <!-- 02 -->
+      <section class="rf-page" data-i="1">
+        <div class="rf-eyebrow"><span>Getting started</span><i></i><b>02</b></div>
+        <h1 class="rf-h1">Getting started</h1>
+        <p class="rf-lead">Four steps, about five minutes. You need MetaMask and nothing else.</p>
+
+        <div class="rf-steps">
+          <div class="rf-step">
+            <h4>Add Arc Testnet to MetaMask</h4>
+            <p>Open <a href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--accent)">testnet.arcscan.app</a> and use the <em>Add Arc Testnet</em> control at the bottom of the page, then confirm in the wallet popup. Network details are also on <a href="https://docs.arc.network" target="_blank" rel="noopener" style="color:var(--accent)">docs.arc.network</a> if you'd rather add it by hand.</p>
+          </div>
+          <div class="rf-step">
+            <h4>Get testnet tokens</h4>
+            <p>Go to <a href="https://faucet.circle.com" target="_blank" rel="noopener" style="color:var(--accent)">faucet.circle.com</a>, select Arc Testnet, and request tokens. You'll receive both USDC and EURC. Gas on Arc is paid in USDC, so the same balance covers your fees.</p>
+          </div>
+          <div class="rf-step">
+            <h4>Connect your wallet</h4>
+            <p>Open RailFlow and connect. There's no account to create and no email to hand over — your address is your account. If you're on the wrong network, the app will offer to switch you.</p>
+          </div>
+          <div class="rf-step">
+            <h4>Send a small amount first</h4>
+            <p>Send 1 USDC to a second address you control and confirm it arrives. That one round trip tells you the wallet, the network and the app are all talking to each other before you try anything larger.</p>
+          </div>
+        </div>
+
+        <div class="rf-note is-good">
+          <div class="rf-note-t">Gas on Arc</div>
+          <p>Fees are denominated in USDC. You don't need to hold a separate gas token, and the cost of a transfer is quoted in the same unit as the transfer itself.</p>
+        </div>
+      </section>
+
+      <!-- 03 -->
+      <section class="rf-page" data-i="2">
+        <div class="rf-eyebrow"><span>Core actions</span><i></i><b>03</b></div>
+        <h1 class="rf-h1">Send</h1>
+        <p class="rf-lead">Transfer USDC, EURC or cirBTC to any address on Arc Testnet.</p>
+        <p>Pick the asset, enter an amount and a recipient address, and review. RailFlow shows you the amount, the recipient and the estimated fee in USDC before anything reaches your wallet. Signing in MetaMask is the point of no return — everything before it is editable.</p>
+
+        <h2 class="rf-h2">What to check before signing</h2>
+        <ul>
+          <li><strong>The address.</strong> Transfers are final. There's no recall and no support desk that can reverse one.</li>
+          <li><strong>The asset.</strong> USDC and EURC look similar in a list and are not interchangeable.</li>
+          <li><strong>The network.</strong> Send works on Arc Testnet only. To move USDC to another chain, use <a href="#" data-go="5" style="color:var(--accent)">Bridge</a> instead.</li>
+        </ul>
+
+        <div class="rf-note">
+          <div class="rf-note-t">Recurring transfers</div>
+          <p>If you're going to send the same amount to the same address regularly, set it up once under <a href="#" data-go="6" style="color:var(--accent)">Jobs</a> rather than repeating this flow every month.</p>
+        </div>
+      </section>
+
+      <!-- 04 -->
+      <section class="rf-page" data-i="3">
+        <div class="rf-eyebrow"><span>Core actions</span><i></i><b>04</b></div>
+        <h1 class="rf-h1">Swap</h1>
+        <p class="rf-lead">Trade between USDC, EURC and cirBTC on Arc, in one transaction.</p>
+        <p>Swaps are same-chain: both sides of the trade stay on Arc Testnet. Choose what you're paying with, what you want, and the amount. RailFlow quotes the output before you commit. Prices come from pool liquidity, so larger trades move the price against you — the quote reflects that.</p>
+
+        <h2 class="rf-h2">Under the hood</h2>
+        <p>Swaps route through Circle App Kit, which abstracts the underlying protocol behind one call:</p>
+<pre><code><span class="tc">// Swap 1.00 USDC for EURC on Arc Testnet</span>
+<span class="tk">await</span> kit.swap({
+  from:     { adapter: viemAdapter, chain: <span class="ts">"Arc_Testnet"</span> },
+  tokenIn:  <span class="ts">"USDC"</span>,
+  tokenOut: <span class="ts">"EURC"</span>,
+  amountIn: <span class="ts">"1.00"</span>,
+});</code></pre>
+        <p>USDC and EURC are both stablecoins but track different currencies, so a USDC ↔ EURC swap is an FX trade and the rate moves with the euro. cirBTC is volatile — quote and execute close together.</p>
+      </section>
+
+      <!-- 05 -->
+      <section class="rf-page" data-i="4">
+        <div class="rf-eyebrow"><span>Core actions</span><i></i><b>05</b></div>
+        <h1 class="rf-h1">Stake</h1>
+        <p class="rf-lead">Deposit USDC or EURC and earn USDC rewards at a fixed demo rate.</p>
+        <p>Staking is for balances you aren't actively moving. Deposit, and rewards accrue in USDC while the position is open. Unstake whenever you want — there's no lockup on testnet.</p>
+
+        <table class="rf-table">
+          <tr><th>Field</th><th>Detail</th></tr>
+          <tr><td>Stakeable</td><td>USDC, EURC</td></tr>
+          <tr><td>Rewards paid in</td><td>USDC</td></tr>
+          <tr><td>Rate</td><td>Fixed demo APY — set by the app, not by a market</td></tr>
+          <tr><td>Lockup</td><td>None. Unstake at any time.</td></tr>
+        </table>
+
+        <div class="rf-note is-warn">
+          <div class="rf-note-t">This is not yield</div>
+          <p>The APY is a constant written into the demo. There is no lending market, no borrower and no revenue behind it. It exists to make the staking flow testable — treat the number as a placeholder, not a return.</p>
+        </div>
+      </section>
+
+      <!-- 06 -->
+      <section class="rf-page" data-i="5">
+        <div class="rf-eyebrow"><span>Core actions</span><i></i><b>06</b></div>
+        <h1 class="rf-h1">Bridge</h1>
+        <p class="rf-lead">Move USDC between Arc Testnet, Ethereum Sepolia and Base Sepolia using Circle's CCTP.</p>
+        <p>CCTP is burn-and-mint: your USDC is destroyed on the source chain, Circle attests to the burn, and an equal amount is minted on the destination. You always end up holding <strong>native USDC</strong> — never a wrapped IOU issued by a third-party bridge.</p>
+
+        <h2 class="rf-h2">What happens, in order</h2>
+        <div class="rf-steps">
+          <div class="rf-step"><h4>Burn</h4><p>You sign a transaction on the source chain. Your USDC is burned. The transfer shows as <em>pending</em>.</p></div>
+          <div class="rf-step"><h4>Attest</h4><p>Circle observes the burn and issues an attestation. This is the waiting phase — it depends on source-chain finality, not on RailFlow.</p></div>
+          <div class="rf-step"><h4>Mint</h4><p>The attestation is redeemed on the destination chain and native USDC appears in your address there. The transfer is <em>complete</em>.</p></div>
+        </div>
+
+<pre><code><span class="tc">// Bridge 1.00 USDC from Ethereum Sepolia to Arc Testnet</span>
+<span class="tk">await</span> kit.bridge({
+  from:   { adapter: viemAdapter, chain: <span class="ts">"Ethereum_Sepolia"</span> },
+  to:     { adapter: viemAdapter, chain: <span class="ts">"Arc_Testnet"</span> },
+  amount: <span class="ts">"1.00"</span>,
+});</code></pre>
+
+        <div class="rf-note is-warn">
+          <div class="rf-note-t">If a bridge sits pending</div>
+          <p>It's almost always the attestation step. The funds are burned and accounted for — they are not lost. Check the transaction on <a href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--accent)">ArcScan</a> rather than submitting the transfer again, which would move a second amount.</p>
+        </div>
+        <p><strong>USDC only.</strong> CCTP doesn't carry EURC or cirBTC. To move those, swap to USDC on Arc first, bridge, then swap back on the far side.</p>
+      </section>
+
+      <!-- 07 -->
+      <section class="rf-page" data-i="6">
+        <div class="rf-eyebrow"><span>Automation</span><i></i><b>07</b></div>
+        <h1 class="rf-h1">Jobs</h1>
+        <p class="rf-lead">Set an action up once and let it run on a schedule — without handing over your keys.</p>
+        <p>A wallet is stateless: it does exactly what you tell it, exactly when you tell it. That's fine for a one-off transfer and painful for anything recurring — payroll, a monthly invoice, a standing transfer to a savings address. Jobs adds the missing piece.</p>
+        <p>Define the action once: asset, amount, recipient, and when it should happen. RailFlow tracks the schedule and prepares each run. Common shapes:</p>
+        <ul>
+          <li><strong>Recurring send</strong> — 500 USDC to the same address on the 1st of each month.</li>
+          <li><strong>Recurring swap</strong> — convert a fixed slice of USDC to EURC every week.</li>
+          <li><strong>Balance-triggered bridge</strong> — move USDC to Base when the Arc balance passes a threshold you set.</li>
+        </ul>
+
+        <h2 class="rf-h2">The custody trade-off, stated plainly</h2>
+        <p>Every service that runs stablecoin payments on a schedule does it by taking custody — holding your keys, or your float, or both. RailFlow doesn't. The consequence is honest and worth understanding before you rely on it:</p>
+        <div class="rf-note">
+          <div class="rf-note-t">Jobs prepare. You execute.</div>
+          <p>A job cannot sign for you. When a run comes due, RailFlow builds the transaction and asks for your signature. If you don't sign, nothing moves. This is a real limitation, and it is the direct cost of the app never being able to move your funds on its own.</p>
+        </div>
+        <p>Unattended execution is on the roadmap via session keys with hard spend caps, recipient allowlists and an expiry — narrow, revocable authority instead of full custody. It isn't shipped yet.</p>
+      </section>
+
+      <!-- 08 -->
+      <section class="rf-page" data-i="7">
+        <div class="rf-eyebrow"><span>Automation</span><i></i><b>08</b></div>
+        <h1 class="rf-h1">Assistant</h1>
+        <p class="rf-lead">Say what you want. Read the plan. Sign it, or don't.</p>
+        <p>Most of the friction in a stablecoin app is translation — you know you want to pay someone in euros from a dollar balance, and the app makes you turn that into a chain, two token selectors and three screens. The Assistant takes the sentence instead.</p>
+        <p>Type something like <code>send 250 EURC to 0xa1b2… on Friday</code> or <code>move half my Arc USDC to Base</code>. The Assistant resolves it into a concrete plan and shows it to you as explicit parameters: asset, amount, recipient, chain, fee.</p>
+
+        <h2 class="rf-h2">What it cannot do</h2>
+        <p>This is the part worth being precise about, because "AI that touches your money" deserves a clear boundary.</p>
+        <div class="rf-note is-good">
+          <div class="rf-note-t">Proposes only</div>
+          <p>The Assistant builds transaction plans. It cannot sign, cannot broadcast, and holds no key material. Every plan it produces goes to your wallet for approval like any other action in RailFlow. It is an input method, not an authority.</p>
+        </div>
+        <ul>
+          <li>Plans are always rendered as reviewable parameters — never executed from a summary.</li>
+          <li>If a request is ambiguous, the Assistant asks rather than guessing at an amount or an address.</li>
+          <li>Anything it proposes, you could have built by hand in the Send, Swap, Stake or Bridge screens. It's a shortcut, not a separate set of powers.</li>
+        </ul>
+      </section>
+
+      <!-- 09 -->
+      <section class="rf-page" data-i="8">
+        <div class="rf-eyebrow"><span>Reference</span><i></i><b>09</b></div>
+        <h1 class="rf-h1">Security</h1>
+        <p class="rf-lead">RailFlow is a client-side interface. It cannot move your funds, and it isn't built so that it could.</p>
+
+        <h2 class="rf-h2">The guarantees</h2>
+        <ul>
+          <li><strong>No custody.</strong> The app holds no private keys, no deposits and no float. Your assets stay at your own address.</li>
+          <li><strong>No admin key.</strong> There is no privileged role that can move, freeze or claw back a user balance.</li>
+          <li><strong>You sign everything.</strong> Every state change produces a MetaMask prompt. There are no background transactions.</li>
+          <li><strong>The Assistant can't execute.</strong> It constructs plans; only your signature broadcasts one.</li>
+          <li><strong>Jobs can't execute unsupervised.</strong> A scheduled run is prepared for you, not performed without you.</li>
+        </ul>
+
+        <h2 class="rf-h2">The limits, stated honestly</h2>
+        <ul>
+          <li>Testnet only. No mainnet deployment.</li>
+          <li>Not audited. Treat it as a demo, because that's what it is.</li>
+          <li>The staking APY is a fixed constant with no yield source behind it.</li>
+          <li>Bridging is USDC-only — CCTP doesn't carry EURC or cirBTC.</li>
+          <li>Jobs require you to be present to sign each run.</li>
+        </ul>
+
+        <h2 class="rf-h2">Built with</h2>
+        <table class="rf-table">
+          <tr><th>Layer</th><th>What it does</th></tr>
+          <tr><td>Circle App Kit</td><td>One interface over Circle's protocols — send, swap, stake and bridge are a single call each.</td></tr>
+          <tr><td>CCTP</td><td>Native burn-and-mint USDC across chains. No wrapped assets, no third-party bridge risk.</td></tr>
+          <tr><td>Arc Testnet</td><td>Circle's EVM L1. USDC-denominated gas and sub-second finality.</td></tr>
+          <tr><td>MetaMask + viem</td><td>EOA signing. Your wallet is the only authority in the system.</td></tr>
+        </table>
+
+        <div class="rf-note is-warn">
+          <div class="rf-note-t">Not financial advice</div>
+          <p>RailFlow is an unaudited testnet demo. Nothing here is a financial product, and no asset in it carries value.</p>
+        </div>
+      </section>
+
+      <button class="rf-next" id="nextBtn">
+        <span>
+          <span class="rf-next-lbl">Next</span>
+          <span class="rf-next-t" id="nextTitle">Getting started</span>
+        </span>
+        <span class="rf-arrow">→</span>
+      </button>
+
+      <div class="rf-foot">RailFlow documentation · Arc Testnet · Self-custody demo</div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  var SECTIONS = [
+    "What is RailFlow?","Getting started","Send","Swap","Stake",
+    "Bridge","Jobs","Assistant","Security"
+  ];
+  var toc = document.getElementById('toc');
+  var pages = Array.prototype.slice.call(document.querySelectorAll('.rf-page'));
+  var nextBtn = document.getElementById('nextBtn');
+  var nextTitle = document.getElementById('nextTitle');
+  var side = document.getElementById('side');
+  var current = 0;
+
+  SECTIONS.forEach(function(name, i){
+    var b = document.createElement('button');
+    b.innerHTML = '<span class="rf-num">' + String(i+1).padStart(2,'0') + '</span><span>' + name + '</span>';
+    b.addEventListener('click', function(){ go(i); });
+    toc.appendChild(b);
+  });
+  var tabs = Array.prototype.slice.call(toc.children);
+
+  function go(i){
+    if(i < 0 || i >= pages.length) return;
+    current = i;
+    pages.forEach(function(p, n){ p.classList.toggle('is-active', n === i); });
+    tabs.forEach(function(t, n){ t.classList.toggle('is-active', n === i); });
+    if(i < SECTIONS.length - 1){
+      nextBtn.style.display = '';
+      nextTitle.textContent = SECTIONS[i+1];
+    } else {
+      nextBtn.style.display = 'none';
+    }
+    side.classList.remove('is-open');
+    window.scrollTo({top:0, behavior:'auto'});
+  }
+
+  nextBtn.addEventListener('click', function(){ go(current + 1); });
+
+  document.getElementById('doc').addEventListener('click', function(e){
+    var link = e.target.closest('[data-go]');
+    if(link){ e.preventDefault(); go(parseInt(link.getAttribute('data-go'), 10)); }
+  });
+
+  document.querySelector('.rf-nav').addEventListener('click', function(e){
+    var link = e.target.closest('[data-go]');
+    if(link){ e.preventDefault(); go(parseInt(link.getAttribute('data-go'), 10)); }
+  });
+
+  document.getElementById('menuBtn').addEventListener('click', function(){
+    side.classList.toggle('is-open');
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>

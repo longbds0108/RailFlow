@@ -374,6 +374,9 @@ main.container {
 .grid-cols-3 {
   grid-template-columns: repeat(3, 1fr);
 }
+.grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
 /* Responsive stat grid (admin overview): fits as many columns as room allows. */
 .stat-grid {
   display: grid;
@@ -381,7 +384,8 @@ main.container {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 @media (max-width: 780px) {
-  .grid-cols-3 {
+  .grid-cols-3,
+  .grid-cols-2 {
     grid-template-columns: 1fr;
   }
   .nav {
@@ -712,6 +716,18 @@ main.container {
   padding: 1px 5px;
   cursor: default;
 }
+/* Same chip, but linked out to the explorer (tx hash / address) */
+.chat-code-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.chat-code-link:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--color-accent);
+  text-decoration: none;
+}
 
 /* ===== Tables ===== */
 .table-wrap {
@@ -822,6 +838,16 @@ tr:last-child td {
   color: var(--color-text-faint);
   font-size: var(--text-xs);
   padding: var(--space-5) 0;
+}
+.social-link {
+  display: inline-flex;
+  color: var(--color-text-faint);
+  transition: color var(--transition-fast), transform var(--transition-fast);
+}
+.social-link:hover {
+  color: var(--color-text);
+  text-decoration: none;
+  transform: translateY(-1px);
 }
 
 /* Home hero */
@@ -993,6 +1019,150 @@ tr:last-child td {
 .badge-info:hover,
 .badge-success:hover {
   transform: translateY(-1px);
+}
+
+/* ===== Swap panel (From/To amount cards) ===== */
+.swap-panel {
+  background: var(--color-bg-elev);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+.swap-panel-label {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-3);
+}
+.swap-amount-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.swap-amount-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 34px;
+  font-weight: 700;
+  padding: 0;
+  -moz-appearance: textfield;
+}
+.swap-amount-input::placeholder {
+  color: var(--color-text-faint);
+}
+.swap-amount-input:disabled {
+  opacity: 0.6;
+}
+.swap-amount-input::-webkit-outer-spin-button,
+.swap-amount-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.swap-amount-display {
+  flex: 1;
+  min-width: 0;
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+.swap-amount-display.is-empty {
+  color: var(--color-text-faint);
+}
+.swap-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+}
+.swap-max-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.swap-max-btn:hover:not(:disabled) {
+  color: var(--color-primary-hover);
+}
+.swap-max-btn:disabled {
+  color: var(--color-text-faint);
+  cursor: not-allowed;
+}
+
+/* Token pill: logo + native <select> styled as a rounded pill (same
+   accessible-native-select approach as .select-wrap, just bigger/pill-shaped). */
+.token-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-3);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.token-pill select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--color-text);
+  font-weight: 700;
+  font-size: var(--text-base);
+  font-family: inherit;
+  padding-right: 18px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239aa6c4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right center;
+}
+.token-pill select:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Circular swap-direction toggle floating between the From/To panels */
+.swap-flip-row {
+  display: flex;
+  justify-content: center;
+  margin: calc(-1 * var(--space-2)) 0;
+  position: relative;
+  z-index: 1;
+}
+.swap-flip-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-primary);
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+.swap-flip-btn:hover:not(:disabled) {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  transform: rotate(180deg);
+}
+.swap-flip-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (prefers-reduced-motion: reduce) {

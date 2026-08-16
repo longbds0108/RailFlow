@@ -1,4 +1,4 @@
-// Public REST endpoints: health, config, sends, history, record endpoints.
+// Public REST endpoints: health, config, sends, record endpoints.
 import { Router } from "express";
 import { db } from "../db.js";
 import { arc, publicConfig, env, getAgentIdentity } from "../config.js";
@@ -70,41 +70,6 @@ router.post("/sends", async (req, res) => {
     )
     .run(address.toLowerCase(), to.toLowerCase(), String(token), String(amount), txHash, status, Date.now());
   res.status(201).json({ ...db.prepare("SELECT * FROM sends WHERE id = ?").get(info.lastInsertRowid), verification: result });
-});
-
-// --- History --------------------------------------------------------------
-
-router.get("/history", (req, res) => {
-  const address = String(req.query.address || "").toLowerCase();
-  if (!isAddress(address)) return res.status(400).json({ error: "invalid_address" });
-
-  const sends = db
-    .prepare("SELECT * FROM sends WHERE address = ?")
-    .all(address)
-    .map((s) => ({ type: "send", id: s.id, status: s.status, token: s.token, amount: s.amount, recipient: s.recipient, txHash: s.txHash, createdAt: s.createdAt }));
-
-  const swaps = db
-    .prepare("SELECT * FROM swaps WHERE address = ?")
-    .all(address)
-    .map((s) => ({ type: "swap", id: s.id, status: s.status, tokenIn: s.tokenIn, tokenOut: s.tokenOut, amountIn: s.amountIn, amountOut: s.amountOut, txHash: s.txHash, createdAt: s.createdAt }));
-
-  const stakes = db
-    .prepare("SELECT * FROM stakes WHERE address = ?")
-    .all(address)
-    .map((s) => ({ type: "stake", id: s.id, status: s.status, action: s.action, token: s.token, amount: s.amount, txHash: s.txHash, createdAt: s.createdAt }));
-
-  const bridges = db
-    .prepare("SELECT * FROM bridges WHERE address = ?")
-    .all(address)
-    .map((b) => ({ type: "bridge", id: b.id, status: b.status, fromChain: b.fromChain, toChain: b.toChain, token: b.token, amount: b.amount, txHash: b.srcTxHash, createdAt: b.createdAt }));
-
-  const jobs = db
-    .prepare("SELECT * FROM jobs WHERE client = ? OR provider = ? OR evaluator = ?")
-    .all(address, address, address)
-    .map((j) => ({ type: "job", id: j.jobId, status: j.status, description: j.description, amount: j.budget, txHash: null, createdAt: j.createdAt }));
-
-  const all = [...sends, ...swaps, ...stakes, ...bridges, ...jobs].sort((a, b) => b.createdAt - a.createdAt);
-  res.json(all);
 });
 
 // --- Record endpoints (verify on-chain, then store) -----------------------

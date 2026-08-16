@@ -5,7 +5,7 @@ import { useConfig } from "./ConfigProvider";
 import { useWallet } from "../lib/useWallet";
 import { api } from "../lib/api";
 import { executeProposedAction } from "../lib/agentActions";
-import { explorerTxUrl } from "../lib/config";
+import { explorerTxUrl, explorerAddressUrl } from "../lib/config";
 import Preview from "./Preview";
 
 const ACTION_TITLES = {
@@ -84,10 +84,27 @@ function renderInline(text, keyPrefix) {
     } else {
       const raw = m[2] ?? m[3];
       const isHex = /^0x[a-fA-F0-9]{12,}$/.test(raw);
+      // Tx hashes are 32 bytes (64 hex chars), addresses 20 bytes (40) —
+      // link each to the right ArcScan page instead of just showing text.
+      const hexLen = raw.length - 2;
+      const href = !isHex ? null : hexLen >= 60 ? explorerTxUrl(raw) : hexLen >= 38 ? explorerAddressUrl(raw) : null;
       out.push(
-        <code key={`${keyPrefix}-${i}`} className="chat-code" title={isHex ? raw : undefined}>
-          {isHex ? shortHex(raw) : raw}
-        </code>
+        href ? (
+          <a
+            key={`${keyPrefix}-${i}`}
+            className="chat-code chat-code-link"
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={raw}
+          >
+            {shortHex(raw)}
+          </a>
+        ) : (
+          <code key={`${keyPrefix}-${i}`} className="chat-code" title={isHex ? raw : undefined}>
+            {isHex ? shortHex(raw) : raw}
+          </code>
+        )
       );
     }
     i += 1;

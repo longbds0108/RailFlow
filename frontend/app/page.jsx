@@ -28,7 +28,6 @@ const FEATURES = [
   { href: "/swap", title: "Swap", desc: "Same-chain swaps between USDC, EURC and cirBTC via Circle App Kit." },
   { href: "/stake", title: "Stake", desc: "Stake USDC or EURC and earn USDC rewards at a fixed demo APY." },
   { href: "/bridge", title: "Bridge", desc: "Move USDC across chains with Circle CCTP (Arc · Sepolia · Base Sepolia)." },
-  { href: "/history", title: "History", desc: "Review your own sends, swaps, stakes and bridges in one place." },
 ];
 
 export default function HomePage() {
@@ -36,12 +35,13 @@ export default function HomePage() {
     <div>
       <section className="hero">
         <h1>
-          Send stablecoins, swap, stake & bridge — on{" "}
-          <span style={{ color: "var(--color-accent)" }}>Arc Testnet</span>.
+          All <span style={{ color: "var(--color-accent)" }}>DeFi</span>, One{" "}
+          <span style={{ color: "var(--color-accent)" }}>Flow</span> — on{" "}
+          <span style={{ color: "var(--color-accent)" }}>Arc</span>
         </h1>
         <p>
-          RailFlow is a self-custody demo built on Circle App Kit. You sign every
-          transaction in MetaMask — the app never holds your keys.
+          Send, swap, stake and bridge on Arc from one unified hub. RailFlow puts every
+          stablecoin flow under your control.
         </p>
         <div className="row mt-5">
           <Link className="btn btn-primary" href="/send">

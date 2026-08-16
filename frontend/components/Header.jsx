@@ -13,7 +13,8 @@ const NAV = [
   { href: "/bridge", label: "Bridge" },
   { href: "/jobs", label: "Jobs" },
   { href: "/agent", label: "Assistant" },
-  { href: "/history", label: "History" },
+  // Static file (frontend/public/docs.html), not a Next.js route.
+  { href: "/docs.html", label: "Docs", external: true },
 ];
 
 export default function Header() {
@@ -31,6 +32,13 @@ export default function Header() {
         <nav className="nav" aria-label="Primary">
           {NAV.map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + "/");
+            if (item.external) {
+              return (
+                <a key={item.href} href={item.href}>
+                  {item.label}
+                </a>
+              );
+            }
             return (
               <Link
                 key={item.href}

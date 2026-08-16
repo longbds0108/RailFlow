@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useConfig } from "../../components/ConfigProvider";
 import { useWallet } from "../../lib/useWallet";
 import WalletGate from "../../components/WalletGate";
-import Balances from "../../components/Balances";
 import Preview from "../../components/Preview";
+import TokenSidebar from "../../components/TokenSidebar";
 import TxResult from "../../components/TxResult";
 import StatusBadge from "../../components/StatusBadge";
 import { api } from "../../lib/api";
@@ -20,10 +20,6 @@ export default function BridgePage() {
         Move USDC across chains using Circle CCTP. Cross-chain bridges can take a few
         minutes to finalize.
       </p>
-      <div className="row row-between" style={{ marginBottom: "var(--space-4)" }}>
-        <span className="muted text-sm">Your balances (Arc)</span>
-        <Balances />
-      </div>
       <WalletGate>
         <BridgeForm />
       </WalletGate>
@@ -106,7 +102,8 @@ function BridgeForm() {
   };
 
   return (
-    <div className="card" style={{ maxWidth: 560 }}>
+    <div className="grid grid-cols-3" style={{ gridTemplateColumns: "1.3fr 1fr", alignItems: "start" }}>
+    <div className="card">
       <div className="row" style={{ gap: "var(--space-4)", alignItems: "flex-end" }}>
         <div className="field" style={{ flex: 1, marginBottom: 0 }}>
           <label htmlFor="fromChain">From chain</label>
@@ -274,6 +271,9 @@ function BridgeForm() {
           </button>
         </TxResult>
       )}
+    </div>
+
+    <TokenSidebar />
     </div>
   );
 }

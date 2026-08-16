@@ -6,8 +6,8 @@ import { useConfig as useWagmiConfig } from "wagmi";
 import { getPublicClient, getWalletClient } from "wagmi/actions";
 import { useWallet } from "../../lib/useWallet";
 import WalletGate from "../../components/WalletGate";
-import Balances from "../../components/Balances";
 import TxResult from "../../components/TxResult";
+import TokenSidebar from "../../components/TokenSidebar";
 import { api } from "../../lib/api";
 import { erc20TransferAbi } from "../../lib/erc20";
 import { TOKENS, ENV } from "../../lib/config";
@@ -23,10 +23,6 @@ export default function SendPage() {
         Send USDC, EURC or cirBTC to any wallet address on Arc Testnet. You sign in
         MetaMask — the recipient receives the full amount.
       </p>
-      <div className="row row-between" style={{ marginBottom: "var(--space-4)" }}>
-        <span className="muted text-sm">Your balances</span>
-        <Balances />
-      </div>
       <WalletGate>
         <SendForm />
       </WalletGate>
@@ -136,7 +132,8 @@ function SendForm() {
         : "enter details";
 
   return (
-    <div className="card" style={{ maxWidth: 520 }}>
+    <div className="grid grid-cols-3" style={{ gridTemplateColumns: "1.3fr 1fr", alignItems: "start" }}>
+    <div className="card">
       {/* 1. Recipient address */}
       <div className="field">
         <label htmlFor="recipient">Recipient address</label>
@@ -250,6 +247,9 @@ function SendForm() {
           </button>
         </TxResult>
       )}
+    </div>
+
+    <TokenSidebar />
     </div>
   );
 }
