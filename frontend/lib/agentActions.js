@@ -2,11 +2,12 @@
 // manual Send/Swap/Stake/Bridge pages. The agent only ever proposes — this is
 // the one place a proposal becomes a signed transaction, and it only runs
 // after the user reviews the preview card and confirms.
-import { parseUnits } from "viem";
+import { parseUnits, decodeEventLog, keccak256, toHex } from "viem";
 import { getPublicClient, getWalletClient } from "wagmi/actions";
 import { wagmiConfig as wagmiCfg } from "./wagmi";
 import { ENV } from "./config";
 import { erc20TransferAbi, erc20ApproveAbi, arcStakingAbi } from "./erc20";
+import { agenticCommerceAbi, ZERO_ADDRESS } from "./jobsAbi";
 import { appkitSwap, appkitBridge, AppKitUnavailableError } from "./appkit";
 import { ammSwap, ammSupportsPair } from "./ammSwap";
 import { api } from "./api";
@@ -119,6 +120,67 @@ async function execBridge({ address }, input) {
   return { txHash: srcTxHash, status: record?.status || state };
 }
 
+async function execJobCreate({ jobsContract, jobsDefaultExpirySeconds }, input) {
+  const { description, provider, evaluator, listingId } = input;
+  if (!jobsContract) throw new Error("Jobs contract is not configured");
+
+  const walletClient = await getWalletClient(wagmiCfg, { chainId: ENV.chainId });
+  const publicClient = getPublicClient(wagmiCfg, { chainId: ENV.chainId });
+  const block = await publicClient.getBlock();
+  const expiredAt = block.timestamp + BigInt(jobsDefaultExpirySeconds || 3600);
+
+  const txHash = await walletClient.writeContract({
+    address: jobsContract,
+    abi: agenticCommerceAbi,
+    functionName: "createJob",
+    args: [provider, evaluator, expiredAt, description, ZERO_ADDRESS],
+  });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+  let jobId = null;
+  for (const log of receipt.logs) {
+    if (log.address.toLowerCase() !== jobsContract.toLowerCase()) continue;
+    try {
+      const decoded = decodeEventLog({
+        abi: agenticCommerceAbi,
+        data: log.data,
+        topics: log.topics,
+        eventName: "JobCreated",
+      });
+      jobId = decoded.args.jobId.toString();
+      break;
+    } catch {
+      /* not the JobCreated log — skip */
+    }
+  }
+  if (!jobId) throw new Error("Could not read the new job id back from the transaction.");
+
+  const synced = await api.syncJob(jobId).catch(() => null);
+  if (listingId != null) {
+    await api.linkJobListing(listingId, jobId).catch(() => null);
+  }
+  return { txHash, jobId, status: synced?.status || "open" };
+}
+
+async function execJobVerdict({ jobsContract }, input) {
+  const { jobId, verdict, reason } = input;
+  if (!jobsContract) throw new Error("Jobs contract is not configured");
+
+  const walletClient = await getWalletClient(wagmiCfg, { chainId: ENV.chainId });
+  const publicClient = getPublicClient(wagmiCfg, { chainId: ENV.chainId });
+
+  const txHash = await walletClient.writeContract({
+    address: jobsContract,
+    abi: agenticCommerceAbi,
+    functionName: "complete",
+    args: [BigInt(jobId), keccak256(toHex(reason || (verdict === "approve" ? "approved" : "rejected"))), "0x"],
+  });
+  await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+  const synced = await api.syncJob(jobId).catch(() => null);
+  return { txHash, jobId, verdict, status: synced?.status || "unknown" };
+}
+
 /**
  * Execute a propose_* tool's input for real, signing in the user's wallet.
  * `ctx` carries the pieces of app config the action needs: { address, tokens,
@@ -134,6 +196,10 @@ export async function executeProposedAction(name, input, ctx) {
       return execStake(ctx, input);
     case "propose_bridge":
       return execBridge(ctx, input);
+    case "propose_create_job":
+      return execJobCreate(ctx, input);
+    case "propose_job_verdict":
+      return execJobVerdict(ctx, input);
     default:
       throw new Error(`Unknown action: ${name}`);
   }

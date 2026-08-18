@@ -93,4 +93,14 @@ export const api = {
   // ERC-8183 jobs
   syncJob: (jobId) => request("/api/jobs/sync", { method: "POST", body: { jobId } }),
   getJobs: (address) => request(`/api/jobs?address=${encodeURIComponent(address)}`),
+  submitJobDeliverable: (jobId, text) => request("/api/jobs/deliverable", { method: "POST", body: { jobId, text } }),
+
+  // Open job marketplace (off-chain listings; see backend/src/db.js job_listings)
+  postJobListing: (payload) => request("/api/jobs/listings", { method: "POST", body: payload }),
+  getOpenJobListings: () => request("/api/jobs/listings"),
+  getMyJobListings: (address) => request(`/api/jobs/listings?client=${encodeURIComponent(address)}`),
+  getClaimedJobListings: (address) => request(`/api/jobs/listings?claimedBy=${encodeURIComponent(address)}`),
+  claimJobListing: (id, address) => request(`/api/jobs/listings/${id}/claim`, { method: "POST", body: { address } }),
+  cancelJobListing: (id) => request(`/api/jobs/listings/${id}/cancel`, { method: "POST" }),
+  linkJobListing: (id, jobId) => request(`/api/jobs/listings/${id}/link`, { method: "POST", body: { jobId } }),
 };

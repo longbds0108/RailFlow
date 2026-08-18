@@ -65,6 +65,8 @@ const STATUS_KIND = {
   no_stake: "warning",
   open: "warning",
   submitted: "warning",
+  claimed: "warning",
+  created: "success",
   // bad
   failed: "danger",
   expired: "danger",

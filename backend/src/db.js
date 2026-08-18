@@ -73,17 +73,47 @@ CREATE TABLE IF NOT EXISTS stakes (
 -- re-reading getJob() on-chain (see POST /api/jobs/sync) — this table is a
 -- cache/index for listing "jobs involving me", not the source of truth.
 CREATE TABLE IF NOT EXISTS jobs (
-  jobId        TEXT PRIMARY KEY,
+  jobId          TEXT PRIMARY KEY,
+  client         TEXT NOT NULL,
+  provider       TEXT NOT NULL,
+  evaluator      TEXT NOT NULL,
+  description    TEXT,
+  budget         TEXT NOT NULL,          -- human USDC string, "0" until set
+  status         TEXT NOT NULL,          -- open|funded|submitted|completed|rejected|expired
+  expiredAt      INTEGER,
+  deliverableText TEXT,                  -- plaintext the provider submitted; only its
+                                          -- keccak256 hash goes on-chain, so this is the
+                                          -- one place the Assistant can actually read it
+  createdAt      INTEGER NOT NULL,
+  updatedAt      INTEGER NOT NULL
+);
+
+-- Open job marketplace. The ERC-8183 contract's createJob() requires a
+-- concrete provider address up front — there's no "unassigned" job on-chain
+-- — so an open listing lives here, off-chain, until someone claims it. Once
+-- claimed, the client still creates the real on-chain job themselves (same
+-- createJob() flow as a direct-assign job, just pre-filled with the
+-- claimer's address); jobId is filled in here afterward for cross-reference.
+CREATE TABLE IF NOT EXISTS job_listings (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
   client       TEXT NOT NULL,
-  provider     TEXT NOT NULL,
-  evaluator    TEXT NOT NULL,
-  description  TEXT,
-  budget       TEXT NOT NULL,          -- human USDC string, "0" until set
-  status       TEXT NOT NULL,          -- open|funded|submitted|completed|rejected|expired
-  expiredAt    INTEGER,
+  description  TEXT NOT NULL,
+  budget       TEXT,                  -- suggested USDC budget, human string; optional
+  evaluator    TEXT NOT NULL,         -- defaults to client if not given
+  status       TEXT NOT NULL,         -- open|claimed|created|cancelled
+  claimedBy    TEXT,
+  jobId        TEXT,                  -- set once the on-chain job is created
   createdAt    INTEGER NOT NULL,
   updatedAt    INTEGER NOT NULL
 );
 `);
+
+// deliverableText was added after the jobs table already existed in some
+// dev databases — ALTER TABLE has no "IF NOT EXISTS" in SQLite, so guard it.
+try {
+  db.exec("ALTER TABLE jobs ADD COLUMN deliverableText TEXT");
+} catch {
+  /* column already exists */
+}
 
 export default db;

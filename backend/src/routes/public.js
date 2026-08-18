@@ -198,6 +198,133 @@ router.get("/jobs", (req, res) => {
   res.json(rows);
 });
 
+// Only the deliverable's keccak256 hash goes on-chain (submit() takes bytes32,
+// not the text). The Assistant needs the actual text to evaluate a submission
+// against the job description, so the provider's browser posts it here right
+// after the on-chain submit() confirms — call /jobs/sync first so this only
+// accepts it once the cached status has caught up to "submitted".
+router.post("/jobs/deliverable", (req, res) => {
+  const { jobId, text } = req.body || {};
+  if (!isJobId(String(jobId ?? ""))) return res.status(400).json({ error: "invalid_jobId" });
+  if (typeof text !== "string" || !text.trim()) return res.status(400).json({ error: "invalid_text" });
+
+  const row = db.prepare("SELECT * FROM jobs WHERE jobId = ?").get(String(jobId));
+  if (!row) return res.status(404).json({ error: "job_not_found" });
+  if (row.status !== "submitted") return res.status(409).json({ error: "job_not_submitted" });
+
+  db.prepare("UPDATE jobs SET deliverableText = ?, updatedAt = ? WHERE jobId = ?").run(
+    text.trim(),
+    Date.now(),
+    String(jobId)
+  );
+  res.json(db.prepare("SELECT * FROM jobs WHERE jobId = ?").get(String(jobId)));
+});
+
+// --- Open job marketplace ---------------------------------------------------
+// Off-chain listings: a client posts one for free (no gas, no signature), any
+// wallet can claim it, and only then does the client sign the real on-chain
+// createJob() — same flow as a direct-assign job, just with the provider
+// address filled in by whoever claimed instead of typed by the client.
+
+router.post("/jobs/listings", (req, res) => {
+  const { client, description, budget, evaluator } = req.body || {};
+  if (!isAddress(client)) return res.status(400).json({ error: "invalid_client" });
+  if (typeof description !== "string" || !description.trim()) {
+    return res.status(400).json({ error: "invalid_description" });
+  }
+  if (evaluator != null && evaluator !== "" && !isAddress(evaluator)) {
+    return res.status(400).json({ error: "invalid_evaluator" });
+  }
+
+  const now = Date.now();
+  const info = db
+    .prepare(
+      `INSERT INTO job_listings (client, description, budget, evaluator, status, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, 'open', ?, ?)`
+    )
+    .run(
+      client.toLowerCase(),
+      description.trim(),
+      budget != null && budget !== "" ? String(budget) : null,
+      (evaluator && evaluator !== "" ? evaluator : client).toLowerCase(),
+      now,
+      now
+    );
+  res.status(201).json(db.prepare("SELECT * FROM job_listings WHERE id = ?").get(info.lastInsertRowid));
+});
+
+router.get("/jobs/listings", (req, res) => {
+  const { client, claimedBy } = req.query;
+  if (client) {
+    if (!isAddress(String(client))) return res.status(400).json({ error: "invalid_client" });
+    return res.json(
+      db
+        .prepare("SELECT * FROM job_listings WHERE client = ? ORDER BY updatedAt DESC")
+        .all(String(client).toLowerCase())
+    );
+  }
+  if (claimedBy) {
+    if (!isAddress(String(claimedBy))) return res.status(400).json({ error: "invalid_claimedBy" });
+    return res.json(
+      db
+        .prepare("SELECT * FROM job_listings WHERE claimedBy = ? ORDER BY updatedAt DESC")
+        .all(String(claimedBy).toLowerCase())
+    );
+  }
+  // The public marketplace view: everything still open for anyone to claim.
+  res.json(db.prepare("SELECT * FROM job_listings WHERE status = 'open' ORDER BY createdAt DESC").all());
+});
+
+router.post("/jobs/listings/:id/claim", (req, res) => {
+  const id = Number(req.params.id);
+  const { address } = req.body || {};
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "invalid_id" });
+  if (!isAddress(address)) return res.status(400).json({ error: "invalid_address" });
+
+  const listing = db.prepare("SELECT * FROM job_listings WHERE id = ?").get(id);
+  if (!listing) return res.status(404).json({ error: "listing_not_found" });
+  // Self-claiming is allowed on purpose — same "one wallet can hold every
+  // role" philosophy as the rest of this app, so solo testing works here too.
+
+  // Race-safe: only succeeds if it's still open, so two simultaneous
+  // claimers can't both "win" the same listing.
+  const result = db
+    .prepare("UPDATE job_listings SET status = 'claimed', claimedBy = ?, updatedAt = ? WHERE id = ? AND status = 'open'")
+    .run(address.toLowerCase(), Date.now(), id);
+  if (result.changes === 0) return res.status(409).json({ error: "already_claimed" });
+
+  res.json(db.prepare("SELECT * FROM job_listings WHERE id = ?").get(id));
+});
+
+router.post("/jobs/listings/:id/cancel", (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "invalid_id" });
+
+  const result = db
+    .prepare("UPDATE job_listings SET status = 'cancelled', updatedAt = ? WHERE id = ? AND status = 'open'")
+    .run(Date.now(), id);
+  if (result.changes === 0) return res.status(409).json({ error: "not_cancellable" });
+
+  res.json(db.prepare("SELECT * FROM job_listings WHERE id = ?").get(id));
+});
+
+// Called by the client's browser right after the real createJob() tx
+// confirms, so the listing shows the finished on-chain job instead of
+// sitting at "claimed" forever.
+router.post("/jobs/listings/:id/link", (req, res) => {
+  const id = Number(req.params.id);
+  const { jobId } = req.body || {};
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "invalid_id" });
+  if (!isJobId(String(jobId ?? ""))) return res.status(400).json({ error: "invalid_jobId" });
+
+  const result = db
+    .prepare("UPDATE job_listings SET status = 'created', jobId = ?, updatedAt = ? WHERE id = ? AND status = 'claimed'")
+    .run(String(jobId), Date.now(), id);
+  if (result.changes === 0) return res.status(409).json({ error: "not_linkable" });
+
+  res.json(db.prepare("SELECT * FROM job_listings WHERE id = ?").get(id));
+});
+
 // --- AI agent -----------------------------------------------------------
 // Chat conversation state (Anthropic message array) is held by the client and
 // sent whole each turn — the backend keeps no chat session. Read tools run

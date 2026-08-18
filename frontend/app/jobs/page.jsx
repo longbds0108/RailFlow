@@ -16,6 +16,43 @@ import { erc20ApproveAbi } from "../../lib/erc20";
 import { TOKENS, ENV, explorerAddressUrl } from "../../lib/config";
 import { shortAddr, fmtAmount } from "../../lib/format";
 
+// Shared by CreateJobCard (client types the provider address) and
+// MyListingCard (client creates the job after someone claims their open
+// listing) — the actual on-chain createJob() call is identical either way.
+async function createJobOnChain({ contract, defaultExpirySeconds, provider, evaluator, description, wagmiCfg }) {
+  const walletClient = await getWalletClient(wagmiCfg, { chainId: ENV.chainId });
+  const publicClient = getPublicClient(wagmiCfg, { chainId: ENV.chainId });
+  const block = await publicClient.getBlock();
+  const expiredAt = block.timestamp + BigInt(defaultExpirySeconds);
+
+  const txHash = await walletClient.writeContract({
+    address: contract,
+    abi: agenticCommerceAbi,
+    functionName: "createJob",
+    args: [provider, evaluator, expiredAt, description, ZERO_ADDRESS],
+  });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+  let jobId = null;
+  for (const log of receipt.logs) {
+    if (log.address.toLowerCase() !== contract.toLowerCase()) continue;
+    try {
+      const decoded = decodeEventLog({
+        abi: agenticCommerceAbi,
+        data: log.data,
+        topics: log.topics,
+        eventName: "JobCreated",
+      });
+      jobId = decoded.args.jobId.toString();
+      break;
+    } catch {
+      /* not the JobCreated log — skip */
+    }
+  }
+  if (!jobId) throw new Error("Could not read the new job id back from the transaction.");
+  return { txHash, jobId };
+}
+
 export default function JobsPage() {
   return (
     <div>
@@ -74,14 +111,9 @@ function JobsModule() {
   }
 
   return (
+    <>
     <div className="grid grid-cols-3" style={{ gridTemplateColumns: "1fr 1.4fr" }}>
-      <CreateJobCard
-        contract={contract}
-        defaultExpirySeconds={defaultExpirySeconds}
-        address={address}
-        wagmiCfg={wagmiCfg}
-        onCreated={refresh}
-      />
+      <PostListingCard address={address} onPosted={refresh} />
 
       <div>
         <div className="row row-between" style={{ marginBottom: "var(--space-3)" }}>
@@ -91,7 +123,7 @@ function JobsModule() {
           </button>
         </div>
         {jobs.length === 0 && (
-          <p className="muted text-sm">No jobs yet — create one to get started.</p>
+          <p className="muted text-sm">No jobs yet — post one below to get started.</p>
         )}
         <div className="stack" style={{ gap: "var(--space-3)" }}>
           {jobs.map((j) => (
@@ -107,147 +139,359 @@ function JobsModule() {
         </div>
       </div>
     </div>
+
+    <div className="mt-4">
+      <MarketplaceSection address={address} refreshKey={refreshKey} onClaimed={refresh} />
+    </div>
+
+    <MyListingsSection
+      address={address}
+      contract={contract}
+      defaultExpirySeconds={defaultExpirySeconds}
+      wagmiCfg={wagmiCfg}
+      refreshKey={refreshKey}
+      onChanged={refresh}
+    />
+    <MyClaimsSection address={address} refreshKey={refreshKey} />
+    </>
   );
 }
 
-function CreateJobCard({ contract, defaultExpirySeconds, address, wagmiCfg, onCreated }) {
+function PostListingCard({ address, onPosted }) {
   const [description, setDescription] = useState("");
-  const [provider, setProvider] = useState("");
+  const [budget, setBudget] = useState("");
   const [evaluator, setEvaluator] = useState("");
-  const [phase, setPhase] = useState("form"); // form | signing | recording | done | error
+  const [phase, setPhase] = useState("form"); // form | posting | error
   const [error, setError] = useState(null);
-  const [result, setResult] = useState(null);
+
+  const valid = description.trim().length > 0 && (!evaluator || isAddress(evaluator));
+
+  const post = async () => {
+    setError(null);
+    setPhase("posting");
+    try {
+      await api.postJobListing({
+        client: address,
+        description: description.trim(),
+        budget: budget.trim() || undefined,
+        evaluator: evaluator.trim() || undefined,
+      });
+      setPhase("form");
+      setDescription("");
+      setBudget("");
+      setEvaluator("");
+      onPosted();
+    } catch (e) {
+      setError(e.message);
+      setPhase("error");
+    }
+  };
+
+  const busy = phase === "posting";
+
+  return (
+    <div className="card">
+      <h3 style={{ marginTop: 0 }}>Post a job</h3>
+      <p className="muted text-sm">
+        No wallet signature yet — this just lists it below. Anyone (including you, to walk the
+        whole lifecycle solo) can claim it; you create and fund the real on-chain job once
+        someone does.
+      </p>
+      <div className="field">
+        <label htmlFor="listingDescription">Description</label>
+        <input
+          id="listingDescription"
+          className="input"
+          placeholder="e.g. Design a logo for RailFlow"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          disabled={busy}
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="listingBudget">Suggested budget (USDC, optional)</label>
+        <input
+          id="listingBudget"
+          className="input"
+          type="number"
+          min="0"
+          step="any"
+          inputMode="decimal"
+          placeholder="0.00"
+          value={budget}
+          onChange={(e) => setBudget(e.target.value)}
+          disabled={busy}
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="listingEvaluator">Evaluator address (optional — defaults to you)</label>
+        <input
+          id="listingEvaluator"
+          className="input mono"
+          placeholder="0x…"
+          value={evaluator}
+          onChange={(e) => setEvaluator(e.target.value.trim())}
+          disabled={busy}
+        />
+      </div>
+      <button className="btn btn-primary btn-block" onClick={post} disabled={!valid || busy}>
+        {busy && <span className="spinner" aria-hidden="true" />}
+        Post to marketplace
+      </button>
+      {error && (
+        <div className="notice notice-danger mt-3" role="alert">
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MarketplaceSection({ address, refreshKey, onClaimed }) {
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [claimingId, setClaimingId] = useState(null);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      setListings(await api.getOpenJobListings());
+    } catch {
+      setListings([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
+    load();
+  }, [load, refreshKey]);
+
+  const claim = async (id) => {
+    setError(null);
+    setClaimingId(id);
+    try {
+      await api.claimJobListing(id, address);
+      await load();
+      onClaimed();
+    } catch (e) {
+      setError(e.data?.error === "already_claimed" ? "Someone else just claimed this job." : e.message);
+    } finally {
+      setClaimingId(null);
+    }
+  };
+
+  const me = address?.toLowerCase();
+
+  return (
+    <div className="card">
+      <div className="row row-between" style={{ marginBottom: "var(--space-3)" }}>
+        <h3 style={{ margin: 0 }}>Open jobs marketplace</h3>
+        <button className="btn btn-ghost btn-sm" onClick={load} disabled={loading}>
+          Refresh
+        </button>
+      </div>
+      {error && (
+        <div className="notice notice-danger mt-2" role="alert">
+          {error}
+        </div>
+      )}
+      {listings.length === 0 && <p className="muted text-sm">No open jobs right now — check back later.</p>}
+      <div className="stack" style={{ gap: "var(--space-3)" }}>
+        {listings.map((l) => {
+          const isOwn = l.client === me;
+          return (
+            <div key={l.id} className="card" style={{ background: "var(--color-bg-elev)" }}>
+              <p className="text-sm" style={{ marginTop: 0 }}>
+                {l.description}
+              </p>
+              <div className="kv">
+                <dt>Client</dt>
+                <dd className="mono">{shortAddr(l.client)}</dd>
+              </div>
+              {l.budget && (
+                <div className="kv">
+                  <dt>Suggested budget</dt>
+                  <dd>{l.budget} USDC</dd>
+                </div>
+              )}
+              <button
+                className="btn btn-primary btn-sm mt-2"
+                onClick={() => claim(l.id)}
+                disabled={claimingId === l.id}
+              >
+                {claimingId === l.id && <span className="spinner" aria-hidden="true" />}
+                {isOwn ? "Claim it yourself (solo test)" : "Claim this job"}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MyListingsSection({ address, contract, defaultExpirySeconds, wagmiCfg, refreshKey, onChanged }) {
+  const [listings, setListings] = useState([]);
+
+  const load = useCallback(async () => {
     if (!address) return;
-    setProvider((p) => p || address);
-    setEvaluator((e) => e || address);
+    try {
+      setListings(await api.getMyJobListings(address));
+    } catch {
+      setListings([]);
+    }
   }, [address]);
 
-  const valid = description.trim().length > 0 && isAddress(provider) && isAddress(evaluator);
+  useEffect(() => {
+    load();
+  }, [load, refreshKey]);
 
-  const create = async () => {
+  if (listings.length === 0) return null;
+
+  return (
+    <div className="card mt-4">
+      <h3 style={{ marginTop: 0 }}>My postings</h3>
+      <div className="stack" style={{ gap: "var(--space-3)" }}>
+        {listings.map((l) => (
+          <MyListingCard
+            key={l.id}
+            listing={l}
+            contract={contract}
+            defaultExpirySeconds={defaultExpirySeconds}
+            wagmiCfg={wagmiCfg}
+            onChanged={() => {
+              load();
+              onChanged();
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MyListingCard({ listing, contract, defaultExpirySeconds, wagmiCfg, onChanged }) {
+  const [phase, setPhase] = useState("idle"); // idle | creating | error
+  const [error, setError] = useState(null);
+
+  const createOnChain = async () => {
     setError(null);
-    setPhase("signing");
+    setPhase("creating");
     try {
-      const walletClient = await getWalletClient(wagmiCfg, { chainId: ENV.chainId });
-      const publicClient = getPublicClient(wagmiCfg, { chainId: ENV.chainId });
-      const block = await publicClient.getBlock();
-      const expiredAt = block.timestamp + BigInt(defaultExpirySeconds);
-
-      const txHash = await walletClient.writeContract({
-        address: contract,
-        abi: agenticCommerceAbi,
-        functionName: "createJob",
-        args: [provider, evaluator, expiredAt, description.trim(), ZERO_ADDRESS],
+      const { txHash, jobId } = await createJobOnChain({
+        contract,
+        defaultExpirySeconds,
+        wagmiCfg,
+        provider: listing.claimedBy,
+        evaluator: listing.evaluator,
+        description: listing.description,
       });
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-
-      let jobId = null;
-      for (const log of receipt.logs) {
-        if (log.address.toLowerCase() !== contract.toLowerCase()) continue;
-        try {
-          const decoded = decodeEventLog({
-            abi: agenticCommerceAbi,
-            data: log.data,
-            topics: log.topics,
-            eventName: "JobCreated",
-          });
-          jobId = decoded.args.jobId.toString();
-          break;
-        } catch {
-          /* not the JobCreated log — skip */
-        }
-      }
-      if (!jobId) throw new Error("Could not read the new job id back from the transaction.");
-
-      setPhase("recording");
       await api.syncJob(jobId).catch(() => null);
-      setResult({ jobId, txHash });
-      setPhase("done");
-      onCreated();
+      await api.linkJobListing(listing.id, jobId).catch(() => null);
+      setPhase("idle");
+      onChanged();
     } catch (e) {
       setError(e.shortMessage || e.message);
       setPhase("error");
     }
   };
 
-  const reset = () => {
-    setPhase("form");
+  const cancel = async () => {
     setError(null);
-    setResult(null);
-    setDescription("");
+    try {
+      await api.cancelJobListing(listing.id);
+      onChanged();
+    } catch (e) {
+      setError(e.message);
+    }
   };
 
-  const busy = phase === "signing" || phase === "recording";
+  return (
+    <div className="card" style={{ background: "var(--color-bg-elev)" }}>
+      <div className="row row-between">
+        <p className="text-sm" style={{ margin: 0 }}>
+          {listing.description}
+        </p>
+        <StatusBadge status={listing.status} />
+      </div>
+      {error && (
+        <div className="notice notice-danger mt-2" role="alert">
+          {error}
+        </div>
+      )}
+
+      {listing.status === "open" && (
+        <div className="row row-between mt-2">
+          <p className="text-xs faint" style={{ margin: 0 }}>
+            Waiting for someone to claim it.
+          </p>
+          <button className="btn btn-ghost btn-sm" onClick={cancel}>
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {listing.status === "claimed" && (
+        <div className="mt-2">
+          <p className="text-xs faint">
+            Claimed by <span className="mono">{shortAddr(listing.claimedBy)}</span> — create the real job
+            on-chain to fund escrow.
+          </p>
+          <button className="btn btn-primary btn-sm" onClick={createOnChain} disabled={phase === "creating"}>
+            {phase === "creating" && <span className="spinner" aria-hidden="true" />}
+            Create job on-chain
+          </button>
+        </div>
+      )}
+
+      {listing.status === "created" && (
+        <p className="text-xs faint mt-2">Job #{listing.jobId} created — see it under &quot;Your jobs&quot; above.</p>
+      )}
+
+      {listing.status === "cancelled" && <p className="text-xs faint mt-2">Cancelled.</p>}
+    </div>
+  );
+}
+
+function MyClaimsSection({ address, refreshKey }) {
+  const [listings, setListings] = useState([]);
+
+  const load = useCallback(async () => {
+    if (!address) return;
+    try {
+      setListings(await api.getClaimedJobListings(address));
+    } catch {
+      setListings([]);
+    }
+  }, [address]);
+
+  useEffect(() => {
+    load();
+  }, [load, refreshKey]);
+
+  if (listings.length === 0) return null;
 
   return (
-    <div className="card">
-      <h3 style={{ marginTop: 0 }}>Create a job</h3>
-      <p className="muted text-sm">
-        You&apos;re the client. Provider and evaluator default to your own address so you
-        can walk the whole lifecycle solo — edit them to test with a second wallet.
-      </p>
-
-      {phase !== "done" && (
-        <>
-          <div className="field">
-            <label htmlFor="jobDescription">Description</label>
-            <input
-              id="jobDescription"
-              className="input"
-              placeholder="e.g. Write a summary of the RailFlow docs"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={phase !== "form"}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="jobProvider">Provider address</label>
-            <input
-              id="jobProvider"
-              className="input mono"
-              value={provider}
-              onChange={(e) => setProvider(e.target.value.trim())}
-              disabled={phase !== "form"}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="jobEvaluator">Evaluator address</label>
-            <input
-              id="jobEvaluator"
-              className="input mono"
-              value={evaluator}
-              onChange={(e) => setEvaluator(e.target.value.trim())}
-              disabled={phase !== "form"}
-            />
-            <span className="text-xs faint">
-              Expires in {Math.round(defaultExpirySeconds / 60)} minutes. Budget is set by
-              the provider after creation.
-            </span>
-          </div>
-
-          <button className="btn btn-primary btn-block mt-3" onClick={create} disabled={!valid || busy}>
-            {busy && <span className="spinner" aria-hidden="true" />}
-            {phase === "signing" ? "Confirm in MetaMask…" : phase === "recording" ? "Recording…" : "Create job"}
-          </button>
-
-          {error && phase === "error" && (
-            <div className="notice notice-danger mt-3" role="alert">
-              {error}
+    <div className="card mt-4">
+      <h3 style={{ marginTop: 0 }}>Jobs I&apos;ve claimed</h3>
+      <div className="stack" style={{ gap: "var(--space-3)" }}>
+        {listings.map((l) => (
+          <div key={l.id} className="card" style={{ background: "var(--color-bg-elev)" }}>
+            <div className="row row-between">
+              <p className="text-sm" style={{ margin: 0 }}>
+                {l.description}
+              </p>
+              <StatusBadge status={l.status} />
             </div>
-          )}
-        </>
-      )}
-
-      {phase === "done" && result && (
-        <TxResult kind="success" title={`Job #${result.jobId} created`} hash={result.txHash}>
-          <div className="text-sm">Find it under &quot;Your jobs&quot; to continue the lifecycle.</div>
-          <button className="btn btn-ghost btn-sm mt-3" onClick={reset}>
-            Create another
-          </button>
-        </TxResult>
-      )}
+            <p className="text-xs faint mt-2">
+              {l.status === "claimed" && "Waiting for the client to create and fund the on-chain job."}
+              {l.status === "created" && `Job #${l.jobId} is live — check "Your jobs" above.`}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -353,8 +597,14 @@ function JobCard({ job, contract, address, wagmiCfg, onChanged }) {
     }
   };
 
-  const doSubmit = () =>
-    write("submit", [BigInt(job.jobId), keccak256(toHex(deliverableText.trim() || "deliverable")), "0x"]);
+  const doSubmit = async () => {
+    const text = deliverableText.trim() || "deliverable";
+    await write("submit", [BigInt(job.jobId), keccak256(toHex(text)), "0x"]);
+    // Only the hash goes on-chain; save the actual text so the Assistant (or
+    // anyone reviewing) can later read what was submitted. Best-effort — a
+    // failure here shouldn't undo the on-chain submission that already succeeded.
+    await api.submitJobDeliverable(job.jobId, text).catch(() => null);
+  };
 
   const doComplete = (approve) =>
     write("complete", [

@@ -13,6 +13,8 @@ const ACTION_TITLES = {
   propose_swap: "Confirm swap",
   propose_stake: "Confirm stake action",
   propose_bridge: "Confirm bridge",
+  propose_create_job: "Confirm job creation",
+  propose_job_verdict: "Confirm job verdict",
 };
 
 const storageKey = (address) => `railflow:agent:${address?.toLowerCase()}`;
@@ -43,6 +45,19 @@ function actionRows(name, input) {
         { label: "To", value: input.toChain },
         { label: "Amount", value: `${input.amount} ${input.token}` },
         { label: "Protocol", value: "Circle CCTP" },
+      ];
+    case "propose_create_job":
+      return [
+        { label: "Description", value: input.description },
+        { label: "Provider", value: input.provider, mono: true },
+        { label: "Evaluator", value: input.evaluator, mono: true },
+        ...(input.listingId != null ? [{ label: "From listing", value: `#${input.listingId}` }] : []),
+      ];
+    case "propose_job_verdict":
+      return [
+        { label: "Job", value: `#${input.jobId}` },
+        { label: "Verdict", value: input.verdict === "approve" ? "Approve (release funds)" : "Reject (refund client)" },
+        { label: "Reason", value: input.reason },
       ];
     default:
       return Object.entries(input || {}).map(([label, value]) => ({ label, value: String(value) }));
@@ -223,6 +238,8 @@ export default function AgentChat() {
     stakingAddress: config?.stakingAddress,
     swapPoolAddress: config?.swapPoolAddress,
     defaultSlippageBps: config?.swap?.defaultSlippageBps,
+    jobsContract: config?.jobs?.agenticCommerceContract,
+    jobsDefaultExpirySeconds: config?.jobs?.defaultExpirySeconds,
   };
 
   const runTurn = async (nextMessages) => {
