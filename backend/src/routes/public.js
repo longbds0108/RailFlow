@@ -358,7 +358,16 @@ router.post("/agent/chat", async (req, res) => {
     write({ type: "final", ...result });
   } catch (e) {
     console.error(e);
-    write({ type: "error", error: "agent_request_failed" });
+    const status = e?.status ?? e?.response?.status;
+    let message = e?.message || "The assistant hit an unexpected error.";
+    if (status === 401 || status === 403) {
+      message = "The Assistant's API key is invalid or unauthorized.";
+    } else if (status === 429) {
+      message = "The Assistant is rate-limited right now — try again in a moment.";
+    } else if (status === 529 || status === 503) {
+      message = "Anthropic's API is temporarily overloaded — try again shortly.";
+    }
+    write({ type: "error", error: "agent_request_failed", message });
   } finally {
     res.end();
   }

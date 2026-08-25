@@ -242,11 +242,13 @@ export default function AgentChat() {
     jobsDefaultExpirySeconds: config?.jobs?.defaultExpirySeconds,
   };
 
-  const runTurn = async (nextMessages) => {
+  const runTurn = async (nextMessages, { allowRecovery = true } = {}) => {
     setMessages(nextMessages);
     setSending(true);
     setChatError(null);
     setStreamingText("");
+
+    let errorEvent = null;
     try {
       await api.agentChatStream({ address, messages: nextMessages }, (event) => {
         if (event.type === "delta") {
@@ -256,15 +258,29 @@ export default function AgentChat() {
           setPendingAction(event.status === "pending_action" ? event.pendingAction : null);
           setStreamingText("");
         } else if (event.type === "error") {
-          setChatError("The assistant is unavailable right now.");
-          setStreamingText("");
+          errorEvent = event;
         }
       });
     } catch (e) {
-      setChatError(e.message || "The assistant is unavailable right now.");
+      errorEvent = { message: e.message };
+    }
+    setSending(false);
+
+    if (errorEvent) {
       setStreamingText("");
-    } finally {
-      setSending(false);
+      // A stale/malformed message saved from an earlier session can break
+      // every future turn the same way, since the full history is resent
+      // each time. If this turn ended in a plain user message and there was
+      // older history behind it, retry once with just that message before
+      // surfacing the error — this also self-heals the persisted history on
+      // success, since it becomes the new `messages` state that gets saved.
+      const last = nextMessages[nextMessages.length - 1];
+      const canRetryFresh = allowRecovery && nextMessages.length > 1 && typeof last?.content === "string";
+      if (canRetryFresh) {
+        await runTurn([last], { allowRecovery: false });
+        return;
+      }
+      setChatError(errorEvent.message || "The assistant is unavailable right now.");
     }
   };
 
