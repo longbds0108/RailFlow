@@ -52,7 +52,7 @@ export default function Header() {
         </nav>
 
         <div className="row" style={{ gap: "var(--space-2)" }}>
-          <ConnectButton showBalance={false} chainStatus="icon" />
+          <ConnectButton showBalance={false} chainStatus="full" />
         </div>
       </div>
     </header>
