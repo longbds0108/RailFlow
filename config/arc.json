@@ -60,10 +60,13 @@
     "stakableTokens": ["USDC", "EURC"]
   },
   "jobs": {
-    "note": "ERC-8183 reference AgenticCommerce contract, already deployed on Arc Testnet (not deployed by RailFlow).",
-    "agenticCommerceContract": "0x0747EEf0706327138c69792bF28Cd525089e4583",
+    "note": "JobEscrowVault: RailFlow-deployed OTC-style job escrow (contracts/contracts/JobEscrowVault.sol). Both the client's budget and the provider's stake are locked here and earn a demo APY, split 50/50 on successful completion. Replaces the earlier design that funded Arc's external ERC-8183 reference contract directly.",
     "statusNames": ["open", "funded", "submitted", "completed", "rejected", "expired"],
-    "defaultExpirySeconds": 3600
+    "defaultExpirySeconds": 3600,
+    "vault": {
+      "apyBps": 1000,
+      "rewardPoolFund": "10.00"
+    }
   },
   "disclaimer": {
     "en": "This is a testnet demo. All tokens used in this application, including testnet USDC, EURC, and cirBTC, have no real-world value. This application is not a payment service, exchange, investment product, or yield product, and does not provide any real financial return.",

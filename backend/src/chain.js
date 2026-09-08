@@ -68,9 +68,10 @@ export async function verifyTokenTransfer({ txHash, receiver, amountHuman, token
   return { ok: false, reason: "no_matching_transfer" };
 }
 
-// ERC-8183 AgenticCommerce — read-only ABI subset (backend only ever reads
-// job state; every write happens client-side in the user's own wallet).
-export const agenticCommerceAbi = [
+// JobEscrowVault — read-only ABI subset (backend only ever reads job state;
+// every write happens client-side in the user's own wallet). See
+// contracts/contracts/JobEscrowVault.sol.
+export const jobEscrowVaultAbi = [
   {
     type: "function",
     name: "getJob",
@@ -80,15 +81,15 @@ export const agenticCommerceAbi = [
       {
         type: "tuple",
         components: [
-          { name: "id", type: "uint256" },
           { name: "client", type: "address" },
           { name: "provider", type: "address" },
           { name: "evaluator", type: "address" },
-          { name: "description", type: "string" },
           { name: "budget", type: "uint256" },
+          { name: "requiredStake", type: "uint256" },
           { name: "expiredAt", type: "uint256" },
+          { name: "activatedAt", type: "uint256" },
           { name: "status", type: "uint8" },
-          { name: "hook", type: "address" },
+          { name: "description", type: "string" },
         ],
       },
     ],
@@ -96,10 +97,10 @@ export const agenticCommerceAbi = [
 ];
 
 /** Read a job's current on-chain state. Throws if the call reverts (job doesn't exist). */
-export async function getJobOnChain(agenticCommerceContract, jobId) {
+export async function getJobOnChain(jobVaultAddress, jobId) {
   return publicClient.readContract({
-    address: agenticCommerceContract,
-    abi: agenticCommerceAbi,
+    address: jobVaultAddress,
+    abi: jobEscrowVaultAbi,
     functionName: "getJob",
     args: [BigInt(jobId)],
   });

@@ -2,17 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
-import { useConfig } from "../../components/ConfigProvider";
-import { useWallet, useBalances } from "../../lib/useWallet";
-import WalletGate from "../../components/WalletGate";
-import Preview from "../../components/Preview";
-import TxResult from "../../components/TxResult";
-import TokenSidebar from "../../components/TokenSidebar";
-import { api } from "../../lib/api";
-import { appkitSwap, appkitEstimateSwap, AppKitUnavailableError } from "../../lib/appkit";
-import { ammSwap, ammSupportsPair, ammEstimateSwap } from "../../lib/ammSwap";
-import { bpsToPct, fmtAmount, fmtNumber } from "../../lib/format";
-import { TokenLogo } from "../../components/Logo";
+import { useConfig } from "../../../components/ConfigProvider";
+import { useWallet, useBalances } from "../../../lib/useWallet";
+import WalletGate from "../../../components/WalletGate";
+import Preview from "../../../components/Preview";
+import TxResult from "../../../components/TxResult";
+import TokenSidebar from "../../../components/TokenSidebar";
+import { api } from "../../../lib/api";
+import { appkitSwap, appkitEstimateSwap, AppKitUnavailableError } from "../../../lib/appkit";
+import { ammSwap, ammSupportsPair, ammEstimateSwap } from "../../../lib/ammSwap";
+import { bpsToPct, fmtAmount, fmtNumber } from "../../../lib/format";
+import { TokenLogo } from "../../../components/Logo";
 
 const ALL_TOKENS = ["USDC", "EURC", "cirBTC"];
 

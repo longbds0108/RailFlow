@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useConfig } from "../../components/ConfigProvider";
-import { useWallet } from "../../lib/useWallet";
-import WalletGate from "../../components/WalletGate";
-import Preview from "../../components/Preview";
-import TokenSidebar from "../../components/TokenSidebar";
-import TxResult from "../../components/TxResult";
-import StatusBadge from "../../components/StatusBadge";
-import { api } from "../../lib/api";
-import { appkitBridge, AppKitUnavailableError } from "../../lib/appkit";
-import { TokenLogo, ChainLogo } from "../../components/Logo";
+import { useConfig } from "../../../components/ConfigProvider";
+import { useWallet } from "../../../lib/useWallet";
+import WalletGate from "../../../components/WalletGate";
+import Preview from "../../../components/Preview";
+import TokenSidebar from "../../../components/TokenSidebar";
+import TxResult from "../../../components/TxResult";
+import StatusBadge from "../../../components/StatusBadge";
+import { api } from "../../../lib/api";
+import { appkitBridge, AppKitUnavailableError } from "../../../lib/appkit";
+import { TokenLogo, ChainLogo } from "../../../components/Logo";
 
 export default function BridgePage() {
   return (

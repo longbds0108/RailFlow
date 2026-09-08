@@ -1,10 +1,10 @@
 // Public REST endpoints: health, config, sends, record endpoints.
 import { Router } from "express";
 import { db } from "../db.js";
-import { arc, publicConfig, env, getAgentIdentity } from "../config.js";
+import { arc, publicConfig, getJobVaultAddress } from "../config.js";
 import { verifyTokenTransfer, txSucceeded, getJobOnChain } from "../chain.js";
+import { getActivityForAddress } from "../activity.js";
 import { formatUnits } from "viem";
-import { runAgentTurn } from "../agent.js";
 
 const router = Router();
 
@@ -17,22 +17,6 @@ router.get("/health", (_req, res) => {
 
 router.get("/config", (_req, res) => {
   res.json(publicConfig());
-});
-
-// ERC-8004 identity for the Assistant (see scripts/registerAgentIdentity.js).
-// Read-only — no secrets in this shape (wallet addresses + agent ID are public
-// on-chain facts once registered).
-router.get("/agent/identity", (_req, res) => {
-  const identity = getAgentIdentity();
-  if (!identity) return res.json({ registered: false });
-  res.json({
-    registered: true,
-    agentId: identity.agentId,
-    ownerWalletAddress: identity.ownerWalletAddress,
-    metadataURI: identity.metadataURI,
-    registerTxHash: identity.registerTxHash,
-    registeredAt: identity.registeredAt,
-  });
 });
 
 // --- Sends ----------------------------------------------------------------
@@ -138,20 +122,36 @@ router.post("/stakes", async (req, res) => {
   res.status(201).json(db.prepare("SELECT * FROM stakes WHERE id = ?").get(info.lastInsertRowid));
 });
 
-// --- ERC-8183 jobs ----------------------------------------------------------
+// --- Jobs (unified activity log) --------------------------------------------
+// Merges sends/swaps/stakes/bridges/marketplace-jobs into one per-wallet feed
+// — see backend/src/activity.js. Not to be confused with the AI-agent escrow
+// marketplace below (client/provider/evaluator jobs), which lives under
+// /marketplace/* to avoid the name collision.
+
+router.get("/jobs", (req, res) => {
+  const address = String(req.query.address || "");
+  if (!isAddress(address)) return res.status(400).json({ error: "invalid_address" });
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+  res.json(getActivityForAddress(address, { limit }));
+});
+
+// --- Escrow marketplace (ERC-8183-style AI job escrow) ----------------------
 // Every write happens client-side in the user's own wallet; the backend only
 // ever reads getJob() on-chain and caches it, so a job can be synced by
 // anyone (it's public on-chain state either way).
 
 const isJobId = (v) => typeof v === "string" && /^\d+$/.test(v);
 
-router.post("/jobs/sync", async (req, res) => {
+router.post("/marketplace/jobs/sync", async (req, res) => {
   const { jobId } = req.body || {};
   if (!isJobId(String(jobId ?? ""))) return res.status(400).json({ error: "invalid_jobId" });
 
+  const jobVaultAddress = getJobVaultAddress();
+  if (!jobVaultAddress) return res.status(503).json({ error: "job_vault_not_deployed" });
+
   let job;
   try {
-    job = await getJobOnChain(arc.jobs.agenticCommerceContract, jobId);
+    job = await getJobOnChain(jobVaultAddress, jobId);
   } catch {
     return res.status(404).json({ error: "job_not_found" });
   }
@@ -163,14 +163,15 @@ router.post("/jobs/sync", async (req, res) => {
 
   const now = Date.now();
   db.prepare(
-    `INSERT INTO jobs (jobId, client, provider, evaluator, description, budget, status, expiredAt, createdAt, updatedAt)
-     VALUES (@jobId, @client, @provider, @evaluator, @description, @budget, @status, @expiredAt, @now, @now)
+    `INSERT INTO jobs (jobId, client, provider, evaluator, description, budget, requiredStake, status, expiredAt, createdAt, updatedAt)
+     VALUES (@jobId, @client, @provider, @evaluator, @description, @budget, @requiredStake, @status, @expiredAt, @now, @now)
      ON CONFLICT(jobId) DO UPDATE SET
        client = excluded.client,
        provider = excluded.provider,
        evaluator = excluded.evaluator,
        description = excluded.description,
        budget = excluded.budget,
+       requiredStake = excluded.requiredStake,
        status = excluded.status,
        expiredAt = excluded.expiredAt,
        updatedAt = excluded.updatedAt`
@@ -181,6 +182,7 @@ router.post("/jobs/sync", async (req, res) => {
     evaluator: job.evaluator.toLowerCase(),
     description: job.description,
     budget: formatUnits(job.budget, arc.tokens.USDC.decimals),
+    requiredStake: formatUnits(job.requiredStake, arc.tokens.USDC.decimals),
     status: arc.jobs.statusNames[Number(job.status)] || "open",
     expiredAt: Number(job.expiredAt),
     now,
@@ -189,7 +191,7 @@ router.post("/jobs/sync", async (req, res) => {
   res.json(db.prepare("SELECT * FROM jobs WHERE jobId = ?").get(String(jobId)));
 });
 
-router.get("/jobs", (req, res) => {
+router.get("/marketplace/jobs", (req, res) => {
   const address = String(req.query.address || "").toLowerCase();
   if (!isAddress(address)) return res.status(400).json({ error: "invalid_address" });
   const rows = db
@@ -201,9 +203,9 @@ router.get("/jobs", (req, res) => {
 // Only the deliverable's keccak256 hash goes on-chain (submit() takes bytes32,
 // not the text). The Assistant needs the actual text to evaluate a submission
 // against the job description, so the provider's browser posts it here right
-// after the on-chain submit() confirms — call /jobs/sync first so this only
-// accepts it once the cached status has caught up to "submitted".
-router.post("/jobs/deliverable", (req, res) => {
+// after the on-chain submit() confirms — call /marketplace/jobs/sync first so
+// this only accepts it once the cached status has caught up to "submitted".
+router.post("/marketplace/jobs/deliverable", (req, res) => {
   const { jobId, text } = req.body || {};
   if (!isJobId(String(jobId ?? ""))) return res.status(400).json({ error: "invalid_jobId" });
   if (typeof text !== "string" || !text.trim()) return res.status(400).json({ error: "invalid_text" });
@@ -226,34 +228,41 @@ router.post("/jobs/deliverable", (req, res) => {
 // createJob() — same flow as a direct-assign job, just with the provider
 // address filled in by whoever claimed instead of typed by the client.
 
-router.post("/jobs/listings", (req, res) => {
-  const { client, description, budget, evaluator } = req.body || {};
+router.post("/marketplace/listings", (req, res) => {
+  const { client, description, budget, evaluator, requiredStake } = req.body || {};
   if (!isAddress(client)) return res.status(400).json({ error: "invalid_client" });
   if (typeof description !== "string" || !description.trim()) {
     return res.status(400).json({ error: "invalid_description" });
   }
+  // The budget is now locked into JobEscrowVault at job-creation time (no
+  // separate provider-side setBudget step), so it must be a real number here.
+  if (budget == null || Number(budget) <= 0) return res.status(400).json({ error: "invalid_budget" });
   if (evaluator != null && evaluator !== "" && !isAddress(evaluator)) {
     return res.status(400).json({ error: "invalid_evaluator" });
+  }
+  if (requiredStake != null && requiredStake !== "" && Number(requiredStake) < 0) {
+    return res.status(400).json({ error: "invalid_requiredStake" });
   }
 
   const now = Date.now();
   const info = db
     .prepare(
-      `INSERT INTO job_listings (client, description, budget, evaluator, status, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, 'open', ?, ?)`
+      `INSERT INTO job_listings (client, description, budget, evaluator, status, requiredStake, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, 'open', ?, ?, ?)`
     )
     .run(
       client.toLowerCase(),
       description.trim(),
-      budget != null && budget !== "" ? String(budget) : null,
+      String(budget),
       (evaluator && evaluator !== "" ? evaluator : client).toLowerCase(),
+      requiredStake != null && requiredStake !== "" ? String(requiredStake) : "0",
       now,
       now
     );
   res.status(201).json(db.prepare("SELECT * FROM job_listings WHERE id = ?").get(info.lastInsertRowid));
 });
 
-router.get("/jobs/listings", (req, res) => {
+router.get("/marketplace/listings", (req, res) => {
   const { client, claimedBy } = req.query;
   if (client) {
     if (!isAddress(String(client))) return res.status(400).json({ error: "invalid_client" });
@@ -275,7 +284,7 @@ router.get("/jobs/listings", (req, res) => {
   res.json(db.prepare("SELECT * FROM job_listings WHERE status = 'open' ORDER BY createdAt DESC").all());
 });
 
-router.post("/jobs/listings/:id/claim", (req, res) => {
+router.post("/marketplace/listings/:id/claim", (req, res) => {
   const id = Number(req.params.id);
   const { address } = req.body || {};
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "invalid_id" });
@@ -296,7 +305,7 @@ router.post("/jobs/listings/:id/claim", (req, res) => {
   res.json(db.prepare("SELECT * FROM job_listings WHERE id = ?").get(id));
 });
 
-router.post("/jobs/listings/:id/cancel", (req, res) => {
+router.post("/marketplace/listings/:id/cancel", (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "invalid_id" });
 
@@ -311,7 +320,7 @@ router.post("/jobs/listings/:id/cancel", (req, res) => {
 // Called by the client's browser right after the real createJob() tx
 // confirms, so the listing shows the finished on-chain job instead of
 // sitting at "claimed" forever.
-router.post("/jobs/listings/:id/link", (req, res) => {
+router.post("/marketplace/listings/:id/link", (req, res) => {
   const id = Number(req.params.id);
   const { jobId } = req.body || {};
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "invalid_id" });
@@ -325,52 +334,5 @@ router.post("/jobs/listings/:id/link", (req, res) => {
   res.json(db.prepare("SELECT * FROM job_listings WHERE id = ?").get(id));
 });
 
-// --- AI agent -----------------------------------------------------------
-// Chat conversation state (Anthropic message array) is held by the client and
-// sent whole each turn — the backend keeps no chat session. Read tools run
-// here; propose_* tool calls are handed back untouched for the frontend to
-// preview and the user to sign — the agent never executes a transaction.
-//
-// Streamed as newline-delimited JSON so the client can render assistant text
-// as it's generated: zero or more {"type":"delta","text":"..."} lines, then
-// exactly one {"type":"final",...} or {"type":"error",...} line.
-
-router.post("/agent/chat", async (req, res) => {
-  const { address, messages } = req.body || {};
-  if (!isAddress(address)) return res.status(400).json({ error: "invalid_address" });
-  if (!Array.isArray(messages) || messages.length === 0 || messages.length > 40) {
-    return res.status(400).json({ error: "invalid_messages" });
-  }
-  if (!env.anthropicApiKey) return res.status(503).json({ error: "agent_not_configured" });
-
-  res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
-  res.setHeader("Cache-Control", "no-cache, no-transform");
-  res.setHeader("X-Accel-Buffering", "no");
-
-  const write = (event) => res.write(JSON.stringify(event) + "\n");
-
-  try {
-    const result = await runAgentTurn({
-      address,
-      messages,
-      onTextDelta: (text) => write({ type: "delta", text }),
-    });
-    write({ type: "final", ...result });
-  } catch (e) {
-    console.error(e);
-    const status = e?.status ?? e?.response?.status;
-    let message = e?.message || "The assistant hit an unexpected error.";
-    if (status === 401 || status === 403) {
-      message = "The Assistant's API key is invalid or unauthorized.";
-    } else if (status === 429) {
-      message = "The Assistant is rate-limited right now — try again in a moment.";
-    } else if (status === 529 || status === 503) {
-      message = "Anthropic's API is temporarily overloaded — try again shortly.";
-    }
-    write({ type: "error", error: "agent_request_failed", message });
-  } finally {
-    res.end();
-  }
-});
 
 export default router;

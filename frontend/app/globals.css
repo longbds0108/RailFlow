@@ -1,24 +1,24 @@
 :root {
   /* ===== RailFlow brand & design tokens ===== */
-  /* Brand: deep indigo "arc" + electric cyan "flow" accent, on near-black canvas. */
-  --color-bg: #0b0f1a;
-  --color-bg-elev: #121829;
-  --color-surface: #161d31;
-  --color-surface-2: #1d2740;
-  --color-border: #273150;
-  --color-border-strong: #36436b;
+  /* Brand: electric violet "arc" + cyan "flow" accent, on near-black canvas. */
+  --color-bg: #0b0a14;
+  --color-bg-elev: #14121f;
+  --color-surface: #191726;
+  --color-surface-2: #221f33;
+  --color-border: #2c2843;
+  --color-border-strong: #423c66;
 
-  --color-text: #eef2fb;
-  --color-text-muted: #9aa6c4;
-  --color-text-faint: #6b769a;
+  --color-text: #f1eefb;
+  --color-text-muted: #a49cc4;
+  --color-text-faint: #756c99;
 
   /* Brand accents */
-  --color-primary: #5b8cff;        /* arc indigo-blue */
-  --color-primary-hover: #74a0ff;
-  --color-primary-press: #4576ec;
-  --color-primary-contrast: #08101f;
-  --color-accent: #34e0d6;         /* flow cyan */
-  --color-accent-soft: rgba(52, 224, 214, 0.14);
+  --color-primary: #9b5cff;        /* arc violet */
+  --color-primary-hover: #ac78ff;
+  --color-primary-press: #8544f0;
+  --color-primary-contrast: #0c081a;
+  --color-accent: #2ee6e0;         /* flow cyan */
+  --color-accent-soft: rgba(46, 230, 224, 0.14);
 
   --color-success: #46d39a;
   --color-success-bg: rgba(70, 211, 154, 0.14);
@@ -57,7 +57,7 @@
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-glow: 0 0 0 1px rgba(91, 140, 255, 0.4), 0 8px 30px rgba(91, 140, 255, 0.18);
+  --shadow-glow: 0 0 0 1px rgba(155, 92, 255, 0.4), 0 8px 30px rgba(155, 92, 255, 0.18);
 
   --transition-fast: 120ms ease;
   --transition: 180ms ease;
@@ -92,7 +92,7 @@ body {
 }
 
 ::selection {
-  background: rgba(91, 140, 255, 0.32);
+  background: rgba(155, 92, 255, 0.32);
   color: #fff;
 }
 
@@ -145,7 +145,330 @@ button {
   font-family: inherit;
 }
 
-/* ===== Layout ===== */
+/* ===== Dashboard shell (sidebar + topbar) ===== */
+.dash-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+}
+.dash-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  width: 232px;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-5) var(--space-3);
+  background: rgba(20, 18, 31, 0.7);
+  backdrop-filter: blur(14px);
+  border-right: 1px solid var(--color-border);
+  z-index: 20;
+}
+.dash-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  padding: 0 var(--space-2);
+  margin-bottom: var(--space-6);
+}
+.dash-brand:hover {
+  text-decoration: none;
+}
+.dash-brand-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  object-fit: contain;
+  box-shadow: var(--shadow-glow);
+}
+.dash-brand-accent {
+  background: linear-gradient(95deg, var(--color-primary), var(--color-accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.dash-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.dash-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 550;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.dash-nav-item:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-decoration: none;
+}
+.dash-nav-item[aria-current="page"] {
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+  box-shadow: inset 0 0 0 1px rgba(155, 92, 255, 0.4);
+}
+.dash-nav-item[aria-current="page"] svg {
+  color: var(--color-primary);
+}
+.dash-sidebar-foot {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+
+.dash-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.dash-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  background: rgba(11, 10, 20, 0.6);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
+}
+.dash-topbar-icons {
+  display: flex;
+  gap: var(--space-2);
+  margin-right: auto;
+}
+.dash-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+.dash-content {
+  flex: 1;
+  padding: var(--space-6);
+  animation: fadeInUp 0.35s ease both;
+}
+@media (max-width: 880px) {
+  .dash-sidebar {
+    width: 72px;
+    padding: var(--space-4) var(--space-2);
+  }
+  .dash-brand span:not(.dash-brand-accent-hide) {
+    display: none;
+  }
+  .dash-brand {
+    justify-content: center;
+    padding: 0;
+  }
+  .dash-nav-item span,
+  .dash-nav-item {
+    justify-content: center;
+  }
+  .dash-nav-item {
+    font-size: 0;
+  }
+  .dash-content {
+    padding: var(--space-4);
+  }
+  .dash-topbar {
+    padding: var(--space-3) var(--space-4);
+  }
+}
+
+/* ===== Dashboard home (Nexus-style card grid) ===== */
+.dash-home-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+.dash-home-head h1 {
+  font-size: clamp(24px, 3vw, 32px);
+  letter-spacing: -0.01em;
+  margin: var(--space-1) 0 0;
+}
+.dash-card-eyebrow {
+  font-family: var(--font-display), var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin: 0;
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+@media (max-width: 880px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dash-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.dash-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-glow);
+}
+.dash-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.dash-card-head h3 {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-lg);
+}
+.dash-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-primary);
+}
+
+.dash-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.dash-placeholder-tall {
+  min-height: 160px;
+}
+
+.dash-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.dash-token-row {
+  display: flex;
+  gap: var(--space-2);
+}
+.dash-chain-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-faint);
+  font-size: var(--text-sm);
+  flex-wrap: wrap;
+}
+
+.dash-portfolio-body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+.dash-donut {
+  width: 88px;
+  height: 88px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 14px), #000 calc(100% - 14px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 14px), #000 calc(100% - 14px));
+}
+.dash-donut-empty {
+  background: var(--color-surface-2);
+}
+.dash-asset-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.dash-asset-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.dash-asset-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.dash-asset-symbol {
+  color: var(--color-text-muted);
+}
+.dash-asset-amount {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.dash-asset-pct {
+  color: var(--color-text-faint);
+  width: 3.5ch;
+  text-align: right;
+}
+@media (max-width: 480px) {
+  .dash-portfolio-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Reused by .dash-content's mount-in animation. */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== Marketing homepage shell (root layout has no sidebar; "/" renders
+   its own Header + this flex column) ===== */
 .app-shell {
   min-height: 100vh;
   min-height: 100dvh;
@@ -171,18 +494,8 @@ main.container {
   flex: 1;
   animation: fadeInUp 0.35s ease both;
 }
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
-/* ===== Header ===== */
+/* ===== Header (homepage only) ===== */
 .header {
   position: sticky;
   top: 0;
@@ -190,6 +503,20 @@ main.container {
   backdrop-filter: blur(10px);
   background: rgba(11, 15, 26, 0.82);
   border-bottom: 1px solid var(--color-border);
+  transition: background var(--transition), backdrop-filter var(--transition),
+    border-color var(--transition);
+}
+/* Homepage only: starts fully transparent over the hero photo, becomes the
+   same glass header as every other page once scrolled past the hero. */
+.header-transparent {
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom-color: transparent;
+}
+.header-transparent.is-scrolled {
+  background: rgba(11, 15, 26, 0.82);
+  backdrop-filter: blur(10px);
+  border-bottom-color: var(--color-border);
 }
 .header-inner {
   display: flex;
@@ -284,6 +611,41 @@ main.container {
   flex: 1;
   flex-wrap: wrap;
 }
+
+/* Homepage-only: a centered floating pill instead of the app's functional
+   nav — this page links to its own sections, not other routes. */
+.nav-center {
+  justify-content: center;
+}
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(22, 29, 49, 0.7);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 6px;
+}
+.nav-pill a {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.nav-pill a:hover {
+  color: var(--color-text);
+  background: var(--color-surface-2);
+  text-decoration: none;
+}
+@media (max-width: 780px) {
+  .nav-pill {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
 .nav a {
   position: relative;
   color: var(--color-text-muted);
@@ -377,6 +739,9 @@ main.container {
 .grid-cols-2 {
   grid-template-columns: repeat(2, 1fr);
 }
+.grid-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
 /* Responsive stat grid (admin overview): fits as many columns as room allows. */
 .stat-grid {
   display: grid;
@@ -385,7 +750,8 @@ main.container {
 }
 @media (max-width: 780px) {
   .grid-cols-3,
-  .grid-cols-2 {
+  .grid-cols-2,
+  .grid-cols-4 {
     grid-template-columns: 1fr;
   }
   .nav {
@@ -444,7 +810,7 @@ main.container {
   overflow: hidden;
   background: linear-gradient(135deg, var(--color-primary), #6f7bff);
   color: var(--color-primary-contrast);
-  box-shadow: 0 4px 14px rgba(91, 140, 255, 0.28);
+  box-shadow: 0 4px 14px rgba(155, 92, 255, 0.28);
 }
 /* light sweep that glides across the button on hover */
 .btn-primary::after {
@@ -470,11 +836,11 @@ main.container {
 .btn-primary:hover:not(:disabled) {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(91, 140, 255, 0.4);
+  box-shadow: 0 6px 20px rgba(155, 92, 255, 0.4);
 }
 .btn-primary:active:not(:disabled) {
   filter: brightness(0.96);
-  box-shadow: 0 3px 10px rgba(91, 140, 255, 0.3);
+  box-shadow: 0 3px 10px rgba(155, 92, 255, 0.3);
 }
 .btn-ghost {
   background: transparent;
@@ -534,7 +900,7 @@ main.container {
 .select:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.25);
+  box-shadow: 0 0 0 3px rgba(155, 92, 255, 0.25);
 }
 .input::placeholder {
   color: var(--color-text-faint);
@@ -614,7 +980,7 @@ main.container {
 }
 .badge-info {
   color: var(--color-primary);
-  background: rgba(91, 140, 255, 0.14);
+  background: rgba(155, 92, 255, 0.14);
   border-color: transparent;
 }
 
@@ -669,7 +1035,7 @@ main.container {
   color: var(--color-success);
 }
 .notice-info {
-  background: rgba(91, 140, 255, 0.12);
+  background: rgba(155, 92, 255, 0.12);
   border-color: transparent;
   color: #c5d6ff;
 }
@@ -850,32 +1216,233 @@ tr:last-child td {
   transform: translateY(-1px);
 }
 
-/* Home hero */
-.hero {
+/* ===== Home — long-form marketing page =====
+   Motif: "night sky" — the eyebrow/mono voice reads like instrument-panel
+   labels, cards feel like glass over the ambient orbs already in the global
+   background. --font-display (IBM Plex Mono, see layout.jsx) carries every
+   label/eyebrow/stat; headings stay in the site's body face for readability
+   at size. */
+
+/* --- Scroll reveal: fade + rise once, the first time a section is seen --- */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* --- Hero starfield: small twinkling dots, generated once in JS, purely
+   decorative atmosphere behind the hero content --- */
+.starfield {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #fff;
+  animation: twinkle 4s ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: var(--star-min, 0.15);
+  }
+  50% {
+    opacity: var(--star-max, 0.85);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .star {
+    animation: none;
+    opacity: 0.4;
+  }
+}
+
+/* --- Magnetic buttons (JS sets --mx/--my within a small radius) --- */
+.magnetic {
+  transform: translate(var(--mx, 0), var(--my, 0));
+  transition: transform 0.25s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .magnetic {
+    transform: none !important;
+  }
+}
+
+.mkt-eyebrow {
+  font-family: var(--font-display), var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin: 0 0 var(--space-3);
+}
+
+/* --- Hero --- */
+.mkt-hero {
+  position: relative;
   padding: var(--space-7) 0 var(--space-6);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  gap: var(--space-7);
+  align-items: center;
 }
-.hero h1 {
-  font-size: clamp(26px, 7vw, var(--text-3xl));
+/* Explicit, not `.mkt-hero > *` — the starfield is also a direct child but
+   must stay position:absolute and out of grid flow, not become a 2nd column. */
+.mkt-hero-copy {
+  position: relative;
+  z-index: 1;
+}
+/* Single-column variant: no side panel (used once the hero has nothing to
+   pair the copy with — e.g. no dashboard preview). */
+.mkt-hero-solo {
+  grid-template-columns: 1fr;
+}
+.mkt-hero-solo .mkt-hero-copy {
+  max-width: 640px;
+}
+.mkt-hero-copy h1 {
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1.08;
   letter-spacing: -0.02em;
-  max-width: 18ch;
+  margin: 0;
 }
-@media (max-width: 600px) {
-  .hero {
-    padding: var(--space-6) 0 var(--space-5);
-  }
-  .hero p {
-    font-size: var(--text-base);
-  }
-  .page-title {
-    font-size: var(--text-xl);
-  }
-}
-.hero p {
+.mkt-hero-copy .lead {
   color: var(--color-text-muted);
   font-size: var(--text-lg);
-  max-width: 52ch;
+  max-width: 46ch;
+  margin: var(--space-4) 0 0;
+}
+.mkt-hero-cta {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  flex-wrap: wrap;
+}
+@media (max-width: 880px) {
+  .mkt-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Solid ground for everything below the hero — the site-wide fixed skyline
+   photo is gorgeous behind the hero's bold type and glass cockpit card, but
+   plain section text further down the (long) page would otherwise sit
+   directly on whatever slice of that fixed photo the scroll happens to show,
+   which reads fine sometimes and badly others. One opaque wrapper keeps every
+   section legible regardless of scroll position. */
+.mkt-body {
+  position: relative;
+  background: var(--color-bg);
+  /* full-bleed break-out of .container's max-width, so the solid ground
+     reaches the viewport edges instead of leaving the photo visible in the
+     side margins on wide screens */
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding-left: calc(50vw - 50%);
+  padding-right: calc(50vw - 50%);
+}
+
+/* --- Generic marketing section rhythm --- */
+.mkt-section {
+  padding: var(--space-8) 0;
+  border-top: 1px solid var(--color-border);
+  scroll-margin-top: 80px; /* clears the sticky header when jumped to via #anchor */
+}
+.mkt-section-head {
+  max-width: 640px;
+  margin: 0 auto var(--space-6);
+  text-align: center;
+}
+.mkt-section-head h2 {
+  font-size: clamp(24px, 3.4vw, 34px);
+  letter-spacing: -0.01em;
+  margin: var(--space-2) 0 0;
+}
+.mkt-section-head p {
+  color: var(--color-text-muted);
   margin-top: var(--space-3);
 }
+.mkt-section-head .mkt-eyebrow {
+  justify-content: center;
+  display: flex;
+}
+
+/* --- Stat strip --- */
+.mkt-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
+  text-align: center;
+}
+.mkt-stat dd {
+  font-family: var(--font-display), var(--font-mono);
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text);
+}
+.mkt-stat dt {
+  color: var(--color-text-faint);
+  font-size: var(--text-sm);
+  margin-top: var(--space-1);
+}
+.mkt-stats-footnote {
+  text-align: center;
+  margin-top: var(--space-5);
+  color: var(--color-text-faint);
+  font-size: var(--text-sm);
+}
+@media (max-width: 640px) {
+  .mkt-stats-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
+/* --- Belief / quote --- */
+.mkt-quote {
+  text-align: center;
+  font-size: clamp(20px, 2.6vw, 28px);
+  line-height: 1.4;
+  max-width: 44ch;
+  margin: 0 auto;
+  font-style: italic;
+  color: var(--color-text);
+}
+
+/* --- Final CTA --- */
+.mkt-final {
+  text-align: center;
+  padding: var(--space-8) 0 var(--space-7);
+}
+.mkt-final h2 {
+  font-size: clamp(26px, 3.6vw, 36px);
+  margin: var(--space-2) 0 0;
+}
+.mkt-final p {
+  color: var(--color-text-muted);
+  margin: var(--space-3) 0 var(--space-5);
+}
+
 .feature-card {
   display: block;
   position: relative;
@@ -917,6 +1484,12 @@ tr:last-child td {
   font-size: var(--text-sm);
   margin: 0;
 }
+.feature-card {
+  animation: cardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.feature-card:nth-child(1) { animation-delay: 0.04s; }
+.feature-card:nth-child(2) { animation-delay: 0.10s; }
+.feature-card:nth-child(3) { animation-delay: 0.16s; }
 
 /* ===== Photo background (site-wide skyline behind every page) ===== */
 .bg-photo {
@@ -953,7 +1526,7 @@ tr:last-child td {
   height: 520px;
   top: -170px;
   left: -120px;
-  background: radial-gradient(circle at 30% 30%, rgba(91, 140, 255, 0.55), transparent 70%);
+  background: radial-gradient(circle at 30% 30%, rgba(155, 92, 255, 0.55), transparent 70%);
   animation: floatA 24s ease-in-out infinite;
 }
 .ambient-orb-2 {
@@ -961,7 +1534,7 @@ tr:last-child td {
   height: 440px;
   top: 8%;
   right: -150px;
-  background: radial-gradient(circle at 30% 30%, rgba(52, 224, 214, 0.42), transparent 70%);
+  background: radial-gradient(circle at 30% 30%, rgba(46, 230, 224, 0.42), transparent 70%);
   animation: floatB 28s ease-in-out infinite;
 }
 .ambient-orb-3 {
@@ -991,16 +1564,14 @@ tr:last-child td {
   box-shadow: var(--shadow-md);
 }
 
-/* ===== Staggered entrance for feature cards ===== */
-.feature-card {
+/* ===== Staggered entrance for dashboard cards ===== */
+.dash-card {
   animation: cardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.feature-card:nth-child(1) { animation-delay: 0.04s; }
-.feature-card:nth-child(2) { animation-delay: 0.10s; }
-.feature-card:nth-child(3) { animation-delay: 0.16s; }
-.feature-card:nth-child(4) { animation-delay: 0.22s; }
-.feature-card:nth-child(5) { animation-delay: 0.28s; }
-.feature-card:nth-child(6) { animation-delay: 0.34s; }
+.dash-card:nth-child(1) { animation-delay: 0.04s; }
+.dash-card:nth-child(2) { animation-delay: 0.10s; }
+.dash-card:nth-child(3) { animation-delay: 0.16s; }
+.dash-card:nth-child(4) { animation-delay: 0.22s; }
 @keyframes cardIn {
   from {
     opacity: 0;

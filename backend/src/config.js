@@ -37,6 +37,17 @@ export function getSwapPoolAddress() {
   }
 }
 
+/** Read deployed JobEscrowVault address (see contracts/scripts/deploy-jobvault.js); null if absent. */
+export function getJobVaultAddress() {
+  try {
+    if (!existsSync(deployedPath)) return null;
+    const deployed = JSON.parse(readFileSync(deployedPath, "utf8"));
+    return deployed?.jobVault ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Read the registered ERC-8004 agent identity (see scripts/registerAgentIdentity.js); null if not yet registered. */
 export function getAgentIdentity() {
   try {
@@ -67,6 +78,7 @@ export function publicConfig() {
     disclaimer: arc.disclaimer,
     stakingAddress: getStakingAddress(),
     swapPoolAddress: getSwapPoolAddress(),
+    jobVaultAddress: getJobVaultAddress(),
   };
 }
 

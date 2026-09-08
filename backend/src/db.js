@@ -69,16 +69,18 @@ CREATE TABLE IF NOT EXISTS stakes (
   createdAt    INTEGER NOT NULL
 );
 
--- ERC-8183 jobs (AgenticCommerce). One row per on-chain jobId, kept in sync by
--- re-reading getJob() on-chain (see POST /api/jobs/sync) — this table is a
--- cache/index for listing "jobs involving me", not the source of truth.
+-- Jobs (JobEscrowVault — see contracts/contracts/JobEscrowVault.sol). One row
+-- per on-chain jobId, kept in sync by re-reading getJob() on-chain (see POST
+-- /api/jobs/sync) — this table is a cache/index for listing "jobs involving
+-- me", not the source of truth.
 CREATE TABLE IF NOT EXISTS jobs (
   jobId          TEXT PRIMARY KEY,
   client         TEXT NOT NULL,
   provider       TEXT NOT NULL,
   evaluator      TEXT NOT NULL,
   description    TEXT,
-  budget         TEXT NOT NULL,          -- human USDC string, "0" until set
+  budget         TEXT NOT NULL,          -- human USDC string
+  requiredStake  TEXT NOT NULL DEFAULT '0', -- human USDC string, "0" if no stake required
   status         TEXT NOT NULL,          -- open|funded|submitted|completed|rejected|expired
   expiredAt      INTEGER,
   deliverableText TEXT,                  -- plaintext the provider submitted; only its
@@ -112,6 +114,24 @@ CREATE TABLE IF NOT EXISTS job_listings (
 // dev databases — ALTER TABLE has no "IF NOT EXISTS" in SQLite, so guard it.
 try {
   db.exec("ALTER TABLE jobs ADD COLUMN deliverableText TEXT");
+} catch {
+  /* column already exists */
+}
+
+// requiredStake was added to jobs when the ERC-8183 reference contract was
+// replaced by the self-contained JobEscrowVault (see above).
+try {
+  db.exec("ALTER TABLE jobs ADD COLUMN requiredStake TEXT NOT NULL DEFAULT '0'");
+} catch {
+  /* column already exists */
+}
+
+// requiredStake: optional human USDC string the client asks the provider to
+// lock in the JobStake contract (see contracts/contracts/JobStake.sol) once
+// the on-chain job is created — an OTC-style bond on top of the client's own
+// budget escrow. Added after job_listings already existed in some dev DBs.
+try {
+  db.exec("ALTER TABLE job_listings ADD COLUMN requiredStake TEXT");
 } catch {
   /* column already exists */
 }

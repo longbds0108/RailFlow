@@ -44,7 +44,7 @@ export default function WalletGate({ children }) {
       <h3>{copy.title}</h3>
       <p className="muted">
         {bridgedFrom
-          ? `You're connected to ${bridgedFrom} — either you switched manually, or Bridge left you here after signing CCTP's final step there. RailFlow's other features (Send, Swap, Stake, Jobs) run on Arc Testnet, so switch back to continue.`
+          ? `You're connected to ${bridgedFrom} — either you switched manually, or Bridge left you here after signing CCTP's final step there. Swap runs on Arc Testnet, so switch back to continue.`
           : copy.body}
       </p>
       <div className="mt-3">

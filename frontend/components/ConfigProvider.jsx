@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 
 // Fallback config mirrors config/arc.json so the UI is usable even if the
 // backend GET /api/config is briefly unavailable. The backend remains the
-// source of truth (esp. stakingAddress from deployed.json).
+// source of truth (esp. jobVaultAddress from deployed.json).
 const FALLBACK_CONFIG = {
   network: {
     name: "Arc Testnet",
@@ -27,11 +27,9 @@ const FALLBACK_CONFIG = {
     ],
     tokens: ["USDC"],
   },
-  staking: { rewardToken: "USDC", apyBps: 1000, lockSeconds: 0, minStake: "1.00", stakableTokens: ["USDC", "EURC"] },
   disclaimer: {
     en: "This is a testnet demo. All tokens used in this application, including testnet USDC, EURC, and cirBTC, have no real-world value. This application is not a payment service, exchange, investment product, or yield product, and does not provide any real financial return.",
   },
-  stakingAddress: null,
 };
 
 const ConfigContext = createContext({
