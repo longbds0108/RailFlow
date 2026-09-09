@@ -1,0 +1,531 @@
+/* Shared building blocks for every page under app/(app) — Lend, Swap, and
+   whatever follows. Keeps one visual language (panels, tables, badges,
+   the agent callout) instead of each page re-inventing its own. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.pageHead .eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: var(--bg-neutral);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  margin-bottom: 10px;
+}
+.pageHead h1 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+}
+.pageHead .lead {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.65;
+  max-width: 540px;
+}
+
+/* ===== Stat tiles ===== */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.statTile {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.statTile:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+.statIcon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--surface-1);
+  border-radius: 9px;
+  font-size: 16px;
+}
+.statBody {
+  min-width: 0;
+  flex: 1;
+}
+.statLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0 0 4px;
+}
+.statValue {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.healthGauge {
+  margin-top: 9px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--border);
+  overflow: hidden;
+}
+.healthGaugeFill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+.zoneSafe {
+  background: var(--text-success);
+}
+.zoneCaution {
+  background: #c98a1f;
+}
+.zoneRisk {
+  background: var(--text-danger);
+}
+
+/* ===== Two-column page layout (main panel + side column) ===== */
+.twoColGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .twoColGrid {
+    grid-template-columns: 1fr;
+  }
+}
+.sideCol {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ===== Panel ===== */
+.panel {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  min-width: 0;
+}
+.panelTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 3px;
+}
+.panelSub {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+.elevated {
+  background: var(--surface-1);
+  border-color: var(--border);
+  box-shadow: 0 1px 2px rgba(23, 28, 44, 0.04), 0 8px 24px -16px rgba(23, 28, 44, 0.18);
+}
+
+/* ===== Tables ===== */
+.table {
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto;
+}
+.tableHead {
+  display: flex;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding-bottom: 8px;
+  min-width: 420px;
+}
+.tableRow {
+  display: flex;
+  align-items: center;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  padding: 11px 0;
+  min-width: 420px;
+  text-align: left;
+  width: 100%;
+}
+button.tableRow {
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.12s ease;
+}
+button.tableRow:hover {
+  background: var(--surface-1);
+}
+button.tableRow.isSelected {
+  background: var(--bg-accent);
+}
+
+.colAsset {
+  flex: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+.colNum {
+  flex: 1;
+  text-align: right;
+}
+.colLtv {
+  flex: 0.7;
+  text-align: right;
+}
+.tokenLogo {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.pairLogos {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.pairLogos .tokenLogo:last-child {
+  margin-left: -6px;
+  box-shadow: 0 0 0 2px var(--surface-2);
+}
+.figures {
+  font-family: var(--font-mono);
+}
+.muted {
+  color: var(--text-secondary);
+}
+
+/* ===== Token chips / segmented control ===== */
+.tokenTabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.tokenChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 5px 12px 5px 6px;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.tokenChip:hover {
+  border-color: var(--border-strong);
+}
+.tokenChip.isActive {
+  background: var(--bg-accent);
+  color: var(--text-accent);
+}
+.tokenChipLogo {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: contain;
+}
+
+.segmented {
+  display: inline-flex;
+  background: var(--surface-2);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+.segment {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  border-radius: 7px;
+  padding: 6px 16px;
+  transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+}
+.segment.isActive {
+  background: var(--surface-1);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(23, 28, 44, 0.08);
+}
+
+/* ===== Amount box ===== */
+.amountBox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px 14px;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.amountBox:focus-within {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 3px var(--bg-accent);
+}
+.amountBox + .amountBox {
+  margin-top: 6px;
+}
+.amountValue {
+  font-size: 22px;
+  font-weight: 600;
+}
+.amountInput {
+  flex: 1;
+  min-width: 0;
+  font-size: 22px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  border: none;
+  outline: none;
+  background: none;
+  color: var(--text-primary);
+  padding: 0;
+}
+.amountInput::placeholder {
+  color: var(--text-muted);
+}
+.amountToken {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.tokenSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent
+    url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23697080' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right center;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0 15px 0 0;
+}
+.walletNote {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin: 6px 0 14px;
+}
+.maxLink {
+  font: inherit;
+  font-size: inherit;
+  color: var(--text-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 600;
+}
+
+/* ===== Key/value rows ===== */
+.kvRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.kvRow:last-of-type {
+  margin-bottom: 16px;
+}
+.kvPositive {
+  color: var(--text-success);
+}
+.kvArrow {
+  color: var(--text-muted);
+}
+
+/* ===== Primary CTA ===== */
+.ctaButton {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--fill-primary);
+  color: var(--on-primary);
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  transition: filter 0.12s ease, transform 0.12s ease;
+}
+.ctaButton:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.ctaButton:active {
+  transform: translateY(0);
+  filter: brightness(0.96);
+}
+
+/* ===== Agent callout ===== */
+.agentPanel {
+  background: linear-gradient(150deg, #f8faff, #eef2fe);
+  border-color: #dde4fb;
+}
+.agentPanelHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.agentMark {
+  color: var(--text-accent);
+  font-size: 16px;
+}
+.agentLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--surface-1);
+  color: var(--text-accent);
+  border: 1px solid #dde4fb;
+  border-radius: 999px;
+  padding: 7px 14px;
+  transition: border-color 0.12s ease, transform 0.12s ease;
+}
+.agentLink:hover {
+  border-color: var(--text-accent);
+  transform: translateY(-1px);
+}
+
+/* ===== Warning banner ===== */
+.warningBanner {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: var(--bg-warning);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.warningIcon {
+  color: var(--text-warning);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.warningText {
+  font-size: 12px;
+  color: var(--text-warning);
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* ===== Tip banner (helpful, not cautionary — e.g. "get testnet tokens") ===== */
+.tipBanner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--bg-accent);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.tipIcon {
+  color: var(--text-accent);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.tipTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+}
+.tipText {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.55;
+}
+.tipLink {
+  color: var(--text-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+.tipLink:hover {
+  text-decoration: underline;
+}
+
+/* ===== Badges ===== */
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 2px 9px;
+}
+.badge.isAgent {
+  background: var(--bg-accent);
+  color: var(--text-accent);
+  border-color: transparent;
+}
+
+/* ===== Icon-only round button (e.g. swap direction flip) ===== */
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease, transform 0.15s ease;
+}
+.iconButton:hover {
+  border-color: var(--text-accent);
+  color: var(--text-accent);
+  transform: rotate(180deg);
+}
