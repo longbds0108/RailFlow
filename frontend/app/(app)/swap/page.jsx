@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cx } from "../../../lib/cx";
 import { TOKEN_LOGOS } from "../../../lib/logos";
+import { IconFlip, IconDroplet, IconRoute, IconHistory } from "../../../components/icons";
 import styles from "../envelope.module.css";
 
 const SWAP_TOKENS = ["USDC", "EURC", "cirBTC"];
@@ -32,28 +33,6 @@ function toInputString(value, symbol) {
   if (!Number.isFinite(value) || value <= 0) return "";
   const decimals = symbol === "cirBTC" ? 6 : 2;
   return String(parseFloat(value.toFixed(decimals)));
-}
-
-function IconFlip() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-      <path d="M4 3v8M4 11 1.5 8.5M4 11l2.5-2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M11 12V4M11 4l2.5 2.5M11 4 8.5 6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconDroplet() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M8 1.7C8 1.7 3.1 7.4 3.1 10.3A4.9 4.9 0 0 0 8 15.2A4.9 4.9 0 0 0 12.9 10.3C12.9 7.4 8 1.7 8 1.7Z"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }
 
 export default function SwapPage() {
@@ -186,7 +165,12 @@ export default function SwapPage() {
 
         <div className={styles.sideCol}>
           <div className={styles.panel}>
-            <p className={styles.panelTitle}>Route and costs</p>
+            <div className={styles.panelTitleRow}>
+              <span className={styles.panelTitleIcon}>
+                <IconRoute size={16} />
+              </span>
+              <p className={styles.panelTitle}>Route and costs</p>
+            </div>
             <div className={styles.kvRow}>
               <span className={styles.muted}>Venue</span>
               <span>Arc DEX pool</span>
@@ -244,7 +228,12 @@ export default function SwapPage() {
       </div>
 
       <div className={styles.panel}>
-        <p className={styles.panelTitle}>Recent swaps</p>
+        <div className={styles.panelTitleRow}>
+          <span className={styles.panelTitleIcon}>
+            <IconHistory size={16} />
+          </span>
+          <p className={styles.panelTitle}>Recent swaps</p>
+        </div>
         <div className={styles.table}>
           <div className={styles.tableHead}>
             <span className={styles.colAsset} style={{ flex: 1.6 }}>Pair</span>

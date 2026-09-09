@@ -1,4 +1,4 @@
-export default function EnvelopeComingSoon({ eyebrow, title, description, note }) {
+export default function EnvelopeComingSoon({ eyebrow, title, description, note, icon }) {
   return (
     <>
       <div>
@@ -25,12 +25,31 @@ export default function EnvelopeComingSoon({ eyebrow, title, description, note }
           background: "var(--surface-2)",
           border: "0.5px dashed var(--border-strong)",
           borderRadius: 12,
-          padding: "2.5rem 1.125rem",
+          padding: "2.75rem 1.125rem",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 10,
           textAlign: "center",
           color: "var(--text-secondary)",
           fontSize: 13,
         }}
       >
+        {icon && (
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              display: "grid",
+              placeItems: "center",
+              background: "var(--surface-1)",
+              color: "var(--text-accent)",
+              borderRadius: "50%",
+            }}
+          >
+            {icon}
+          </div>
+        )}
         {note}
       </div>
     </>

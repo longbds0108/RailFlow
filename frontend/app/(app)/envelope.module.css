@@ -33,6 +33,27 @@
   max-width: 540px;
 }
 
+/* Page header row when a status pill sits beside the title block */
+.pageHeadRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--bg-success);
+  color: var(--text-success);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  flex-shrink: 0;
+}
+
 /* ===== Stat tiles ===== */
 .statGrid {
   display: grid;
@@ -132,6 +153,20 @@
   font-size: 14px;
   font-weight: 600;
   margin: 0 0 3px;
+}
+.panelTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 3px;
+}
+.panelTitleRow .panelTitle {
+  margin: 0;
+}
+.panelTitleIcon {
+  color: var(--text-accent);
+  display: flex;
+  flex-shrink: 0;
 }
 .panelSub {
   font-size: 12.5px;
@@ -495,6 +530,51 @@ button.tableRow.isSelected {
   text-decoration: underline;
 }
 
+/* ===== Neutral note (informational, not a tip or a caution) ===== */
+.noteBanner {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: var(--bg-neutral);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+.noteIcon {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.noteText {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ===== Simple date/label/value row (e.g. a redemption calendar) ===== */
+.dateRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+.dateRow .date {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-size: 12px;
+  min-width: 52px;
+  flex-shrink: 0;
+}
+.dateRow .label {
+  flex: 1;
+}
+.dateRow .value {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
 /* ===== Badges ===== */
 .badge {
   display: inline-block;
@@ -508,6 +588,220 @@ button.tableRow.isSelected {
   background: var(--bg-accent);
   color: var(--text-accent);
   border-color: transparent;
+}
+.badge.isWarning {
+  background: var(--bg-warning);
+  color: var(--text-warning);
+  border-color: transparent;
+}
+.badge.isNeutral {
+  background: var(--bg-neutral);
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+.badge.isSuccess {
+  background: var(--bg-success);
+  color: var(--text-success);
+  border-color: transparent;
+}
+
+/* Small muted glyph placed before a row label (instrument, asset, ...) when
+   there's no logo image to show — keeps the same visual rhythm as tokenLogo. */
+.rowIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  display: flex;
+}
+
+/* ===== Generic single-color progress bar (e.g. a lock-up nearing unlock) ===== */
+.meter {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+.meterFill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--fill-accent);
+}
+
+/* ===== Position card (a row with a title, a value, and a progress meter) ===== */
+.positionCard {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.positionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 7px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.positionCaption {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 5px 0 0;
+}
+
+/* ===== Plain field box (e.g. a chain picker) ===== */
+.fieldBox {
+  background: var(--surface-1);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 13px;
+}
+.fieldSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  border: none;
+  background: transparent
+    url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23697080' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right center;
+  font: inherit;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding-right: 15px;
+}
+
+/* ===== Timeline (e.g. a bridge transfer's in-flight steps) ===== */
+.timelineStep {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding-bottom: 12px;
+  position: relative;
+}
+.timelineStep:last-child {
+  padding-bottom: 0;
+}
+.timelineStep::before {
+  content: "";
+  position: absolute;
+  left: 7.5px;
+  top: 20px;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+.timelineStep:last-child::before {
+  display: none;
+}
+.timelineIcon {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  background: var(--surface-2);
+}
+.timelineTitle {
+  font-size: 13px;
+  margin: 0;
+}
+.timelineCaption {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== Chat (e.g. "Ask the agent") ===== */
+.chatBubbleRow {
+  display: flex;
+}
+.chatBubbleRow.isUser {
+  justify-content: flex-end;
+}
+.chatBubbleUser {
+  font-size: 13px;
+  background: var(--bg-neutral);
+  border-radius: 12px;
+  padding: 9px 13px;
+  max-width: 85%;
+}
+.chatBubbleAgent {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 11px 13px;
+}
+.chatInputRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-top: auto;
+  gap: 8px;
+}
+.chatInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  outline: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.chatInput::placeholder {
+  color: var(--text-muted);
+}
+.chatSendButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 0.12s ease;
+}
+.chatSendButton:hover {
+  color: var(--text-accent);
+}
+.suggestChip {
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  background: none;
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.suggestChip:hover {
+  border-color: var(--text-accent);
+  color: var(--text-accent);
+}
+
+/* ===== Inline text-link button (e.g. "Ask why") ===== */
+.linkButton {
+  color: var(--text-accent);
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+.linkButton:hover {
+  text-decoration: underline;
 }
 
 /* ===== Icon-only round button (e.g. swap direction flip) ===== */

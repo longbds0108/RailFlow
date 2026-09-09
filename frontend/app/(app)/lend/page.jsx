@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cx } from "../../../lib/cx";
 import { TOKEN_LOGOS } from "../../../lib/logos";
+import { IconLayers, IconShield, IconPercent, IconWallet } from "../../../components/icons";
 import styles from "../envelope.module.css";
 
 const MARKETS = [
@@ -53,39 +54,6 @@ const healthZone = HEALTH_FACTOR >= 1.8 ? "safe" : HEALTH_FACTOR >= 1.2 ? "cauti
 const healthPct = Math.min(100, (HEALTH_FACTOR / HEALTH_MAX) * 100);
 const ZONE_CLASS = { safe: styles.zoneSafe, caution: styles.zoneCaution, risk: styles.zoneRisk };
 
-function IconLayers() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path d="M9 2.3 16 6.3 9 10.3 2 6.3 9 2.3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="M2 9.6 9 13.6 16 9.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconShield() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path
-        d="M9 1.6 15.4 4 15.4 8.6C15.4 12.5 12.6 15.2 9 16.4 5.4 15.2 2.6 12.5 2.6 8.6L2.6 4 9 1.6Z"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <path d="M6.1 9 8.2 11 12 6.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconPercent() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <circle cx="5.4" cy="5.4" r="2" stroke="currentColor" strokeWidth="1.4" />
-      <circle cx="12.6" cy="12.6" r="2" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M13.5 3.5 4.5 14.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 const STAT_TILES = [
   { key: "collateral", label: "My collateral", value: "$44,100", icon: <IconLayers /> },
   { key: "health", label: "Health factor", value: HEALTH_FACTOR.toFixed(2), icon: <IconShield />, gauge: true },
@@ -132,7 +100,12 @@ export default function LendPage() {
 
       <div className={styles.twoColGrid}>
         <div className={styles.panel}>
-          <p className={styles.panelTitle}>Supply markets</p>
+          <div className={styles.panelTitleRow}>
+            <span className={styles.panelTitleIcon}>
+              <IconLayers size={16} />
+            </span>
+            <p className={styles.panelTitle}>Supply markets</p>
+          </div>
           <p className={styles.panelSub}>All three assets earn yield and can be used as collateral.</p>
           <div className={styles.table}>
             <div className={styles.tableHead}>
@@ -227,7 +200,12 @@ export default function LendPage() {
       </div>
 
       <div className={styles.panel}>
-        <p className={styles.panelTitle}>Your supplied positions</p>
+        <div className={styles.panelTitleRow}>
+          <span className={styles.panelTitleIcon}>
+            <IconWallet size={16} />
+          </span>
+          <p className={styles.panelTitle}>Your supplied positions</p>
+        </div>
         <div className={styles.table}>
           <div className={styles.tableHead}>
             <span className={styles.colAsset} style={{ flex: 1.3 }}>Asset</span>

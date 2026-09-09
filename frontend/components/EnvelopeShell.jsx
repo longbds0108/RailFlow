@@ -20,6 +20,7 @@ const ENVELOPE_TOKENS = {
   "--text-muted": "#9aa1b0",
   "--text-accent": "#2045df",
   "--text-success": "#238563",
+  "--bg-success": "#e6f4ee",
   "--text-danger": "#c23b3b",
   "--text-warning": "#a15c07",
   "--bg-warning": "#fdf2e0",
