@@ -1,0 +1,20 @@
+{
+  "name": "@railflow/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RailFlow Lend contract (cirBTC collateral, USDC borrow) on Arc Testnet",
+  "license": "MIT",
+  "type": "commonjs",
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy:lending": "hardhat run scripts/deploy-lending.js --network arcTestnet"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.1.0",
+    "dotenv": "^16.4.5"
+  }
+}
