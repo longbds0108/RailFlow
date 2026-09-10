@@ -410,6 +410,9 @@ button.tableRow.isSelected {
 .kvPositive {
   color: var(--text-success);
 }
+.kvNegative {
+  color: var(--text-warning);
+}
 .kvArrow {
   color: var(--text-muted);
 }
@@ -666,6 +669,84 @@ button.tableRow.isSelected {
   color: var(--text-primary);
   cursor: pointer;
   padding-right: 15px;
+}
+
+/* ===== Chain picker (logo + name trigger, dropdown list of the same) ===== */
+.chainPicker {
+  position: relative;
+}
+.chainTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+.chainTrigger:hover {
+  border-color: var(--border-strong);
+}
+.chainTrigger.isOpen {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 3px var(--bg-accent);
+}
+.chainTriggerName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chainChevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+.chainChevron.isOpen {
+  transform: rotate(180deg);
+}
+.chainMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px -10px rgba(23, 28, 44, 0.25), 0 2px 8px rgba(23, 28, 44, 0.08);
+  padding: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.chainOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 6px;
+  background: none;
+  border: none;
+  font: inherit;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+.chainOption:hover {
+  background: var(--surface-2);
+}
+.chainOption.isActive {
+  background: var(--bg-accent);
+  color: var(--text-accent);
+  font-weight: 600;
 }
 
 /* ===== Timeline (e.g. a bridge transfer's in-flight steps) ===== */

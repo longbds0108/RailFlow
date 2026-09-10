@@ -4,6 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import RailflowLogo from "./RailflowLogo";
+import { BRIDGE_CHAINS } from "../lib/bridgeChains";
+
+// Find our own logo/name for a connected chain id, so the header's network
+// pill always shows a real logo (RainbowKit has no built-in icon for a
+// brand-new chain like Arc Testnet).
+function chainMetaFor(chainId) {
+  return Object.values(BRIDGE_CHAINS).find((c) => c.chain.id === chainId) || null;
+}
 
 // Envelope design tokens — shared across every page under app/(app), so a
 // single palette change here updates Lend, Swap, Yield, RWA, Bridge, Agent
@@ -144,44 +152,49 @@ export default function EnvelopeShell({ children }) {
                       );
                     }
 
-                    if (chain.unsupported) {
-                      return (
+                    const meta = chainMetaFor(chain.id);
+
+                    return (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <button
                           onClick={openChainModal}
                           style={{
                             font: "inherit",
                             cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
                             fontSize: 12,
                             fontWeight: 500,
                             background: "transparent",
-                            color: "var(--text-danger)",
-                            border: "0.5px solid var(--text-danger)",
+                            color: chain.unsupported ? "var(--text-danger)" : "var(--text-primary)",
+                            border: `0.5px solid ${chain.unsupported ? "var(--text-danger)" : "var(--border-strong)"}`,
                             borderRadius: "var(--radius)",
                             padding: "7px 11px",
                           }}
                         >
-                          Wrong network
+                          {!chain.unsupported && meta && (
+                            <img src={meta.logo} alt="" width={16} height={16} style={{ borderRadius: "50%", flexShrink: 0 }} />
+                          )}
+                          {chain.unsupported ? "Wrong network" : meta ? meta.name : chain.name}
                         </button>
-                      );
-                    }
-
-                    return (
-                      <button
-                        onClick={openAccountModal}
-                        style={{
-                          font: "inherit",
-                          cursor: "pointer",
-                          fontSize: 12,
-                          fontFamily: "var(--font-mono)",
-                          background: "transparent",
-                          color: "var(--text-primary)",
-                          border: "0.5px solid var(--border-strong)",
-                          borderRadius: "var(--radius)",
-                          padding: "7px 11px",
-                        }}
-                      >
-                        {account.displayName}
-                      </button>
+                        <button
+                          onClick={openAccountModal}
+                          style={{
+                            font: "inherit",
+                            cursor: "pointer",
+                            fontSize: 12,
+                            fontFamily: "var(--font-mono)",
+                            background: "transparent",
+                            color: "var(--text-primary)",
+                            border: "0.5px solid var(--border-strong)",
+                            borderRadius: "var(--radius)",
+                            padding: "7px 11px",
+                          }}
+                        >
+                          {account.displayName}
+                        </button>
+                      </div>
                     );
                   })()}
                 </div>

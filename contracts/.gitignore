@@ -3,3 +3,7 @@
 /artifacts
 .env
 deployed.json
+deployed-pool.json
+deployed-amm.json
+deployed-yield-vault.json
+deployed-tbill.json

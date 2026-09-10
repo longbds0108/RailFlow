@@ -1,25 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { formatUnits } from "viem";
+import { useSwitchChain } from "wagmi";
 import { cx } from "../../../lib/cx";
 import { TOKEN_LOGOS } from "../../../lib/logos";
+import { TOKENS, ENV, explorerTxUrl } from "../../../lib/config";
+import { useWallet } from "../../../lib/useWallet";
+import { AMM_ADDRESS } from "../../../lib/ammSwap";
+import { useSwapBalances, useSwapQuote, useExecuteSwap, useSwapHistory } from "../../../lib/useSwapAmm";
 import { IconFlip, IconDroplet, IconRoute, IconHistory } from "../../../components/icons";
 import styles from "../envelope.module.css";
 
 const SWAP_TOKENS = ["USDC", "EURC", "cirBTC"];
-
-// Illustrative USD reference price per token — lets any of the 3 tokens be
-// picked on either side and still produce a sane, internally consistent quote.
-const REFERENCE_PRICE_USD = { USDC: 1, EURC: 1.157, cirBTC: 65000 };
-const WALLET_BALANCE = { USDC: "30,000", EURC: "6,200", cirBTC: "0.42" };
-const POOL_SPREAD = 0.9993; // pool rate sits ~0.07% below the reference rate
-const SLIPPAGE_PCT = 0.003; // 0.30% max slippage
-
-const RECENT_SWAPS = [
-  { from: "USDC", to: "EURC", size: "$12,000", spread: "0.05%", when: "2h", by: "you" },
-  { from: "EURC", to: "USDC", size: "$8,400", spread: "0.02%", when: "1d", by: "agent" },
-  { from: "USDC", to: "cirBTC", size: "$3,200", spread: "0.18%", when: "3d", by: "you" },
-];
 
 function formatAmount(value, symbol) {
   if (!Number.isFinite(value)) return "0";
@@ -27,51 +20,116 @@ function formatAmount(value, symbol) {
   return value.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
-// Plain (no thousands separator) string suitable for putting back into the
-// editable amount input, trimmed to a sane number of decimals per token.
-function toInputString(value, symbol) {
-  if (!Number.isFinite(value) || value <= 0) return "";
-  const decimals = symbol === "cirBTC" ? 6 : 2;
-  return String(parseFloat(value.toFixed(decimals)));
-}
-
 export default function SwapPage() {
+  const { address, isConnected, correctNetwork } = useWallet();
+  const { switchChain, isPending: switchingChain } = useSwitchChain();
+  const [refreshKey, setRefreshKey] = useState(0);
   const [fromSymbol, setFromSymbol] = useState("USDC");
   const [toSymbol, setToSymbol] = useState("EURC");
-  const [amount, setAmount] = useState("5000");
+  const [amount, setAmount] = useState("");
+
+  const { balances } = useSwapBalances(address, refreshKey);
+  const { quote } = useSwapQuote(fromSymbol, toSymbol, amount, refreshKey);
+  const { execute, status, error, txHash, reset, isBusy } = useExecuteSwap();
+  const { entries: history } = useSwapHistory(address, refreshKey);
+
+  useEffect(() => {
+    if (status === "done") {
+      setRefreshKey((k) => k + 1);
+      setAmount("");
+      reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   const handleAmountChange = (e) => {
     const v = e.target.value;
     if (v === "" || /^\d*\.?\d*$/.test(v)) setAmount(v);
   };
-
-  const fromAmountNum = parseFloat(amount) || 0;
-  const refRate = REFERENCE_PRICE_USD[fromSymbol] / REFERENCE_PRICE_USD[toSymbol];
-  const poolRate = refRate * POOL_SPREAD;
-  const toAmountNum = fromAmountNum * poolRate;
-  const minReceivedNum = toAmountNum * (1 - SLIPPAGE_PCT);
-
-  // Switching the "from" token keeps the same underlying USD value instead of
-  // reinterpreting the typed number in the new unit (1,234 USDC becoming
-  // "1,234 cirBTC" would be a wildly different, misleading amount).
   const handleFromChange = (symbol) => {
     if (symbol === toSymbol) setToSymbol(fromSymbol);
-    const usdValue = fromAmountNum * REFERENCE_PRICE_USD[fromSymbol];
-    setAmount(toInputString(usdValue / REFERENCE_PRICE_USD[symbol], symbol));
     setFromSymbol(symbol);
+    setAmount("");
   };
   const handleToChange = (symbol) => {
     if (symbol === fromSymbol) setFromSymbol(toSymbol);
     setToSymbol(symbol);
   };
-
-  // Flip carries the quoted "to" amount into the new "from" field, same as
-  // any swap UI — you're now sending what you were about to receive.
   const flip = () => {
-    setAmount(toInputString(toAmountNum, toSymbol));
+    const outNum = quote?.amountOut ? Number(formatUnits(quote.amountOut, TOKENS[toSymbol].decimals)) : 0;
+    setAmount(outNum > 0 ? String(outNum) : "");
     setFromSymbol(toSymbol);
     setToSymbol(fromSymbol);
   };
+
+  const fromBalanceRaw = balances[fromSymbol]?.balance ?? null;
+  const fromAmountNum = parseFloat(amount) || 0;
+  const outDecimals = TOKENS[toSymbol].decimals;
+  const inDecimals = TOKENS[fromSymbol].decimals;
+  const amountOutNum = quote?.amountOut ? Number(formatUnits(quote.amountOut, outDecimals)) : 0;
+
+  // Real price impact: compare the actual quoted output to what a frictionless
+  // trade at the pool's current spot rate (no fee, no slippage) would give.
+  let priceImpactPct = null;
+  let spotRate = null;
+  if (quote?.hasLiquidity) {
+    const reserveInNum = Number(formatUnits(quote.reserveIn, inDecimals));
+    const reserveOutNum = Number(formatUnits(quote.reserveOut, outDecimals));
+    spotRate = reserveOutNum / reserveInNum;
+    const linearOut = fromAmountNum * spotRate;
+    priceImpactPct = linearOut > 0 ? ((linearOut - amountOutNum) / linearOut) * 100 : 0;
+  }
+
+  const SLIPPAGE_BPS = 100; // 1% — wider than a deep-liquidity DEX since this pool is thinly seeded
+  const minReceivedNum = amountOutNum * (1 - SLIPPAGE_BPS / 10_000);
+
+  const amountInRaw = (() => {
+    try {
+      if (!amount || fromAmountNum <= 0) return 0n;
+      return BigInt(Math.round(fromAmountNum * 10 ** inDecimals));
+    } catch {
+      return 0n;
+    }
+  })();
+  const insufficientBalance = fromBalanceRaw != null && amountInRaw > fromBalanceRaw;
+  const noLiquidity = amountInRaw > 0n && quote && !quote.hasLiquidity;
+  const canSwap = isConnected && amountInRaw > 0n && !insufficientBalance && quote?.hasLiquidity && amountOutNum > 0 && !isBusy;
+
+  const handleSwap = () => {
+    if (!canSwap || !address) return;
+    execute({ address, tokenIn: fromSymbol, tokenOut: toSymbol, amountIn: amount, slippageBps: SLIPPAGE_BPS });
+  };
+
+  const primaryLabel = status === "approving" ? "Confirm approval…" : status === "swapping" ? "Confirm in wallet…" : "Swap";
+
+  if (!isConnected || !correctNetwork) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.pageHead}>
+          <span className={styles.eyebrow}>Arc Testnet · Railflow Protocol</span>
+          <h1>Swap</h1>
+          <p className={styles.lead}>Real on-chain swaps between USDC, EURC and cirBTC via RailFlowAMM.</p>
+        </div>
+        <div className={styles.noteBanner}>
+          <p className={styles.noteText}>
+            {!isConnected
+              ? "Connect your wallet to see real balances and swap."
+              : "Swap runs on Arc Testnet — the network your wallet is on doesn't have this contract."}
+          </p>
+          {isConnected && !correctNetwork && (
+            <button
+              className={styles.ctaButton}
+              style={{ marginTop: 12, width: "auto", padding: "8px 16px" }}
+              onClick={() => switchChain({ chainId: ENV.chainId })}
+              disabled={switchingChain}
+            >
+              {switchingChain ? "Switching…" : "Switch to Arc Testnet"}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -79,8 +137,8 @@ export default function SwapPage() {
         <span className={styles.eyebrow}>Arc Testnet · Railflow Protocol</span>
         <h1>Swap</h1>
         <p className={styles.lead}>
-          Stablecoin FX on Arc. Every quote is shown against the real-world reference rate, so you can see exactly
-          what the pool is charging you.
+          Real constant-product swaps on RailFlowAMM. Quotes come straight from the pool's own on-chain reserves —
+          pairs with no seeded liquidity yet show that honestly instead of a made-up rate.
         </p>
       </div>
 
@@ -113,8 +171,12 @@ export default function SwapPage() {
             </span>
           </div>
           <p className={styles.walletNote}>
-            Balance {WALLET_BALANCE[fromSymbol]} ·{" "}
-            <button className={styles.maxLink} onClick={() => setAmount(WALLET_BALANCE[fromSymbol].replace(/,/g, ""))}>
+            Balance {fromBalanceRaw != null ? formatAmount(Number(formatUnits(fromBalanceRaw, inDecimals)), fromSymbol) : "—"} ·{" "}
+            <button
+              className={styles.maxLink}
+              disabled={fromBalanceRaw == null}
+              onClick={() => setAmount(formatUnits(fromBalanceRaw, inDecimals))}
+            >
               Max
             </button>
           </p>
@@ -127,7 +189,7 @@ export default function SwapPage() {
 
           <p className={styles.statLabel} style={{ margin: "10px 0 6px" }}>To</p>
           <div className={styles.amountBox} style={{ marginBottom: 14 }}>
-            <span className={cx(styles.amountValue, styles.figures)}>{formatAmount(toAmountNum, toSymbol)}</span>
+            <span className={cx(styles.amountValue, styles.figures)}>{formatAmount(amountOutNum, toSymbol)}</span>
             <span className={styles.amountToken}>
               <img className={styles.tokenLogo} src={TOKEN_LOGOS[toSymbol]} alt="" />
               <select
@@ -145,22 +207,34 @@ export default function SwapPage() {
             </span>
           </div>
 
-          <div className={styles.kvRow}>
-            <span className={styles.muted}>Pool rate</span>
-            <span className={styles.figures}>
-              {poolRate < 1 ? poolRate.toFixed(4) : poolRate.toFixed(2)}
-            </span>
-          </div>
-          <div className={styles.kvRow}>
-            <span className={styles.muted}>Reference FX</span>
-            <span className={cx(styles.figures, styles.muted)}>{refRate < 1 ? refRate.toFixed(4) : refRate.toFixed(2)}</span>
-          </div>
-          <div className={styles.kvRow}>
-            <span className={styles.muted}>You pay vs market</span>
-            <span className={cx(styles.figures, styles.kvPositive)}>0.07%</span>
-          </div>
+          {noLiquidity ? (
+            <p style={{ fontSize: 12, color: "var(--text-warning)", margin: "0 0 14px" }}>
+              No liquidity seeded for {fromSymbol}/{toSymbol} yet — this pair can't quote a real rate.
+            </p>
+          ) : (
+            <>
+              <div className={styles.kvRow}>
+                <span className={styles.muted}>Pool rate</span>
+                <span className={styles.figures}>{spotRate != null ? (spotRate < 1 ? spotRate.toFixed(4) : spotRate.toFixed(2)) : "—"}</span>
+              </div>
+              <div className={styles.kvRow}>
+                <span className={styles.muted}>Price impact</span>
+                <span className={cx(styles.figures, priceImpactPct > 1 && styles.kvNegative)}>
+                  {priceImpactPct != null ? `${priceImpactPct.toFixed(2)}%` : "—"}
+                </span>
+              </div>
+            </>
+          )}
+          {insufficientBalance && (
+            <p style={{ fontSize: 11, color: "var(--text-danger)", marginTop: -8, marginBottom: 12 }}>
+              Amount exceeds your {fromSymbol} balance.
+            </p>
+          )}
 
-          <button className={styles.ctaButton}>Swap</button>
+          <button className={styles.ctaButton} onClick={handleSwap} disabled={!canSwap}>
+            {primaryLabel}
+          </button>
+          {error && <p style={{ fontSize: 11, color: "var(--text-danger)", marginTop: 8 }}>{error}</p>}
         </div>
 
         <div className={styles.sideCol}>
@@ -173,25 +247,21 @@ export default function SwapPage() {
             </div>
             <div className={styles.kvRow}>
               <span className={styles.muted}>Venue</span>
-              <span>Arc DEX pool</span>
+              <span>RailFlowAMM</span>
             </div>
             <div className={styles.kvRow}>
-              <span className={styles.muted}>Price impact</span>
-              <span className={styles.figures}>0.04%</span>
-            </div>
-            <div className={styles.kvRow}>
-              <span className={styles.muted}>Max slippage</span>
+              <span className={styles.muted}>Swap fee</span>
               <span className={styles.figures}>0.30%</span>
             </div>
             <div className={styles.kvRow}>
-              <span className={styles.muted}>Minimum received</span>
-              <span className={styles.figures}>
-                {formatAmount(minReceivedNum, toSymbol)} {toSymbol}
-              </span>
+              <span className={styles.muted}>Max slippage</span>
+              <span className={styles.figures}>{(SLIPPAGE_BPS / 100).toFixed(2)}%</span>
             </div>
             <div className={styles.kvRow} style={{ marginBottom: 0 }}>
-              <span className={styles.muted}>Network fee</span>
-              <span className={styles.figures}>$0.02</span>
+              <span className={styles.muted}>Minimum received</span>
+              <span className={styles.figures}>
+                {quote?.hasLiquidity ? `${formatAmount(minReceivedNum, toSymbol)} ${toSymbol}` : "—"}
+              </span>
             </div>
           </div>
 
@@ -210,20 +280,6 @@ export default function SwapPage() {
               </p>
             </div>
           </div>
-
-          <div className={cx(styles.panel, styles.agentPanel)}>
-            <div className={styles.agentPanelHead}>
-              <span className={styles.agentMark} aria-hidden="true">✳</span>
-              <p className={styles.panelTitle}>Let it run on rails</p>
-            </div>
-            <p className={styles.panelSub}>
-              The agent watches this spread around the clock, trades only when the gap beats the cost, and never
-              exceeds the slippage you signed.
-            </p>
-            <button className={styles.agentLink}>
-              Move to agent <span className={styles.kvArrow}>→</span>
-            </button>
-          </div>
         </div>
       </div>
 
@@ -232,36 +288,44 @@ export default function SwapPage() {
           <span className={styles.panelTitleIcon}>
             <IconHistory size={16} />
           </span>
-          <p className={styles.panelTitle}>Recent swaps</p>
+          <p className={styles.panelTitle}>Your swap history</p>
         </div>
-        <div className={styles.table}>
-          <div className={styles.tableHead}>
-            <span className={styles.colAsset} style={{ flex: 1.6 }}>Pair</span>
-            <span className={styles.colNum}>Size</span>
-            <span className={styles.colNum}>vs market</span>
-            <span className={styles.colNum}>When</span>
-            <span className={styles.colNum}>By</span>
-          </div>
-          {RECENT_SWAPS.map((s, i) => (
-            <div className={styles.tableRow} key={i}>
-              <span className={styles.colAsset} style={{ flex: 1.6 }}>
-                <span className={styles.pairLogos}>
-                  <img className={styles.tokenLogo} src={TOKEN_LOGOS[s.from]} alt="" />
-                  <img className={styles.tokenLogo} src={TOKEN_LOGOS[s.to]} alt="" />
-                </span>
-                {s.from} → {s.to}
-              </span>
-              <span className={cx(styles.colNum, styles.figures, styles.muted)}>{s.size}</span>
-              <span className={cx(styles.colNum, styles.figures, styles.muted)}>{s.spread}</span>
-              <span className={cx(styles.colNum, styles.muted)}>{s.when}</span>
-              <span className={styles.colNum}>
-                <span className={cx(styles.badge, s.by === "agent" && styles.isAgent)}>
-                  {s.by === "agent" ? "Agent" : "You"}
-                </span>
-              </span>
+        {history.length === 0 ? (
+          <p className={styles.panelSub}>No swaps yet — real trades through RailFlowAMM will show up here.</p>
+        ) : (
+          <div className={styles.table}>
+            <div className={styles.tableHead}>
+              <span className={styles.colAsset} style={{ flex: 1.6 }}>Pair</span>
+              <span className={styles.colNum}>Sent</span>
+              <span className={styles.colNum}>Received</span>
+              <span className={styles.colNum}>When</span>
+              <span className={styles.colNum}>Tx</span>
             </div>
-          ))}
-        </div>
+            {history.map((s) => (
+              <div className={styles.tableRow} key={s.txHash}>
+                <span className={styles.colAsset} style={{ flex: 1.6 }}>
+                  <span className={styles.pairLogos}>
+                    <img className={styles.tokenLogo} src={TOKEN_LOGOS[s.fromSymbol]} alt="" />
+                    <img className={styles.tokenLogo} src={TOKEN_LOGOS[s.toSymbol]} alt="" />
+                  </span>
+                  {s.fromSymbol} → {s.toSymbol}
+                </span>
+                <span className={cx(styles.colNum, styles.figures, styles.muted)}>
+                  {formatAmount(Number(formatUnits(s.amountIn, TOKENS[s.fromSymbol].decimals)), s.fromSymbol)}
+                </span>
+                <span className={cx(styles.colNum, styles.figures)}>
+                  {formatAmount(Number(formatUnits(s.amountOut, TOKENS[s.toSymbol].decimals)), s.toSymbol)}
+                </span>
+                <span className={cx(styles.colNum, styles.muted)}>{new Date(s.timestamp).toLocaleDateString()}</span>
+                <span className={styles.colNum}>
+                  <a className={styles.linkButton} href={explorerTxUrl(s.txHash)} target="_blank" rel="noopener noreferrer">
+                    View
+                  </a>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <style jsx>{`

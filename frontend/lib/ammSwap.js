@@ -10,6 +10,11 @@ import { wagmiConfig as wagmiCfg } from "./wagmi";
 import { ENV } from "./config";
 import { erc20ApproveAbi } from "./erc20";
 
+// RailFlowAMM: real constant-product swaps on Arc Testnet. Address is only
+// set once deployed — an empty address means no real swap is possible yet.
+export const AMM_ADDRESS = process.env.NEXT_PUBLIC_AMM_ADDRESS || "";
+export const AMM_DEPLOYED_BLOCK = 61380842n;
+
 export const railflowAmmAbi = [
   {
     type: "function",
@@ -24,6 +29,19 @@ export const railflowAmmAbi = [
   },
   {
     type: "function",
+    name: "getReserves",
+    stateMutability: "view",
+    inputs: [
+      { name: "tokenA", type: "address" },
+      { name: "tokenB", type: "address" },
+    ],
+    outputs: [
+      { name: "reserveA", type: "uint256" },
+      { name: "reserveB", type: "uint256" },
+    ],
+  },
+  {
+    type: "function",
     name: "swap",
     stateMutability: "nonpayable",
     inputs: [
@@ -35,12 +53,23 @@ export const railflowAmmAbi = [
     ],
     outputs: [{ name: "amountOut", type: "uint256" }],
   },
+  {
+    type: "event",
+    name: "Swap",
+    inputs: [
+      { name: "user", type: "address", indexed: true },
+      { name: "tokenIn", type: "address", indexed: true },
+      { name: "tokenOut", type: "address", indexed: true },
+      { name: "amountIn", type: "uint256", indexed: false },
+      { name: "amountOut", type: "uint256", indexed: false },
+    ],
+  },
 ];
 
-/** True when the RailFlow pool can serve this pair (seeded USDC/EURC only). */
+/** Any of the 3 tokens can pair with any other — whether it actually has a
+ * quote depends on seeded reserves, which ammEstimateSwap checks for real. */
 export function ammSupportsPair(poolAddress, tokenIn, tokenOut) {
-  const pair = new Set([tokenIn, tokenOut]);
-  return Boolean(poolAddress) && pair.has("USDC") && pair.has("EURC") && tokenIn !== tokenOut;
+  return Boolean(poolAddress) && tokenIn !== tokenOut;
 }
 
 /**
@@ -73,7 +102,7 @@ export async function ammEstimateSwap({ tokenIn, tokenOut, amountIn, poolAddress
  * Execute a swap through RailFlowAMM. Returns { txHash, amountOut }.
  * @param tokens  config.tokens map (symbol -> { address, decimals })
  */
-export async function ammSwap({ address, tokenIn, tokenOut, amountIn, slippageBps, poolAddress, tokens }) {
+export async function ammSwap({ address, tokenIn, tokenOut, amountIn, slippageBps, poolAddress, tokens, onStatus }) {
   if (!poolAddress) throw new Error("RailFlow pool not deployed");
   const inMeta = tokens[tokenIn];
   const outMeta = tokens[tokenOut];
@@ -101,6 +130,7 @@ export async function ammSwap({ address, tokenIn, tokenOut, amountIn, slippageBp
     args: [address, poolAddress],
   });
   if (allowance < amt) {
+    onStatus?.("approving");
     const approveHash = await walletClient.writeContract({
       address: inMeta.address,
       abi: erc20ApproveAbi,
@@ -111,6 +141,7 @@ export async function ammSwap({ address, tokenIn, tokenOut, amountIn, slippageBp
   }
 
   // Swap.
+  onStatus?.("swapping");
   const txHash = await walletClient.writeContract({
     address: poolAddress,
     abi: railflowAmmAbi,

@@ -2,20 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { formatUnits, parseUnits } from "viem";
+import { useSwitchChain } from "wagmi";
 import { cx } from "../../../lib/cx";
 import { TOKEN_LOGOS } from "../../../lib/logos";
-import { TOKENS } from "../../../lib/config";
+import { TOKENS, ENV } from "../../../lib/config";
 import { useWallet } from "../../../lib/useWallet";
-import { LENDING_ADDRESS } from "../../../lib/lendingContract";
-import {
-  useLendingPosition,
-  useApproveCirBtc,
-  useApproveUsdc,
-  useDepositCollateral,
-  useWithdrawCollateral,
-  useTakeLoan,
-  useRepayLoan,
-} from "../../../lib/useLending";
+import { LENDING_POOL_ADDRESS } from "../../../lib/lendingPoolContract";
+import { useLendingPoolPosition, useApproveToken, useSupply, useWithdraw, useBorrow, useRepay } from "../../../lib/useLendingPool";
 import { IconLayers, IconShield, IconPercent, IconWallet } from "../../../components/icons";
 import styles from "../envelope.module.css";
 
@@ -249,7 +242,7 @@ function IllustrativeLend() {
   );
 }
 
-const CIRBTC_DECIMALS = TOKENS.cirBTC.decimals;
+const SYMBOLS = ["USDC", "EURC", "cirBTC"];
 const USDC_DECIMALS = TOKENS.USDC.decimals;
 
 function fmt(raw, decimals, fractionDigits = 4) {
@@ -257,39 +250,45 @@ function fmt(raw, decimals, fractionDigits = 4) {
   const n = Number(formatUnits(raw, decimals));
   return n.toLocaleString("en-US", { maximumFractionDigits: fractionDigits });
 }
+function fmtUsd(raw, fractionDigits = 2) {
+  return `$${fmt(raw, USDC_DECIMALS, fractionDigits)}`;
+}
 
 const MODES = {
-  deposit: { label: "Deposit", token: "cirBTC", decimals: CIRBTC_DECIMALS, needsApprove: true },
-  withdraw: { label: "Withdraw", token: "cirBTC", decimals: CIRBTC_DECIMALS, needsApprove: false },
-  borrow: { label: "Borrow", token: "USDC", decimals: USDC_DECIMALS, needsApprove: false },
-  repay: { label: "Repay", token: "USDC", decimals: USDC_DECIMALS, needsApprove: true },
+  supply: { label: "Supply", needsApprove: true },
+  withdraw: { label: "Withdraw", needsApprove: false },
+  borrow: { label: "Borrow", needsApprove: false },
+  repay: { label: "Repay", needsApprove: true },
 };
 
-// Real on-chain Lend flow against the deployed LendingBorrowing contract:
-// deposit cirBTC as collateral, borrow USDC against it, repay, withdraw.
+// Real on-chain Lend flow against the deployed RailFlowLendingPool contract:
+// supply USDC/EURC/cirBTC as collateral, borrow any of the three against
+// your combined collateral value, repay, withdraw.
 function RealLend() {
   const { address, isConnected, correctNetwork } = useWallet();
+  const { switchChain, isPending: switchingChain } = useSwitchChain();
   const [refreshKey, setRefreshKey] = useState(0);
-  const { data, loading, error } = useLendingPosition(address, refreshKey);
+  const { data, loading, error } = useLendingPoolPosition(address, refreshKey);
 
-  const [mode, setMode] = useState("deposit");
+  const [symbolIndex, setSymbolIndex] = useState(0);
+  const [mode, setMode] = useState("supply");
   const [amount, setAmount] = useState("");
+  const symbol = SYMBOLS[symbolIndex];
+  const tokenAddress = TOKENS[symbol].address;
   const modeConfig = MODES[mode];
 
-  const approveCirBtc = useApproveCirBtc();
-  const approveUsdc = useApproveUsdc();
-  const depositCollateral = useDepositCollateral();
-  const withdrawCollateral = useWithdrawCollateral();
-  const takeLoan = useTakeLoan();
-  const repayLoan = useRepayLoan();
+  const approveToken = useApproveToken(tokenAddress);
+  const supply = useSupply();
+  const withdraw = useWithdraw();
+  const borrow = useBorrow();
+  const repay = useRepay();
 
-  const actionByMode = { deposit: depositCollateral, withdraw: withdrawCollateral, borrow: takeLoan, repay: repayLoan };
-  const approveByMode = { deposit: approveCirBtc, repay: approveUsdc };
+  const actionByMode = { supply, withdraw, borrow, repay };
   const action = actionByMode[mode];
-  const approve = approveByMode[mode];
+  const approve = modeConfig.needsApprove ? approveToken : null;
 
-  // Refetch position + allowance after any confirmed transaction, and clear
-  // the amount field once the action (not just the approve) lands.
+  // Refetch every asset's position + allowance after any confirmed
+  // transaction, and clear the amount field once the action lands.
   useEffect(() => {
     if (approve?.isConfirmed || action.isConfirmed) {
       setRefreshKey((k) => k + 1);
@@ -301,14 +300,13 @@ function RealLend() {
 
   useEffect(() => {
     setAmount("");
-    approveCirBtc.reset();
-    approveUsdc.reset();
-    depositCollateral.reset();
-    withdrawCollateral.reset();
-    takeLoan.reset();
-    repayLoan.reset();
+    approveToken.reset();
+    supply.reset();
+    withdraw.reset();
+    borrow.reset();
+    repay.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  }, [mode, symbol]);
 
   const handleAmountChange = (e) => {
     const v = e.target.value;
@@ -322,7 +320,8 @@ function RealLend() {
           <span className={styles.eyebrow}>Arc Testnet · Railflow Protocol</span>
           <h1>Lend</h1>
           <p className={styles.lead}>
-            Deposit cirBTC as collateral to borrow USDC against it — live on the LendingBorrowing contract.
+            Supply USDC, EURC or cirBTC as collateral and borrow any of the three against it — live on
+            RailFlowLendingPool.
           </p>
         </div>
         <div className={styles.noteBanner}>
@@ -330,63 +329,79 @@ function RealLend() {
             {!isConnected
               ? "Connect your wallet to see your real collateral and loan position."
               : !correctNetwork
-                ? "Switch your wallet to Arc Testnet to use the real Lend contract."
+                ? "Lend only runs on Arc Testnet — the network your wallet just switched to doesn't have this contract."
                 : loading
-                  ? "Loading your position from the LendingBorrowing contract…"
+                  ? "Loading your position from the RailFlowLendingPool contract…"
                   : error
                     ? `Couldn't read the contract: ${error}`
                     : "Loading…"}
           </p>
+          {isConnected && !correctNetwork && (
+            <button
+              className={styles.ctaButton}
+              style={{ marginTop: 12, width: "auto", padding: "8px 16px" }}
+              onClick={() => switchChain({ chainId: ENV.chainId })}
+              disabled={switchingChain}
+            >
+              {switchingChain ? "Switching…" : "Switch to Arc Testnet"}
+            </button>
+          )}
         </div>
       </div>
     );
   }
 
-  const collateralWhole = Number(formatUnits(data.collateral, CIRBTC_DECIMALS));
-  const priceWhole = Number(formatUnits(data.collateralPrice, USDC_DECIMALS));
-  const collateralValueUsd = collateralWhole * priceWhole;
-  const borrowedWhole = Number(formatUnits(data.borrowed, USDC_DECIMALS));
-  const maxBorrowWhole = Number(formatUnits(data.maxBorrow, USDC_DECIMALS));
-  const utilizationPct = maxBorrowWhole > 0 ? Math.min(100, (borrowedWhole / maxBorrowWhole) * 100) : 0;
+  const asset = data.assets[symbol];
+  const priceWhole = Number(formatUnits(asset.priceInUsdc, USDC_DECIMALS));
+  const suppliedUsd = Number(formatUnits(asset.supplied, asset.decimals)) * priceWhole;
+
+  const availableUsdRaw = data.collateralValue > data.borrowValue ? data.collateralValue - data.borrowValue : 0n;
+  const utilizationPct = data.collateralValue > 0n ? Math.min(100, (Number(data.borrowValue) / Number(data.collateralValue)) * 100) : 0;
   const utilZone = utilizationPct < 60 ? "safe" : utilizationPct < 85 ? "caution" : "risk";
 
+  // "Max" for borrow/repay is computed in the selected token's own units —
+  // repay is capped by wallet balance too (can't repay more than you hold).
+  const availableToBorrowInToken =
+    priceWhole > 0 ? parseUnits((Number(formatUnits(availableUsdRaw, USDC_DECIMALS)) / priceWhole).toFixed(asset.decimals), asset.decimals) : 0n;
+  const liquidityCappedBorrow = availableToBorrowInToken < asset.liquidity ? availableToBorrowInToken : asset.liquidity;
+
   const maxByMode = {
-    deposit: data.cirBtcBalance,
-    withdraw: data.collateral,
-    borrow: data.availableToBorrow,
-    repay: data.borrowed > data.usdcBalance ? data.usdcBalance : data.borrowed,
+    supply: asset.balance,
+    withdraw: asset.supplied,
+    borrow: liquidityCappedBorrow,
+    repay: asset.borrowed < asset.balance ? asset.borrowed : asset.balance,
   };
+
   const amountRaw = (() => {
     try {
-      return amount ? parseUnits(amount, modeConfig.decimals) : 0n;
+      return amount ? parseUnits(amount, asset.decimals) : 0n;
     } catch {
       return 0n;
     }
   })();
-  const allowanceByMode = { deposit: data.cirBtcAllowance, repay: data.usdcAllowance };
-  const needsApprove = modeConfig.needsApprove && amountRaw > 0n && allowanceByMode[mode] < amountRaw;
+  const needsApprove = modeConfig.needsApprove && amountRaw > 0n && asset.allowance < amountRaw;
 
   const busy = approve?.isPending || approve?.isConfirming || action.isPending || action.isConfirming;
-  const spenderAmount = parseUnits("1000000000", modeConfig.decimals); // one-time approval, avoids re-approving every deposit/repay
+  const spenderAmount = parseUnits("1000000000", asset.decimals); // one-time approval per token
 
   const primaryLabel = needsApprove
     ? approve.isPending
       ? "Confirm approval…"
       : approve.isConfirming
         ? "Approving…"
-        : `Approve ${modeConfig.token}`
+        : `Approve ${symbol}`
     : action.isPending
       ? "Confirm in wallet…"
       : action.isConfirming
         ? "Confirming…"
-        : `${modeConfig.label} ${modeConfig.token}`;
+        : `${modeConfig.label} ${symbol}`;
 
   const handlePrimary = () => {
     if (amountRaw <= 0n) return;
     if (needsApprove) {
-      approve.write([LENDING_ADDRESS, spenderAmount]);
+      approve.write([LENDING_POOL_ADDRESS, spenderAmount]);
     } else {
-      action.write([amountRaw]);
+      action.write([tokenAddress, amountRaw]);
     }
   };
 
@@ -396,28 +411,28 @@ function RealLend() {
         <span className={styles.eyebrow}>Arc Testnet · Railflow Protocol</span>
         <h1>Lend</h1>
         <p className={styles.lead}>
-          Deposit cirBTC as collateral to borrow USDC against it. Every action is a transaction you sign — nothing
-          moves without your wallet.
+          Supply USDC, EURC or cirBTC from your own wallet, and borrow any of the three against your combined
+          collateral. Every action is a transaction you sign yourself.
         </p>
       </div>
 
       <div className={styles.statGrid}>
         <div className={styles.statTile}>
           <div className={styles.statIcon} style={{ color: "var(--text-accent)" }}>
-            <img className={styles.tokenLogo} src={TOKEN_LOGOS.cirBTC} alt="" />
+            <IconLayers />
           </div>
           <div className={styles.statBody}>
-            <p className={styles.statLabel}>My collateral</p>
-            <p className={styles.statValue}>{fmt(data.collateral, CIRBTC_DECIMALS, 6)} cirBTC</p>
+            <p className={styles.statLabel}>My collateral value</p>
+            <p className={styles.statValue}>{fmtUsd(data.collateralValue, 2)}</p>
           </div>
         </div>
         <div className={styles.statTile}>
           <div className={styles.statIcon} style={{ color: "var(--text-accent)" }}>
-            <img className={styles.tokenLogo} src={TOKEN_LOGOS.USDC} alt="" />
+            <IconWallet />
           </div>
           <div className={styles.statBody}>
             <p className={styles.statLabel}>Borrowed</p>
-            <p className={styles.statValue}>${fmt(data.borrowed, USDC_DECIMALS, 2)}</p>
+            <p className={styles.statValue}>{fmtUsd(data.borrowValue, 2)}</p>
           </div>
         </div>
         <div className={styles.statTile}>
@@ -437,8 +452,8 @@ function RealLend() {
             <IconPercent />
           </div>
           <div className={styles.statBody}>
-            <p className={styles.statLabel}>Pool liquidity</p>
-            <p className={styles.statValue}>${fmt(data.poolLiquidity, USDC_DECIMALS, 0)}</p>
+            <p className={styles.statLabel}>{symbol} pool liquidity</p>
+            <p className={styles.statValue}>{fmt(asset.liquidity, asset.decimals, 2)}</p>
           </div>
         </div>
       </div>
@@ -449,32 +464,59 @@ function RealLend() {
             <span className={styles.panelTitleIcon}>
               <IconLayers size={16} />
             </span>
-            <p className={styles.panelTitle}>Market</p>
+            <p className={styles.panelTitle}>Markets</p>
           </div>
-          <p className={styles.panelSub}>cirBTC / USDC — the only live pair on Arc Testnet right now.</p>
-          <div className={styles.kvRow}>
-            <span className={styles.muted}>Collateral factor</span>
-            <span className={styles.figures}>{(Number(data.collateralFactorBps) / 100).toFixed(0)}%</span>
-          </div>
-          <div className={styles.kvRow}>
-            <span className={styles.muted}>cirBTC price (owner-set)</span>
-            <span className={styles.figures}>${priceWhole.toLocaleString("en-US")}</span>
-          </div>
-          <div className={styles.kvRow}>
-            <span className={styles.muted}>My collateral value</span>
-            <span className={styles.figures}>${collateralValueUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
-          </div>
-          <div className={styles.kvRow} style={{ marginBottom: 0 }}>
-            <span className={styles.muted}>My max borrow</span>
-            <span className={styles.figures}>${maxBorrowWhole.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
+          <p className={styles.panelSub}>All three assets can be supplied as collateral or borrowed.</p>
+          <div className={styles.table}>
+            <div className={styles.tableHead}>
+              <span className={styles.colAsset}>Asset</span>
+              <span className={styles.colNum}>Price</span>
+              <span className={styles.colNum}>LTV</span>
+              <span className={styles.colNum}>My supply</span>
+              <span className={styles.colNum}>My borrow</span>
+            </div>
+            {SYMBOLS.map((s, i) => {
+              const a = data.assets[s];
+              return (
+                <button
+                  key={s}
+                  className={cx(styles.tableRow, i === symbolIndex && styles.isSelected)}
+                  onClick={() => setSymbolIndex(i)}
+                >
+                  <span className={styles.colAsset}>
+                    <img className={styles.tokenLogo} src={TOKEN_LOGOS[s]} alt="" />
+                    {s}
+                  </span>
+                  <span className={cx(styles.colNum, styles.figures, styles.muted)}>
+                    ${Number(formatUnits(a.priceInUsdc, USDC_DECIMALS)).toLocaleString("en-US")}
+                  </span>
+                  <span className={cx(styles.colNum, styles.muted)}>{(Number(a.collateralFactorBps) / 100).toFixed(0)}%</span>
+                  <span className={cx(styles.colNum, styles.figures)}>{fmt(a.supplied, a.decimals, 4)}</span>
+                  <span className={cx(styles.colNum, styles.figures, styles.muted)}>{fmt(a.borrowed, a.decimals, 4)}</span>
+                </button>
+              );
+            })}
           </div>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 12 }}>
-            No price oracle on testnet — cirBTC/USDC is set by the contract owner, not a live feed.
+            No price oracle on testnet — prices are set by the contract owner, not a live feed.
           </p>
         </div>
 
         <div className={styles.sideCol}>
           <div className={cx(styles.panel, styles.elevated)}>
+            <div className={styles.tokenTabs}>
+              {SYMBOLS.map((s, i) => (
+                <button
+                  key={s}
+                  className={cx(styles.tokenChip, i === symbolIndex && styles.isActive)}
+                  onClick={() => setSymbolIndex(i)}
+                >
+                  <img className={styles.tokenChipLogo} src={TOKEN_LOGOS[s]} alt="" />
+                  {s}
+                </button>
+              ))}
+            </div>
+
             <div className={styles.segmented}>
               {Object.keys(MODES).map((m) => (
                 <button key={m} className={cx(styles.segment, mode === m && styles.isActive)} onClick={() => setMode(m)}>
@@ -490,25 +532,31 @@ function RealLend() {
                 onChange={handleAmountChange}
                 inputMode="decimal"
                 placeholder="0"
-                aria-label={`Amount of ${modeConfig.token} to ${mode}`}
+                aria-label={`Amount of ${symbol} to ${mode}`}
               />
               <span className={styles.amountToken}>
-                <img className={styles.tokenLogo} src={TOKEN_LOGOS[modeConfig.token]} alt="" />
-                {modeConfig.token}
+                <img className={styles.tokenLogo} src={TOKEN_LOGOS[symbol]} alt="" />
+                {symbol}
               </span>
             </div>
             <p className={styles.walletNote}>
-              {mode === "deposit" && `Wallet balance ${fmt(data.cirBtcBalance, CIRBTC_DECIMALS, 6)}`}
-              {mode === "withdraw" && `Deposited ${fmt(data.collateral, CIRBTC_DECIMALS, 6)}`}
-              {mode === "borrow" && `Available to borrow $${fmt(data.availableToBorrow, USDC_DECIMALS, 2)}`}
-              {mode === "repay" && `Outstanding loan $${fmt(data.borrowed, USDC_DECIMALS, 2)}`} ·{" "}
-              <button
-                className={styles.maxLink}
-                onClick={() => setAmount(formatUnits(maxByMode[mode], modeConfig.decimals))}
-              >
+              {mode === "supply" && `Wallet balance ${fmt(asset.balance, asset.decimals, 6)}`}
+              {mode === "withdraw" && `Supplied ${fmt(asset.supplied, asset.decimals, 6)}`}
+              {mode === "borrow" && `Available to borrow ${fmt(liquidityCappedBorrow, asset.decimals, 6)}`}
+              {mode === "repay" && `Outstanding loan ${fmt(asset.borrowed, asset.decimals, 6)}`} ·{" "}
+              <button className={styles.maxLink} onClick={() => setAmount(formatUnits(maxByMode[mode], asset.decimals))}>
                 Max
               </button>
             </p>
+
+            <div className={styles.kvRow}>
+              <span className={styles.muted}>{symbol} value supplied</span>
+              <span className={styles.figures}>{fmtUsd(parseUnits(suppliedUsd.toFixed(2), USDC_DECIMALS))}</span>
+            </div>
+            <div className={styles.kvRow} style={{ marginBottom: 16 }}>
+              <span className={styles.muted}>Available to borrow (all assets)</span>
+              <span className={styles.figures}>{fmtUsd(availableUsdRaw)}</span>
+            </div>
 
             <button className={styles.ctaButton} onClick={handlePrimary} disabled={busy || amountRaw <= 0n}>
               {primaryLabel}
@@ -540,6 +588,6 @@ function RealLend() {
 }
 
 export default function LendPage() {
-  if (!LENDING_ADDRESS) return <IllustrativeLend />;
+  if (!LENDING_POOL_ADDRESS) return <IllustrativeLend />;
   return <RealLend />;
 }

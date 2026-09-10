@@ -2,12 +2,18 @@
   "name": "@railflow/contracts",
   "version": "1.0.0",
   "private": true,
-  "description": "RailFlow Lend contract (cirBTC collateral, USDC borrow) on Arc Testnet",
+  "description": "RailFlow Lend contracts on Arc Testnet: single-pair LendingBorrowing and the multi-asset RailFlowLendingPool",
   "license": "MIT",
   "type": "commonjs",
   "scripts": {
     "compile": "hardhat compile",
-    "deploy:lending": "hardhat run scripts/deploy-lending.js --network arcTestnet"
+    "deploy:lending": "hardhat run scripts/deploy-lending.js --network arcTestnet",
+    "deploy:lending-pool": "hardhat run scripts/deploy-lending-pool.js --network arcTestnet",
+    "agent:keeper": "node scripts/agent-keeper.js",
+    "agent:keeper:once": "node scripts/agent-keeper.js --once",
+    "deploy:amm": "hardhat run scripts/deploy-amm.js --network arcTestnet",
+    "deploy:yield-vault": "hardhat run scripts/deploy-yield-vault.js --network arcTestnet",
+    "deploy:tbill": "hardhat run scripts/deploy-tbill.js --network arcTestnet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

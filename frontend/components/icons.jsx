@@ -219,6 +219,28 @@ export function IconArrowUp({ size = 16 }) {
   );
 }
 
+export function IconAlertTriangle({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+      <path
+        d="M8 2.2 14.4 13.4a1 1 0 0 1-.87 1.5H2.47a1 1 0 0 1-.87-1.5L8 2.2Z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+      <path d="M8 6.3v3.2M8 11.9v.1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function IconChevronDown({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+      <path d="M4 6.5 8 10.5l4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function IconChart({ size = 16 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 18 18" fill="none">

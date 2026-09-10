@@ -14,6 +14,7 @@ export const CHAIN_LOGOS = {
   Arc_Testnet: `${BASE}/arc-testnet.jpg`,
   Ethereum_Sepolia: `${BASE}/eth.svg`,
   Base_Sepolia: `${BASE}/base.png`,
+  Avalanche_Fuji: `${BASE}/avalanche.svg`,
 };
 
 // Brand mark used in the header wordmark / favicon (kept separate from the
