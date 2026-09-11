@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Railflow — Perps that clear at rail speed</title>
+<meta name="description" content="Railflow là sàn giao dịch perpetual on-chain trên Arc. Khớp lệnh dưới 1 giây, đòn bẩy tới 50x, phí maker bằng 0, không cần mở tài khoản.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Testnet banner -->
+  <div class="banner" id="testnetBanner">
+    <span class="banner__live"><span class="banner__dot"></span>Live</span>
+    <span>Railflow đang chạy trên <strong>Arc testnet</strong> — giao dịch chỉ dùng test fund. Danh sách chờ mainnet đang mở.</span>
+    <a href="#faucet" class="banner__link">Nhận test USDC</a>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header__logo">
+      <div class="logo-mark">
+        <span></span><span></span><span></span>
+      </div>
+      <span class="logo-text">Railflow</span>
+    </div>
+
+    <nav class="nav" id="mainNav">
+      <a href="#markets">Markets</a>
+      <a href="#edge">Why Railflow</a>
+      <a href="#faucet">Testnet guide</a>
+      <a href="#">Docs</a>
+    </nav>
+
+    <div class="header__actions">
+      <div class="network-pill"><span class="network-dot"></span>ARC TESTNET</div>
+      <a href="#" class="btn btn--primary btn--sm">Connect wallet</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Mở menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero__inner">
+      <div class="hero__copy">
+        <div class="eyebrow"><span class="eyebrow__pill">v0.9</span>Perpetual exchange · on-chain orderbook</div>
+        <h1 class="h1">Perps that clear<br><span class="accent">at rail speed.</span></h1>
+        <p class="lead">Một sàn giao dịch perpetual hoàn toàn on-chain xây trên Arc. Khớp lệnh dưới 1 giây, đòn bẩy tới <strong>50x</strong>, phí maker bằng 0 và không cần mở tài khoản — ví của bạn chính là tài khoản.</p>
+        <div class="hero__cta">
+          <a href="#" class="btn btn--primary btn--lg">Mở app giao dịch</a>
+          <a href="#faucet" class="btn btn--ghost btn--lg">Nạp ví testnet</a>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-cell"><div class="stat-cell__value">$1.84B</div><div class="stat-cell__label">Khối lượng 30 ngày</div></div>
+          <div class="stat-cell"><div class="stat-cell__value">$96.4M</div><div class="stat-cell__label">Open interest</div></div>
+          <div class="stat-cell"><div class="stat-cell__value">182ms</div><div class="stat-cell__label">Thời gian khớp lệnh</div></div>
+          <div class="stat-cell"><div class="stat-cell__value">31,402</div><div class="stat-cell__label">Ví testnet</div></div>
+        </div>
+      </div>
+
+      <!-- Trading panel mock -->
+      <div class="panel">
+        <div class="panel__head">
+          <div class="panel__pair">
+            <span class="mono">BTC-PERP</span>
+            <span class="pill-lev">50x</span>
+          </div>
+          <div class="panel__price">
+            <span class="mono price">112,480.50</span>
+            <span class="mono price-chg up">+2.14%</span>
+          </div>
+        </div>
+        <div class="panel__body">
+          <div class="orderbook">
+            <div class="orderbook__hd"><span>Price</span><span>Size</span></div>
+            <div class="ob-row ask" style="--depth:42%"><span>112,486.0</span><span>4.812</span></div>
+            <div class="ob-row ask" style="--depth:60%"><span>112,484.5</span><span>2.140</span></div>
+            <div class="ob-row ask" style="--depth:72%"><span>112,482.0</span><span>1.026</span></div>
+            <div class="ob-mid"><span>112,480.50</span><span>spread 0.4</span></div>
+            <div class="ob-row bid" style="--depth:66%"><span>112,478.5</span><span>3.407</span></div>
+            <div class="ob-row bid" style="--depth:50%"><span>112,476.0</span><span>1.884</span></div>
+            <div class="ob-row bid" style="--depth:38%"><span>112,473.5</span><span>0.960</span></div>
+          </div>
+          <div class="order-form">
+            <div class="side-toggle">
+              <div class="side-toggle__opt is-active">Long</div>
+              <div class="side-toggle__opt">Short</div>
+            </div>
+            <div class="field">
+              <label>Size (USDC)</label>
+              <div class="field__value mono">25,000</div>
+            </div>
+            <div class="field">
+              <div class="field__row"><label>Leverage</label><span class="mono accent-text">20x</span></div>
+              <div class="lev-track"><div class="lev-fill"></div><div class="lev-thumb"></div></div>
+            </div>
+            <div class="order-summary">
+              <div><span>Entry</span><span class="mono">112,480.50</span></div>
+              <div><span>Liq. price</span><span class="mono">107,246.10</span></div>
+              <div><span>Fee</span><span class="mono up">0.000%</span></div>
+            </div>
+            <div class="btn-submit">Mở lệnh Long</div>
+          </div>
+        </div>
+        <div class="pulse-track"><div class="pulse-bar"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Markets -->
+  <section id="markets" class="section">
+    <div class="section__inner">
+      <div class="section__head">
+        <div>
+          <div class="eyebrow-sm">Live markets</div>
+          <h2 class="h2">Funding, độ sâu thị trường và lệnh khớp — tất cả một chỗ</h2>
+        </div>
+        <a href="#" class="link-arrow">Xem 34 thị trường →</a>
+      </div>
+
+      <div class="table-card">
+        <div class="table-row table-row--head mono">
+          <div>Market</div>
+          <div class="ta-r">Mark price</div>
+          <div class="ta-r">24h</div>
+          <div class="ta-r">Funding 1h</div>
+          <div class="ta-r">Open interest</div>
+          <div class="ta-r">Max lev</div>
+        </div>
+
+        <div class="table-row mono">
+          <div class="market-cell"><span class="tick">BTC</span>BTC-PERP</div>
+          <div class="ta-r">112,480.50</div>
+          <div class="ta-r up">+2.14%</div>
+          <div class="ta-r up">+0.0041%</div>
+          <div class="ta-r dim">$38.2M</div>
+          <div class="ta-r muted">50x</div>
+        </div>
+        <div class="table-row mono">
+          <div class="market-cell"><span class="tick">ETH</span>ETH-PERP</div>
+          <div class="ta-r">4,182.30</div>
+          <div class="ta-r up">+1.08%</div>
+          <div class="ta-r up">+0.0026%</div>
+          <div class="ta-r dim">$21.7M</div>
+          <div class="ta-r muted">50x</div>
+        </div>
+        <div class="table-row mono">
+          <div class="market-cell"><span class="tick">SOL</span>SOL-PERP</div>
+          <div class="ta-r">214.86</div>
+          <div class="ta-r down">-0.92%</div>
+          <div class="ta-r down">-0.0013%</div>
+          <div class="ta-r dim">$12.4M</div>
+          <div class="ta-r muted">25x</div>
+        </div>
+        <div class="table-row mono">
+          <div class="market-cell"><span class="tick">ARC</span>ARC-PERP</div>
+          <div class="ta-r">1.4824</div>
+          <div class="ta-r up">+9.37%</div>
+          <div class="ta-r up">+0.0118%</div>
+          <div class="ta-r dim">$8.9M</div>
+          <div class="ta-r muted">20x</div>
+        </div>
+        <div class="table-row mono">
+          <div class="market-cell"><span class="tick">HYPE</span>HYPE-PERP</div>
+          <div class="ta-r">41.270</div>
+          <div class="ta-r up">+3.62%</div>
+          <div class="ta-r up">+0.0074%</div>
+          <div class="ta-r dim">$5.6M</div>
+          <div class="ta-r muted">20x</div>
+        </div>
+        <div class="table-row mono">
+          <div class="market-cell"><span class="tick">SUI</span>SUI-PERP</div>
+          <div class="ta-r">3.8420</div>
+          <div class="ta-r down">-1.47%</div>
+          <div class="ta-r down">-0.0008%</div>
+          <div class="ta-r dim">$3.1M</div>
+          <div class="ta-r muted">20x</div>
+        </div>
+        <div class="table-row mono">
+          <div class="market-cell"><span class="tick">DOGE</span>DOGE-PERP</div>
+          <div class="ta-r">0.29140</div>
+          <div class="ta-r up">+0.41%</div>
+          <div class="ta-r up">+0.0019%</div>
+          <div class="ta-r dim">$2.4M</div>
+          <div class="ta-r muted">10x</div>
+        </div>
+
+        <div class="table-foot">
+          <span>Funding tất toán mỗi giờ. Funding âm trả cho vị thế Long.</span>
+          <span class="mono">Oracle: Arc median · 12 feeds</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Railflow -->
+  <section id="edge" class="section">
+    <div class="section__inner">
+      <div class="eyebrow-sm">Why Railflow</div>
+      <h2 class="h2 h2--wide">Xây cho giao dịch quy mô lớn, không phải cho phễu onboarding</h2>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-card__num accent-text">0.000%</div>
+          <h3>Maker rebate, taker thấp</h3>
+          <p>Phí maker bằng 0 ở mọi cấp độ, taker chỉ 0.025%. Phí tính trên notional chứ không phải collateral, nên khi giao dịch lớn hơn, spread bạn trả không hề rộng ra.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card__num accent-text">50x</div>
+          <h3>Cross hoặc isolated, tới 50x</h3>
+          <p>Margin theo từng vị thế với maintenance theo bậc và cơ chế thanh lý một phần, cắt giảm exposure trước khi đóng toàn bộ vị thế của bạn.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card__num accent-text">No KYC</div>
+          <h3>Có ví là giao dịch được</h3>
+          <p>Không email, không custody, không hàng đợi rút tiền. Vị thế và tài sản thế chấp nằm trong smart contract bạn có thể đọc trực tiếp, thoát lệnh không cần xin phép.</p>
+        </div>
+      </div>
+
+      <div class="mini-strip">
+        <div class="mini-cell"><h4>Sổ lệnh on-chain</h4><p>Mọi lệnh đặt, huỷ và khớp đều là một giao dịch trên Arc. Không có gì khớp lệnh ngầm ngoài sổ sách.</p></div>
+        <div class="mini-cell"><h4>Khớp lệnh 182ms</h4><p>Khớp lệnh dưới 1 giây với huỷ lệnh trong một block, khả thi cho market maker báo giá liên tục.</p></div>
+        <div class="mini-cell"><h4>Tất toán bằng USDC</h4><p>Một tài sản thế chấp duy nhất, một tài khoản margin duy nhất, không vòng qua tài sản wrapped.</p></div>
+        <div class="mini-cell"><h4>API công khai</h4><p>REST và WebSocket song song với giao diện, cùng SDK ký lệnh cho các bàn giao dịch tự động.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testnet faucet -->
+  <section id="faucet" class="section">
+    <div class="section__inner faucet-grid">
+      <div>
+        <div class="eyebrow-sm">Arc testnet</div>
+        <h2 class="h2">Ba bước để có ví testnet đầy tài sản</h2>
+        <p class="section-lead">Test fund không có giá trị thực và sẽ reset mỗi khi network nâng cấp. Mọi hoạt động ở đây đều được tính vào hạng trader trên mainnet.</p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step__num">1</div>
+            <div>
+              <h4>Thêm mạng Arc testnet</h4>
+              <p>Kết nối ví và chấp nhận prompt thêm mạng, hoặc nhập thông tin RPC thủ công ở bên phải.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step__num">2</div>
+            <div>
+              <h4>Nhận 10,000 USDC test</h4>
+              <p>Mỗi ví được nhận một lần mỗi 24 giờ từ faucet. Gas được tài trợ sẵn, không cần số dư native để bắt đầu.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step__num">3</div>
+            <div>
+              <h4>Nạp vào margin và giao dịch</h4>
+              <p>Chuyển USDC vào tài khoản margin chỉ với một chữ ký, rồi mở vị thế đầu tiên trên bất kỳ thị trường nào trong 34 thị trường.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero__cta" style="margin-top:28px">
+          <a href="#" class="btn btn--primary">Mở faucet</a>
+          <a href="#" class="btn btn--ghost">Đọc hướng dẫn testnet</a>
+        </div>
+      </div>
+
+      <div class="network-card">
+        <div class="network-card__head mono">Chi tiết mạng</div>
+        <div class="network-row"><span>Tên mạng</span><span class="mono">Arc Testnet</span></div>
+        <div class="network-row"><span>Chain ID</span><span class="mono">10241</span></div>
+        <div class="network-row"><span>RPC URL</span><span class="mono trunc">rpc.testnet.arc.network</span></div>
+        <div class="network-row"><span>Explorer</span><span class="mono">explorer.testnet.arc.network</span></div>
+        <div class="network-row"><span>Collateral</span><span class="mono">USDC (test)</span></div>
+        <div class="network-row network-row--last"><span>Giới hạn faucet</span><span class="mono accent-text">10,000 / 24h</span></div>
+        <div class="network-card__foot">Railflow không bao giờ hỏi seed phrase. Kiểm tra kỹ URL trước khi ký bất kỳ giao dịch nào.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section">
+    <div class="section__inner">
+      <div class="cta-banner">
+        <div>
+          <h2 class="h2 h2--sm">Giao dịch trên testnet. Giữ nguyên hạng của bạn.</h2>
+          <p>Khối lượng giao dịch trước mainnet được cộng dồn vào hạng phí khi ra mắt. Không dashboard điểm thưởng, không mê cung referral — chỉ có sổ lệnh.</p>
+        </div>
+        <a href="#" class="btn btn--primary btn--lg">Mở app giao dịch</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__grid">
+        <div>
+          <div class="header__logo" style="margin-bottom:14px">
+            <div class="logo-mark logo-mark--sm"><span></span><span></span><span></span></div>
+            <span class="logo-text logo-text--sm">Railflow</span>
+          </div>
+          <p class="footer__about">Sàn giao dịch perpetual on-chain trên Arc. Hiện đang trong giai đoạn testnet công khai.</p>
+        </div>
+        <div class="footer__col">
+          <div class="footer__label">Product</div>
+          <a href="#markets">Markets</a>
+          <a href="#">Trade</a>
+          <a href="#">Fees</a>
+          <a href="#">Vaults</a>
+        </div>
+        <div class="footer__col">
+          <div class="footer__label">Developers</div>
+          <a href="#">Documentation</a>
+          <a href="#">API reference</a>
+          <a href="#">Contracts</a>
+          <a href="#">Audits</a>
+        </div>
+        <div class="footer__col">
+          <div class="footer__label">Community</div>
+          <a href="#">X / Twitter</a>
+          <a href="#">Discord</a>
+          <a href="#">Telegram</a>
+          <a href="#">GitHub</a>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>© 2026 Railflow Labs</span>
+        <span class="mono">Testnet · không phải tiền thật · phái sinh có rủi ro mất toàn bộ vốn</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
