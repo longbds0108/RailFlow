@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Explore the Railflow trading workspace with a simulated Arc testnet account.">
+  <meta name="description" content="Connect your wallet on Arc Testnet and explore the Railflow demo trading workspace.">
   <meta name="theme-color" content="#06080b">
   <title>BTC-PERP · Railflow</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/trade.css">
+  <link rel="stylesheet" href="wallet-widget/main.css">
 </head>
 <body class="trade-page">
   <a class="skip-link" href="#workspace">Skip to trading</a>
@@ -24,28 +25,22 @@
     </nav>
     <div class="trade-header__right">
       <div class="network-pill"><span class="network-dot"></span>ARC TESTNET</div>
-      <div class="wallet-wrap">
-        <button class="wallet-button" id="walletButton" aria-expanded="false" aria-controls="walletMenu">
-          <span class="wallet-equity"><span class="micro-label">Equity</span><span class="mono" id="headerEquity">$12,418.62</span></span>
-          <span class="wallet-avatar" aria-hidden="true"></span><span class="mono wallet-address">0x7F3a…B29c</span><span class="chevron" aria-hidden="true">▾</span>
-        </button>
-        <div class="wallet-menu" id="walletMenu" hidden><span class="micro-label">Demo account</span><p>Explore trading with simulated funds.</p><button type="button" id="resetDemo">Reset demo account</button><a href="index.html">Disconnect</a></div>
-      </div>
+      <div class="wallet-wrap" id="wallet-trade-root"></div>
     </div>
   </header>
 
-  <div class="connection-bar"><span class="connected-badge">Connected</span><span>Demo wallet on Arc testnet. Margin account funded with <strong>10,000 test USDC.</strong></span><button type="button" class="text-link" id="accountDetails">View account details</button></div>
+  <div id="wallet-connection-root"></div>
 
   <section class="market-strip" aria-label="Selected market">
     <div class="market-picker-wrap">
-      <button class="market-picker" id="marketPicker" aria-expanded="false" aria-controls="marketMenu"><span><span class="market-symbol mono" id="marketSymbol">BTC-PERP <span class="chevron" aria-hidden="true">▾</span></span><span class="market-name" id="marketName">Bitcoin perpetual</span></span><span class="pill-lev" id="marketMaxLev">50x</span></button>
+      <button class="market-picker" id="marketPicker" aria-expanded="false" aria-controls="marketMenu"><img class="tick" id="marketLogo" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCBTC.svg" alt="" width="22" height="22" loading="lazy"><span class="market-picker__labels"><span class="market-symbol mono" id="marketSymbol">BTC-PERP <span class="chevron" aria-hidden="true">▾</span></span><span class="market-name" id="marketName">Bitcoin perpetual</span></span><span class="pill-lev" id="marketMaxLev">50x</span></button>
       <div class="market-menu" id="marketMenu" hidden></div>
     </div>
     <div class="market-metrics">
       <div class="market-metric market-metric--mark"><span class="mono up" id="markPrice">112,480.50</span><span class="micro-label">Mark</span></div>
       <div class="market-metric"><span class="mono up" id="marketChange">+2.14%</span><span class="micro-label">24h change</span></div>
       <div class="market-metric"><span class="mono" id="oraclePrice">112,479.80</span><span class="micro-label">Oracle</span></div>
-      <div class="market-metric"><span class="mono up" id="marketFunding">+0.0041%</span><span class="micro-label">Funding 1h</span></div>
+      <div class="market-metric"><span class="mono up" id="marketFunding">+0.0041%</span><span class="micro-label">Funding 8h</span></div>
       <div class="market-metric"><span class="mono" id="marketInterest">$38.2M</span><span class="micro-label">Open interest</span></div>
       <div class="market-metric"><span class="mono" id="marketVolume">$214.6M</span><span class="micro-label">24h volume</span></div>
     </div>
@@ -54,14 +49,15 @@
   <main class="trading-layout" id="workspace">
     <div class="trading-left">
       <section class="trading-card chart-card" aria-label="Candlestick chart">
-        <div class="chart-toolbar"><div class="timeframes" role="group" aria-label="Chart timeframe"><button data-timeframe="1m" aria-pressed="false">1m</button><button data-timeframe="5m" aria-pressed="false">5m</button><button data-timeframe="15m" class="is-active" aria-pressed="true">15m</button><button data-timeframe="1h" aria-pressed="false">1h</button><button data-timeframe="4h" aria-pressed="false">4h</button><button data-timeframe="1d" aria-pressed="false">1d</button></div><div class="chart-ohlc mono" id="chartOhlc"><span>O <b>112,204.0</b></span><span>H <b>112,690.5</b></span><span>L <b>111,982.0</b></span><span>C <b class="up">112,480.5</b></span></div></div>
-        <div class="chart-canvas" id="chartCanvas"><svg id="priceChart" viewBox="0 0 1000 350" preserveAspectRatio="none" role="img" aria-label="Simulated BTC perpetual candlestick chart"></svg><div class="chart-tooltip mono" id="chartTooltip" hidden></div></div>
+        <div class="chart-toolbar"><div class="chart-toolbar__left"><div class="chart-type-picker"><button type="button" class="chart-type-button" id="chartTypeButton" aria-haspopup="true" aria-expanded="false" aria-controls="chartTypeMenu" aria-label="Chart type: Candles" title="Chart type"><span id="chartTypeIcon"></span><span class="chevron" aria-hidden="true">▾</span></button><div class="chart-type-menu" id="chartTypeMenu" role="menu" hidden></div></div><div class="timeframes" role="group" aria-label="Chart timeframe"><button data-timeframe="1m" aria-pressed="false">1m</button><button data-timeframe="5m" aria-pressed="false">5m</button><button data-timeframe="15m" class="is-active" aria-pressed="true">15m</button><button data-timeframe="1h" aria-pressed="false">1h</button><button data-timeframe="4h" aria-pressed="false">4h</button><button data-timeframe="1d" aria-pressed="false">1d</button></div></div><div class="chart-ohlc mono" id="chartOhlc"><span>O <b>112,204.0</b></span><span>H <b>112,690.5</b></span><span>L <b>111,982.0</b></span><span>C <b class="up">112,480.5</b></span></div></div>
+        <div class="chart-canvas" id="chartCanvas"><div id="priceChart" role="img" aria-label="Simulated BTC perpetual candlestick chart"></div><div class="chart-tooltip mono" id="chartTooltip" hidden></div></div>
       </section>
 
       <section class="trading-card positions-card" id="portfolio" aria-label="Account activity">
         <div class="activity-tabs" role="tablist" aria-label="Account activity"><button id="tab-positions" role="tab" aria-selected="true" aria-controls="activityPanel" data-activity="positions" class="is-active">Positions <span id="positionCount">2</span></button><button id="tab-orders" role="tab" aria-selected="false" aria-controls="activityPanel" data-activity="orders" tabindex="-1">Open orders <span id="orderCount">1</span></button><button id="tab-fills" role="tab" aria-selected="false" aria-controls="activityPanel" data-activity="fills" tabindex="-1">Fills</button><button id="tab-funding" role="tab" aria-selected="false" aria-controls="activityPanel" data-activity="funding" tabindex="-1">Funding</button></div>
         <div class="activity-scroll" id="activityPanel" role="tabpanel" aria-labelledby="tab-positions" tabindex="0"><table class="activity-table"><thead><tr><th>Position</th><th class="ta-r">Size</th><th class="ta-r">Entry</th><th class="ta-r">Mark</th><th class="ta-r">Liq.</th><th class="ta-r">UPNL</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody><tr><td><span class="position-pair"><span class="side-badge is-long">Long</span>BTC-PERP <small class="mono">10x</small></span></td><td class="mono ta-r">0.482 BTC</td><td class="mono ta-r">109,204.00</td><td class="mono ta-r">112,480.50</td><td class="mono ta-r liq-value">101,980.40</td><td class="mono ta-r up">+$1,579.27</td><td><button class="small-button" disabled>Close</button></td></tr><tr><td><span class="position-pair"><span class="side-badge is-short">Short</span>SOL-PERP <small class="mono">5x</small></span></td><td class="mono ta-r">128.0 SOL</td><td class="mono ta-r">219.40</td><td class="mono ta-r">214.86</td><td class="mono ta-r liq-value">251.80</td><td class="mono ta-r up">+$581.12</td><td><button class="small-button" disabled>Close</button></td></tr></tbody></table></div>
-        <div class="positions-footer"><span>Margin usage <strong class="mono" id="marginUsage">18.4%</strong> · maintenance <strong class="mono" id="maintenanceMargin">$1,142.00</strong></span><span class="mono">Mode: Cross</span></div>
+        <div class="demo-account-strip"><span>Demo equity <strong class="mono" id="headerEquity">$12,418.62</strong></span><span class="demo-account-strip__actions"><button type="button" class="text-link" id="accountDetails">Demo account details</button><button type="button" class="text-link" id="resetDemo">Reset demo account</button></span></div>
+        <div class="positions-footer"><span>Demo margin usage <strong class="mono" id="marginUsage">18.4%</strong> · maintenance <strong class="mono" id="maintenanceMargin">$1,142.00</strong></span><span class="mono">Mode: Cross</span></div>
       </section>
     </div>
 
@@ -71,7 +67,7 @@
       <div class="book-levels" id="bookAsks"></div>
       <div class="book-spread"><strong class="mono up" id="bookMark">112,480.50</strong><span class="mono" id="bookSpread">spread 0.4</span></div>
       <div class="book-levels" id="bookBids"></div>
-      <div class="book-balance"><div class="balance-track" aria-label="Buy depth 58 percent, sell depth 42 percent"><span></span></div><span class="mono">58 / 42</span></div>
+      <div class="book-balance"><div class="balance-track" id="bookBalanceTrack" aria-label="Buy and sell depth"><span id="bookBalanceFill"></span></div><span class="mono" id="bookBalanceText">— / —</span></div>
     </section>
 
     <section class="trading-card order-card" aria-label="Place a simulated order">
@@ -83,16 +79,21 @@
         <div class="order-field"><div class="field-heading"><label for="orderSize">Size</label><span>USDC</span></div><input id="orderSize" class="mono" type="text" inputmode="decimal" value="5,000" autocomplete="off" aria-describedby="orderError"></div>
         <div class="size-presets" role="group" aria-label="Use percentage of available margin"><button type="button" data-size-percent="25">25%</button><button type="button" data-size-percent="50">50%</button><button type="button" data-size-percent="75">75%</button><button type="button" data-size-percent="100">Max</button></div>
         <div class="leverage-field"><div class="field-heading"><label for="leverage">Leverage</label><output for="leverage" id="leverageValue" class="mono">10x</output></div><input id="leverage" type="range" min="1" max="50" value="10" aria-label="Leverage" style="--range-progress:18.37%"></div>
-        <dl class="trade-summary"><div><dt>Available</dt><dd class="mono" id="availableBalance">$10,142.60</dd></div><div><dt>Margin required</dt><dd class="mono" id="requiredMargin">$500.00</dd></div><div><dt>Est. liq. price</dt><dd class="mono" id="liquidationPrice">102,458.30</dd></div><div><dt>Est. fee</dt><dd class="mono up" id="estimatedFee">0.000%</dd></div></dl>
+        <dl class="trade-summary"><div><dt>Demo available</dt><dd class="mono" id="availableBalance">$10,142.60</dd></div><div><dt>Margin required</dt><dd class="mono" id="requiredMargin">$500.00</dd></div><div><dt>Est. liq. price</dt><dd class="mono" id="liquidationPrice">102,458.30</dd></div><div><dt>Est. fee</dt><dd class="mono up" id="estimatedFee">0.000%</dd></div></dl>
         <p class="order-error" id="orderError" role="alert" hidden></p>
-        <button class="place-order" id="submitOrder" type="submit">Buy / Long BTC-PERP</button>
-        <p class="order-disclaimer">Simulated trading · test funds only.<br>No wallet signature or real transaction.</p>
+        <button class="place-order" id="submitOrder" type="submit">Demo · Buy / Long BTC-PERP</button>
+        <p class="order-disclaimer">Demo orders use simulated margin.<br>Your connected wallet funds are not used.</p>
       </form>
     </section>
   </main>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   <dialog class="info-dialog" id="infoDialog" aria-labelledby="dialogTitle"><div class="dialog-heading"><h2 id="dialogTitle"></h2><button id="closeDialog" type="button" aria-label="Close dialog">×</button></div><div id="dialogContent"></div></dialog>
   <noscript><p class="noscript-note">Enable JavaScript to use the simulated trading workspace.</p></noscript>
+  <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="js/chart-datafeed.js"></script>
+  <script src="js/token-icons.js"></script>
+  <script src="js/chart-types.js"></script>
   <script src="js/trade.js"></script>
+  <script type="module" src="wallet-widget/main.js"></script>
 </body>
 </html>

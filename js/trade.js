@@ -6,60 +6,250 @@
     ETH: { name: 'Ethereum', price: 4182.30, oracle: 4182.12, change: 1.08, funding: 0.0026, interest: '$21.7M', volume: '$98.2M', maxLev: 50, step: 0.05 },
     SOL: { name: 'Solana', price: 214.86, oracle: 214.84, change: -0.92, funding: -0.0013, interest: '$12.4M', volume: '$46.8M', maxLev: 25, step: 0.01 }
   };
-  var state = { market: 'BTC', timeframe: '15m', side: 'long', type: 'limit', activity: 'positions', leverage: 10 };
+  var state = { market: 'BTC', timeframe: '15m', chartType: 'candles', side: 'long', type: 'limit', activity: 'positions', leverage: 10 };
   var $ = function (id) { return document.getElementById(id); };
   var format = function (value, digits) { return Number(value).toLocaleString('en-US', { minimumFractionDigits: digits === undefined ? 2 : digits, maximumFractionDigits: digits === undefined ? 2 : digits }); };
   var money = function (value) { return '$' + format(value); };
 
-  function drawChart() {
-    var price = markets[state.market].price;
-    var frame = ['1m', '5m', '15m', '1h', '4h', '1d'].indexOf(state.timeframe);
-    var candles = [];
-    var chart = '<line x1="20" x2="980" y1="116" y2="116" stroke="#243640" stroke-dasharray="3 3"/><line x1="20" x2="980" y1="222" y2="222" stroke="#1c2b35" stroke-dasharray="3 3"/>';
-    var previous = 231;
-    for (var i = 0; i < 44; i++) {
-      var x = 27 + i * 22;
-      var close = 232 - i * 2.77 + Math.sin(i * .49 + frame * .3) * 7 + Math.sin(i * 1.3) * 2.4;
-      var open = previous;
-      var high = Math.min(open, close) - 8 - (i % 5) * 2.2;
-      var low = Math.max(open, close) + 7 + (i % 4) * 3.5;
-      var color = close <= open ? '#32cc9a' : '#ff6678';
-      chart += '<g><line x1="' + x + '" y1="' + high + '" x2="' + x + '" y2="' + low + '" stroke="' + color + '" stroke-opacity=".56" stroke-width="1.2"/><rect x="' + (x - 7.5) + '" y="' + Math.min(open, close) + '" width="15" height="' + Math.max(2.6, Math.abs(open - close)) + '" rx=".7" fill="' + color + '"/></g>';
-      candles.push({ o: price * (1 + (116 - open) / 18000), h: price * (1 + (116 - high) / 18000), l: price * (1 + (116 - low) / 18000), c: price * (1 + (116 - close) / 18000) });
-      previous = close;
-    }
-    $('priceChart').innerHTML = chart;
-    $('priceChart').setAttribute('aria-label', 'Simulated ' + state.market + ' perpetual ' + state.timeframe + ' candlestick chart');
-    $('chartOhlc').innerHTML = '<span>O <b>' + format(price * .99754, 1) + '</b></span><span>H <b>' + format(price * 1.001867, 1) + '</b></span><span>L <b>' + format(price * .995568, 1) + '</b></span><span>C <b class="up">' + format(price, 1) + '</b></span>';
-    $('chartCanvas').onpointermove = function (event) {
-      var rect = $('chartCanvas').getBoundingClientRect();
-      var candle = candles[Math.min(43, Math.max(0, Math.round(((event.clientX - rect.left) / rect.width * 1000 - 27) / 22)))];
-      $('chartTooltip').textContent = 'O ' + format(candle.o) + '  H ' + format(candle.h) + '  L ' + format(candle.l) + '  C ' + format(candle.c);
+  function formatCompactUsd(value) {
+    if (!Number.isFinite(value)) return '—';
+    if (value >= 1e9) return '$' + format(value / 1e9, 1) + 'B';
+    if (value >= 1e6) return '$' + format(value / 1e6, 1) + 'M';
+    if (value >= 1e3) return '$' + format(value / 1e3, 1) + 'K';
+    return money(value);
+  }
+
+  var chart, priceSeries, volumeSeries, chartSub, tickerSub;
+
+  function ensureChart() {
+    if (chart) return;
+    chart = LightweightCharts.createChart($('priceChart'), {
+      layout: { background: { color: 'transparent' }, textColor: '#7f8c9b', fontSize: 11 },
+      grid: { vertLines: { color: '#182129' }, horzLines: { color: '#182129' } },
+      rightPriceScale: { borderColor: '#1c2b35' },
+      timeScale: { borderColor: '#1c2b35', timeVisible: true, secondsVisible: false },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+      autoSize: true
+    });
+    volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, { priceFormat: { type: 'volume' }, priceScaleId: 'volume' });
+    chart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+    // priceSeries changes type when the chart-style picker is used, so this
+    // reads the variable fresh on every move rather than closing over one
+    // fixed series, and handles both OHLC-shaped and single-value-shaped
+    // series data.
+    chart.subscribeCrosshairMove(function (param) {
+      var point = param && param.time && priceSeries && param.seriesData && param.seriesData.get(priceSeries);
+      if (!point) { $('chartTooltip').hidden = true; return; }
+      $('chartTooltip').textContent = point.open !== undefined
+        ? 'O ' + format(point.open) + '  H ' + format(point.high) + '  L ' + format(point.low) + '  C ' + format(point.close)
+        : 'Price ' + format(point.value);
       $('chartTooltip').hidden = false;
-    };
-    $('chartCanvas').onpointerleave = function () { $('chartTooltip').hidden = true; };
+    });
+  }
+
+  function updateOhlc(bar) {
+    var up = bar.close >= bar.open;
+    $('chartOhlc').innerHTML = '<span>O <b>' + format(bar.open, 1) + '</b></span><span>H <b>' + format(bar.high, 1) + '</b></span><span>L <b>' + format(bar.low, 1) + '</b></span><span>C <b class="' + (up ? 'up' : 'down') + '">' + format(bar.close, 1) + '</b></span>';
+  }
+
+  // ---- Chart style (Bars/Candles/Line/Area/.../Heikin Ashi) ----
+  // The OHLC toolbar readout always reflects the raw candle regardless of
+  // style — only the plotted series changes shape. Heikin Ashi is a
+  // transform of the whole history (each bar depends on the previous HA
+  // bar), so its live updates re-run the transform over the kept history
+  // rather than patching a single point; every other style updates in
+  // place, which is cheap enough at ~150 bars either way.
+  function heikinAshi(candles) {
+    var out = [];
+    var prevOpen, prevClose;
+    for (var i = 0; i < candles.length; i++) {
+      var c = candles[i];
+      var haClose = (c.open + c.high + c.low + c.close) / 4;
+      var haOpen = i === 0 ? (c.open + c.close) / 2 : (prevOpen + prevClose) / 2;
+      out.push({ time: c.time, open: haOpen, high: Math.max(c.high, haOpen, haClose), low: Math.min(c.low, haOpen, haClose), close: haClose });
+      prevOpen = haOpen;
+      prevClose = haClose;
+    }
+    return out;
+  }
+  function toLineData(candles) { return candles.map(function (c) { return { time: c.time, value: c.close }; }); }
+  function toHlcAreaData(candles) { return candles.map(function (c) { return { time: c.time, value: (c.high + c.low + c.close) / 3 }; }); }
+  function toColumnData(candles) {
+    return candles.map(function (c, i) {
+      var prevClose = i > 0 ? candles[i - 1].close : c.open;
+      return { time: c.time, value: c.close, color: c.close >= prevClose ? '#32cc9a' : '#ff6678' };
+    });
+  }
+
+  function buildSeriesFor(type) {
+    switch (type) {
+      case 'bars': return chart.addSeries(LightweightCharts.BarSeries, { upColor: '#32cc9a', downColor: '#ff6678' });
+      case 'hollow': return chart.addSeries(LightweightCharts.CandlestickSeries, { upColor: 'rgba(0,0,0,0)', downColor: '#ff6678', borderVisible: true, borderUpColor: '#32cc9a', borderDownColor: '#ff6678', wickUpColor: '#32cc9a', wickDownColor: '#ff6678' });
+      case 'line': return chart.addSeries(LightweightCharts.LineSeries, { color: '#5ee3c4', lineWidth: 2 });
+      case 'line-markers': return chart.addSeries(LightweightCharts.LineSeries, { color: '#5ee3c4', lineWidth: 2, pointMarkersVisible: true });
+      case 'step': return chart.addSeries(LightweightCharts.LineSeries, { color: '#5ee3c4', lineWidth: 2, lineType: LightweightCharts.LineType.WithSteps });
+      case 'area': case 'hlc-area': return chart.addSeries(LightweightCharts.AreaSeries, { lineColor: '#5ee3c4', topColor: 'rgba(94,227,196,.32)', bottomColor: 'rgba(94,227,196,0)' });
+      case 'baseline': return chart.addSeries(LightweightCharts.BaselineSeries, { topLineColor: '#32cc9a', bottomLineColor: '#ff6678', topFillColor1: 'rgba(50,204,154,.28)', topFillColor2: 'rgba(50,204,154,0)', bottomFillColor1: 'rgba(255,102,120,0)', bottomFillColor2: 'rgba(255,102,120,.28)' });
+      case 'columns': return chart.addSeries(LightweightCharts.HistogramSeries, { priceFormat: { type: 'price', precision: 2, minMove: 0.01 } });
+      case 'highlow': return chart.addSeries(LightweightCharts.BarSeries, { upColor: '#32cc9a', downColor: '#ff6678', openVisible: false });
+      case 'heikin-ashi': return chart.addSeries(LightweightCharts.CandlestickSeries, { upColor: '#32cc9a', downColor: '#ff6678', borderVisible: false, wickUpColor: '#32cc9a', wickDownColor: '#ff6678' });
+      default: return chart.addSeries(LightweightCharts.CandlestickSeries, { upColor: '#32cc9a', downColor: '#ff6678', borderVisible: false, wickUpColor: '#32cc9a', wickDownColor: '#ff6678', priceFormat: { type: 'price', precision: 2, minMove: 0.01 } });
+    }
+  }
+
+  function dataForType(type, candles) {
+    switch (type) {
+      case 'bars': case 'hollow': case 'highlow': return candles;
+      case 'heikin-ashi': return heikinAshi(candles);
+      case 'hlc-area': return toHlcAreaData(candles);
+      case 'columns': return toColumnData(candles);
+      case 'line': case 'line-markers': case 'step': case 'area': case 'baseline': return toLineData(candles);
+      default: return candles;
+    }
+  }
+
+  var lastHistory;
+
+  function applyChartType(type) {
+    state.chartType = type;
+    if (priceSeries) { chart.removeSeries(priceSeries); priceSeries = null; }
+    priceSeries = buildSeriesFor(type);
+    if (lastHistory) priceSeries.setData(dataForType(type, lastHistory.candles));
+    $('chartTypeIcon').innerHTML = window.RailflowChartTypes.icons[type] || window.RailflowChartTypes.icons.candles;
+    $('chartTypeButton').setAttribute('aria-label', 'Chart type: ' + window.RailflowChartTypes.label(type));
+    document.querySelectorAll('#chartTypeMenu [data-chart-type]').forEach(function (button) {
+      button.setAttribute('aria-checked', String(button.dataset.chartType === type));
+    });
+  }
+
+  function upsertCandle(candle) {
+    if (!lastHistory) return;
+    var candles = lastHistory.candles;
+    var last = candles[candles.length - 1];
+    if (last && last.time === candle.time) candles[candles.length - 1] = candle;
+    else candles.push(candle);
+  }
+
+  function applyLiveTick(candle) {
+    if (!priceSeries) return;
+    var type = state.chartType;
+    if (type === 'heikin-ashi') { priceSeries.setData(heikinAshi(lastHistory.candles)); return; }
+    if (type === 'bars' || type === 'hollow' || type === 'highlow') { priceSeries.update(candle); return; }
+    if (type === 'hlc-area') { priceSeries.update({ time: candle.time, value: (candle.high + candle.low + candle.close) / 3 }); return; }
+    if (type === 'columns') {
+      var candles = lastHistory.candles;
+      var idx = candles.length - 1;
+      var prevClose = idx > 0 ? candles[idx - 1].close : candle.open;
+      priceSeries.update({ time: candle.time, value: candle.close, color: candle.close >= prevClose ? '#32cc9a' : '#ff6678' });
+      return;
+    }
+    // line, line-markers, step, area, baseline, and the plain candlestick default
+    if (type === 'line' || type === 'line-markers' || type === 'step' || type === 'area' || type === 'baseline') {
+      priceSeries.update({ time: candle.time, value: candle.close });
+      return;
+    }
+    priceSeries.update(candle);
+  }
+
+  function initChartTypeMenu() {
+    var groups = [];
+    window.RailflowChartTypes.list.forEach(function (item) {
+      if (item.newGroup || !groups.length) groups.push([]);
+      groups[groups.length - 1].push(item);
+    });
+    $('chartTypeMenu').innerHTML = groups.map(function (group) {
+      return '<div class="chart-type-menu-group">' + group.map(function (item) {
+        return '<button type="button" role="menuitemradio" data-chart-type="' + item.id + '" aria-checked="' + (item.id === state.chartType) + '">' + window.RailflowChartTypes.icons[item.id] + '<span>' + item.label + '</span></button>';
+      }).join('') + '</div>';
+    }).join('');
+  }
+
+  var chartRequest = 0;
+
+  async function drawChart() {
+    ensureChart();
+    if (chartSub) { window.RailflowDatafeed.unsubscribeBars(chartSub); chartSub = null; }
+    var market = state.market;
+    var timeframe = state.timeframe;
+    var requestId = ++chartRequest;
+    var history = await window.RailflowDatafeed.getBars(market, timeframe, markets[market].price, 150);
+    // The user may have switched market/timeframe again while this request
+    // was in flight; a stale response must not overwrite the newer one.
+    if (requestId !== chartRequest) return;
+    lastHistory = history;
+    applyChartType(state.chartType);
+    volumeSeries.setData(history.volumes);
+    chart.timeScale().fitContent();
+    var lastCandle = history.candles[history.candles.length - 1];
+    var lastVolume = history.volumes[history.volumes.length - 1];
+    updateOhlc(lastCandle);
+    chartSub = window.RailflowDatafeed.subscribeBars(market, timeframe, lastCandle, lastVolume, function (candle, volume) {
+      if (requestId !== chartRequest) return;
+      upsertCandle(candle);
+      volumeSeries.update(volume);
+      applyLiveTick(candle);
+      updateOhlc(candle);
+      if (market === state.market) { markets[market].price = candle.close; renderMarketStrip(market); updateSummary(); drawActivity(); }
+    });
+    $('priceChart').setAttribute('aria-label', market + ' perpetual ' + timeframe + ' ' + window.RailflowChartTypes.label(state.chartType) + ' chart, live from Binance Futures');
+  }
+
+  // Real depth from Binance Futures (see js/chart-datafeed.js). Levels are
+  // grouped into price buckets sized by the precision dropdown — asks
+  // round up to their bucket, bids round down, the same convention real
+  // order-book "group by" controls use — then re-rendered from the last
+  // book on a precision change without waiting for the next tick.
+  var bookSub, lastBook;
+
+  function groupLevels(levels, step, isAsk) {
+    var buckets = [];
+    var index = {};
+    levels.forEach(function (level) {
+      var bucketPrice = (isAsk ? Math.ceil(level.price / step) : Math.floor(level.price / step)) * step;
+      var key = bucketPrice.toFixed(8);
+      if (!(key in index)) { index[key] = { price: bucketPrice, qty: 0 }; buckets.push(index[key]); }
+      index[key].qty += level.qty;
+    });
+    return buckets;
+  }
+
+  function renderOrderBook(book) {
+    var digits = state.market === 'BTC' ? 1 : state.market === 'ETH' ? 2 : 3;
+    var step = Number($('bookPrecision').value);
+    var asks = groupLevels(book.asks, step, true).slice(0, 7).reverse();
+    var bids = groupLevels(book.bids, step, false).slice(0, 7);
+    var maxQty = Math.max.apply(null, asks.concat(bids).map(function (l) { return l.qty; }).concat([0.0001]));
+    function rows(levels, isAsk) {
+      var total = 0;
+      return levels.map(function (level) {
+        total += level.qty;
+        var depth = Math.min(100, Math.round(level.qty / maxQty * 100));
+        return '<button type="button" class="book-row ' + (isAsk ? 'ask' : 'bid') + '" style="--depth:' + depth + '%" data-book-price="' + level.price.toFixed(8) + '" aria-label="Use price ' + format(level.price, digits) + '"><span>' + format(level.price, digits) + '</span><span>' + format(level.qty, 3) + '</span><span>' + format(total) + '</span></button>';
+      }).join('');
+    }
+    $('bookAsks').innerHTML = rows(asks, true);
+    $('bookBids').innerHTML = rows(bids, false);
+    var bestBid = book.bids[0] ? book.bids[0].price : markets[state.market].price;
+    var bestAsk = book.asks[0] ? book.asks[0].price : markets[state.market].price;
+    $('bookMark').textContent = format((bestBid + bestAsk) / 2, digits);
+    $('bookSpread').textContent = 'spread ' + format(bestAsk - bestBid, digits);
+    var bidTotal = bids.reduce(function (sum, l) { return sum + l.qty; }, 0);
+    var askTotal = asks.reduce(function (sum, l) { return sum + l.qty; }, 0);
+    var bidPct = bidTotal + askTotal > 0 ? Math.round(bidTotal / (bidTotal + askTotal) * 100) : 50;
+    $('bookBalanceFill').style.width = bidPct + '%';
+    $('bookBalanceTrack').setAttribute('aria-label', 'Buy depth ' + bidPct + ' percent, sell depth ' + (100 - bidPct) + ' percent');
+    $('bookBalanceText').textContent = bidPct + ' / ' + (100 - bidPct);
   }
 
   function drawOrderbook() {
-    var market = markets[state.market];
-    var step = Number($('bookPrecision').value);
-    var askSizes = [4.812, 2.140, 3.026, 1.408, .962, 2.204, 1.118];
-    var bidSizes = [1.884, 3.407, .960, 2.612, 1.340, 4.028, 1.712];
-    var askOffsets = [11, 10, 8, 6, 4, 2, 1];
-    var bidOffsets = [1, 3, 5, 8, 11, 14, 17];
-    function rows(sizes, isAsk) {
-      var total = 0;
-      return sizes.map(function (size, i) {
-        total += size;
-        var level = market.price + (isAsk ? askOffsets[i] : -bidOffsets[i]) * step;
-        var depth = [59, 44, 65, 28, 34, 53, 40][i];
-        return '<button type="button" class="book-row ' + (isAsk ? 'ask' : 'bid') + '" style="--depth:' + depth + '%" data-book-price="' + level.toFixed(2) + '" aria-label="Use price ' + format(level) + '"><span>' + format(level, state.market === 'BTC' ? 1 : 2) + '</span><span>' + format(size, 3) + '</span><span>' + format(total) + '</span></button>';
-      }).join('');
-    }
-    $('bookAsks').innerHTML = rows(askSizes, true);
-    $('bookBids').innerHTML = rows(bidSizes, false);
-    $('bookMark').textContent = format(market.price);
-    $('bookSpread').textContent = 'spread ' + format(step * 2, state.market === 'BTC' ? 1 : 2);
+    if (bookSub) { window.RailflowDatafeed.unsubscribeOrderBook(bookSub); bookSub = null; }
+    var symbol = state.market;
+    lastBook = null;
+    bookSub = window.RailflowDatafeed.subscribeOrderBook(symbol, function (book) {
+      if (symbol !== state.market) return;
+      lastBook = book;
+      renderOrderBook(book);
+    });
   }
 
   var account;
@@ -122,7 +312,7 @@
     $('leverageValue').textContent = state.leverage + 'x';
     $('leverage').style.setProperty('--range-progress', ((state.leverage - 1) / (markets[state.market].maxLev - 1) * 100) + '%');
     $('leverage').setAttribute('aria-valuetext', state.leverage + ' times');
-    $('submitOrder').textContent = (state.side === 'long' ? 'Buy / Long ' : 'Sell / Short ') + state.market + '-PERP';
+    $('submitOrder').textContent = 'Demo · ' + (state.side === 'long' ? 'Buy / Long ' : 'Sell / Short ') + state.market + '-PERP';
     $('submitOrder').classList.toggle('is-short', state.side === 'short');
     $('marginUsage').textContent = format(equity() > 0 ? usedMargin() / equity() * 100 : 0, 1) + '%';
     $('maintenanceMargin').textContent = money(account.positions.reduce(function (sum, p) { return sum + p.margin / 2; }, 0));
@@ -184,13 +374,8 @@
     updateSummary();
   }
 
-  function selectMarket(symbol) {
-    state.market = symbol;
+  function renderMarketStrip(symbol) {
     var market = markets[symbol];
-    document.title = symbol + '-PERP · Railflow';
-    $('marketSymbol').innerHTML = symbol + '-PERP <span class="chevron" aria-hidden="true">▾</span>';
-    $('marketName').textContent = market.name + ' perpetual';
-    $('marketMaxLev').textContent = market.maxLev + 'x';
     $('markPrice').textContent = format(market.price);
     $('marketChange').textContent = (market.change >= 0 ? '+' : '') + format(market.change) + '%';
     $('marketChange').className = 'mono ' + (market.change >= 0 ? 'up' : 'down');
@@ -199,12 +384,49 @@
     $('marketFunding').className = 'mono ' + (market.funding >= 0 ? 'up' : 'down');
     $('marketInterest').textContent = market.interest;
     $('marketVolume').textContent = market.volume;
+    $('bookMark').textContent = format(market.price);
+    document.querySelectorAll('#marketMenu [data-market]').forEach(function (button) {
+      var priceEl = button.querySelector('.mono');
+      if (priceEl) priceEl.textContent = format(markets[button.dataset.market].price);
+    });
+  }
+
+  // Tracks every tradable market (not just the one currently on screen) so
+  // a position's Mark/UPNL stays accurate even while you're viewing a
+  // different market's chart — started once, for the whole session.
+  function startMarketTracking() {
+    if (tickerSub) { window.RailflowDatafeed.unsubscribeMarkets(tickerSub); tickerSub = null; }
+    tickerSub = window.RailflowDatafeed.subscribeMarkets(Object.keys(markets), function (symbol, ticker) {
+      if (!markets[symbol]) return;
+      // The WebSocket path can deliver price/change before open interest's
+      // separate REST poll resolves; only overwrite fields that arrived.
+      if (ticker.price !== undefined) markets[symbol].price = ticker.price;
+      if (ticker.oraclePrice !== undefined) markets[symbol].oracle = ticker.oraclePrice;
+      if (ticker.changePercent !== undefined) markets[symbol].change = ticker.changePercent;
+      if (ticker.fundingRate !== undefined) markets[symbol].funding = ticker.fundingRate;
+      if (ticker.openInterestUsd !== undefined) markets[symbol].interest = formatCompactUsd(ticker.openInterestUsd);
+      if (ticker.volumeUsd !== undefined) markets[symbol].volume = formatCompactUsd(ticker.volumeUsd);
+      if (symbol === state.market) { renderMarketStrip(symbol); updateSummary(); }
+      drawActivity(); // keeps Positions' Mark/UPNL live for every open market, not just the selected one
+    });
+  }
+
+  function selectMarket(symbol) {
+    state.market = symbol;
+    var market = markets[symbol];
+    document.title = symbol + '-PERP · Railflow';
+    $('marketSymbol').innerHTML = symbol + '-PERP <span class="chevron" aria-hidden="true">▾</span>';
+    $('marketName').textContent = market.name + ' perpetual';
+    $('marketMaxLev').textContent = market.maxLev + 'x';
+    $('marketLogo').src = window.RailflowTokenIcons.logoUrl(symbol);
+    $('marketLogo').alt = symbol;
     $('orderPrice').value = format(market.price);
     $('leverage').max = market.maxLev;
     state.leverage = Math.min(state.leverage, market.maxLev);
     $('leverage').value = state.leverage;
     $('bookPrecision').innerHTML = [1, 2, 10].map(function (multiple) { var step = market.step * multiple; return '<option value="' + step + '">' + step + '</option>'; }).join('');
-    $('marketMenu').innerHTML = Object.keys(markets).map(function (key) { return '<button type="button" data-market="' + key + '" aria-pressed="' + (key === symbol) + '"><span>' + key + '-PERP</span><span class="mono">' + format(markets[key].price) + '</span></button>'; }).join('');
+    $('marketMenu').innerHTML = Object.keys(markets).map(function (key) { return '<button type="button" data-market="' + key + '" aria-pressed="' + (key === symbol) + '"><span class="market-menu-item"><img class="tick" src="' + window.RailflowTokenIcons.logoUrl(key) + '" alt="" width="20" height="20" loading="lazy"><span>' + key + '-PERP</span></span><span class="mono">' + format(markets[key].price) + '</span></button>'; }).join('');
+    renderMarketStrip(symbol);
     error('');
     drawChart();
     drawOrderbook();
@@ -316,36 +538,62 @@
   });
   $('leverage').addEventListener('input', function () { state.leverage = Number(this.value); error(''); updateSummary(); });
   $('useMid').addEventListener('click', function () { $('orderPrice').value = format(markets[state.market].price); error(''); updateSummary(); });
-  $('bookPrecision').addEventListener('change', drawOrderbook);
+  $('bookPrecision').addEventListener('change', function () { if (lastBook) renderOrderBook(lastBook); });
   ['bookAsks', 'bookBids'].forEach(function (id) {
     $(id).addEventListener('click', function (event) { var button = event.target.closest('[data-book-price]'); if (button) { setOrderType('limit'); $('orderPrice').value = format(Number(button.dataset.bookPrice)); updateSummary(); } });
   });
-  $('marketPicker').addEventListener('click', function () { toggleMenu('marketPicker', 'marketMenu'); toggleMenu('walletButton', 'walletMenu', false); });
+  $('marketPicker').addEventListener('click', function () { toggleMenu('marketPicker', 'marketMenu'); toggleMenu('chartTypeButton', 'chartTypeMenu', false); });
   $('marketMenu').addEventListener('click', function (event) { var button = event.target.closest('[data-market]'); if (button) { selectMarket(button.dataset.market); toggleMenu('marketPicker', 'marketMenu', false); $('marketPicker').focus(); } });
-  $('walletButton').addEventListener('click', function () { toggleMenu('walletButton', 'walletMenu'); toggleMenu('marketPicker', 'marketMenu', false); });
+  $('chartTypeButton').addEventListener('click', function () { toggleMenu('chartTypeButton', 'chartTypeMenu'); toggleMenu('marketPicker', 'marketMenu', false); });
+  $('chartTypeMenu').addEventListener('click', function (event) {
+    var button = event.target.closest('[data-chart-type]');
+    if (!button) return;
+    applyChartType(button.dataset.chartType);
+    chart.timeScale().fitContent();
+    toggleMenu('chartTypeButton', 'chartTypeMenu', false);
+    $('chartTypeButton').focus();
+  });
   document.addEventListener('click', function (event) {
-    if (!event.target.closest('.wallet-wrap')) toggleMenu('walletButton', 'walletMenu', false);
     if (!event.target.closest('.market-picker-wrap')) toggleMenu('marketPicker', 'marketMenu', false);
+    if (!event.target.closest('.chart-type-picker')) toggleMenu('chartTypeButton', 'chartTypeMenu', false);
   });
   document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape') {
-      if (!$('walletMenu').hidden) { toggleMenu('walletButton', 'walletMenu', false); $('walletButton').focus(); }
-      if (!$('marketMenu').hidden) { toggleMenu('marketPicker', 'marketMenu', false); $('marketPicker').focus(); }
-    }
+    if (event.key === 'Escape' && !$('marketMenu').hidden) { toggleMenu('marketPicker', 'marketMenu', false); $('marketPicker').focus(); }
+    if (event.key === 'Escape' && !$('chartTypeMenu').hidden) { toggleMenu('chartTypeButton', 'chartTypeMenu', false); $('chartTypeButton').focus(); }
   });
   $('portfolioLink').addEventListener('click', function () { setActivity('positions', true); $('portfolio').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'nearest' }); });
   $('vaultsLink').addEventListener('click', function () { dialog('Vaults', '<p>Vaults are not available in this trading demo. You can explore trading with the simulated funds in your margin account.</p><button type="button" class="place-order" data-dialog-dismiss>Back to trading</button>'); });
-  $('accountDetails').addEventListener('click', function () { dialog('Demo account', '<p>This preview uses a simulated wallet and sample market data. No blockchain account is connected. Balances reset when you reload the page.</p><dl class="trade-summary"><div><dt>Equity</dt><dd class="mono">' + money(equity()) + '</dd></div><div><dt>Available margin</dt><dd class="mono">' + money(available()) + '</dd></div><div><dt>Open positions</dt><dd class="mono">' + account.positions.length + '</dd></div></dl>'); });
-  $('faucetLink').addEventListener('click', function () { dialog('Testnet faucet', '<p>Add 10,000 simulated USDC to this demo account. Available once per session.</p><button type="button" class="place-order" id="claimFunds"' + (account.claimed ? ' disabled' : '') + '>' + (account.claimed ? 'Already claimed this session' : 'Claim 10,000 test USDC') + '</button>'); });
+  $('accountDetails').addEventListener('click', function () { dialog('Demo account', '<p>These positions and balances belong to a simulated trading account, separate from your connected wallet. Demo balances reset when you reload the page.</p><dl class="trade-summary"><div><dt>Demo equity</dt><dd class="mono">' + money(equity()) + '</dd></div><div><dt>Demo available margin</dt><dd class="mono">' + money(available()) + '</dd></div><div><dt>Demo open positions</dt><dd class="mono">' + account.positions.length + '</dd></div></dl>'); });
+  $('faucetLink').addEventListener('click', function () { dialog('USDC test funds', '<p>To fund your actual wallet, open Circle Faucet, select Arc Testnet, and enter your wallet address.</p><a class="btn btn--primary wallet-faucet-link" href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer">Open Circle Faucet</a><div class="wallet-menu-divider"></div><p>For the trading demo, add 10,000 simulated USDC once per session. This does not send tokens to your wallet.</p><button type="button" class="place-order" id="claimFunds"' + (account.claimed ? ' disabled' : '') + '>' + (account.claimed ? 'Demo funds already added' : 'Add 10,000 demo USDC') + '</button>'); });
   $('dialogContent').addEventListener('click', function (event) {
     if (event.target.closest('[data-dialog-dismiss]')) $('infoDialog').close();
     if (event.target.id === 'claimFunds' && !account.claimed) { account.cash += 10000; account.claimed = true; updateSummary(); $('infoDialog').close(); notify('10,000 simulated USDC added to your margin account.'); }
   });
   $('closeDialog').addEventListener('click', function () { $('infoDialog').close(); });
   $('infoDialog').addEventListener('click', function (event) { if (event.target === this) { var rect = this.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) this.close(); } });
-  $('resetDemo').addEventListener('click', function () { resetAccount(); state.leverage = 10; $('leverage').value = 10; $('orderSize').value = '5,000'; selectMarket('BTC'); setActivity('positions'); toggleMenu('walletButton', 'walletMenu', false); notify('Demo account reset.'); });
+  $('resetDemo').addEventListener('click', function () { resetAccount(); state.leverage = 10; $('leverage').value = 10; $('orderSize').value = '5,000'; selectMarket('BTC'); setActivity('positions'); notify('Demo account reset.'); });
 
+  initChartTypeMenu();
   resetAccount();
   selectMarket('BTC');
   drawActivity();
+  startMarketTracking();
+
+  window.addEventListener('pagehide', function () {
+    if (chartSub) { window.RailflowDatafeed.unsubscribeBars(chartSub); chartSub = null; }
+    if (bookSub) { window.RailflowDatafeed.unsubscribeOrderBook(bookSub); bookSub = null; }
+    if (tickerSub) { window.RailflowDatafeed.unsubscribeMarkets(tickerSub); tickerSub = null; }
+  });
+  // A page the browser restores from the back/forward cache (clicking Back
+  // after visiting index.html, for example) doesn't re-run this script —
+  // the WebSockets above were already closed by pagehide, so the chart,
+  // order book, and Positions' live Mark/UPNL would otherwise sit frozen.
+  // Re-running the same setup calls is safe: each tears down whatever
+  // subscription it already holds before creating a new one.
+  window.addEventListener('pageshow', function (event) {
+    if (!event.persisted) return;
+    drawChart();
+    drawOrderbook();
+    startMarketTracking();
+  });
 })();

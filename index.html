@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="wallet-widget/main.css">
 </head>
 <body>
 
@@ -37,7 +38,7 @@
 
     <div class="header__actions">
       <div class="network-pill"><span class="network-dot"></span>ARC TESTNET</div>
-      <a href="trade.html" class="btn btn--primary btn--sm">Connect wallet</a>
+      <div id="wallet-home-root"></div>
       <button class="nav-toggle" id="navToggle" aria-label="Mở menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -67,6 +68,7 @@
       <div class="panel">
         <div class="panel__head">
           <div class="panel__pair">
+            <img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCBTC.svg" alt="BTC" width="22" height="22" loading="lazy">
             <span class="mono">BTC-PERP</span>
             <span class="pill-lev">50x</span>
           </div>
@@ -128,70 +130,70 @@
           <div>Market</div>
           <div class="ta-r">Mark price</div>
           <div class="ta-r">24h</div>
-          <div class="ta-r">Funding 1h</div>
+          <div class="ta-r">Funding 8h</div>
           <div class="ta-r">Open interest</div>
           <div class="ta-r">Max lev</div>
         </div>
 
-        <div class="table-row mono">
-          <div class="market-cell"><span class="tick">BTC</span>BTC-PERP</div>
-          <div class="ta-r">112,480.50</div>
-          <div class="ta-r up">+2.14%</div>
-          <div class="ta-r up">+0.0041%</div>
-          <div class="ta-r dim">$38.2M</div>
+        <div class="table-row mono" data-market="BTC">
+          <div class="market-cell"><img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCBTC.svg" alt="BTC" width="22" height="22" loading="lazy">BTC-PERP</div>
+          <div class="ta-r" data-field="price">112,480.50</div>
+          <div class="ta-r up" data-field="change">+2.14%</div>
+          <div class="ta-r up" data-field="funding">+0.0041%</div>
+          <div class="ta-r dim" data-field="interest">$38.2M</div>
           <div class="ta-r muted">50x</div>
         </div>
-        <div class="table-row mono">
-          <div class="market-cell"><span class="tick">ETH</span>ETH-PERP</div>
-          <div class="ta-r">4,182.30</div>
-          <div class="ta-r up">+1.08%</div>
-          <div class="ta-r up">+0.0026%</div>
-          <div class="ta-r dim">$21.7M</div>
+        <div class="table-row mono" data-market="ETH">
+          <div class="market-cell"><img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCETH.svg" alt="ETH" width="22" height="22" loading="lazy">ETH-PERP</div>
+          <div class="ta-r" data-field="price">4,182.30</div>
+          <div class="ta-r up" data-field="change">+1.08%</div>
+          <div class="ta-r up" data-field="funding">+0.0026%</div>
+          <div class="ta-r dim" data-field="interest">$21.7M</div>
           <div class="ta-r muted">50x</div>
         </div>
-        <div class="table-row mono">
-          <div class="market-cell"><span class="tick">SOL</span>SOL-PERP</div>
-          <div class="ta-r">214.86</div>
-          <div class="ta-r down">-0.92%</div>
-          <div class="ta-r down">-0.0013%</div>
-          <div class="ta-r dim">$12.4M</div>
+        <div class="table-row mono" data-market="SOL">
+          <div class="market-cell"><img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCSOL.svg" alt="SOL" width="22" height="22" loading="lazy">SOL-PERP</div>
+          <div class="ta-r" data-field="price">214.86</div>
+          <div class="ta-r down" data-field="change">-0.92%</div>
+          <div class="ta-r down" data-field="funding">-0.0013%</div>
+          <div class="ta-r dim" data-field="interest">$12.4M</div>
           <div class="ta-r muted">25x</div>
         </div>
-        <div class="table-row mono">
-          <div class="market-cell"><span class="tick">ARC</span>ARC-PERP</div>
-          <div class="ta-r">1.4824</div>
-          <div class="ta-r up">+9.37%</div>
-          <div class="ta-r up">+0.0118%</div>
-          <div class="ta-r dim">$8.9M</div>
+        <div class="table-row mono" data-market="LINK">
+          <div class="market-cell"><img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCLINK.svg" alt="LINK" width="22" height="22" loading="lazy">LINK-PERP</div>
+          <div class="ta-r" data-field="price">11.828</div>
+          <div class="ta-r down" data-field="change">-0.42%</div>
+          <div class="ta-r down" data-field="funding">-0.0022%</div>
+          <div class="ta-r dim" data-field="interest">$6.4M</div>
           <div class="ta-r muted">20x</div>
         </div>
-        <div class="table-row mono">
-          <div class="market-cell"><span class="tick">HYPE</span>HYPE-PERP</div>
-          <div class="ta-r">41.270</div>
-          <div class="ta-r up">+3.62%</div>
-          <div class="ta-r up">+0.0074%</div>
-          <div class="ta-r dim">$5.6M</div>
+        <div class="table-row mono" data-market="HYPE">
+          <div class="market-cell"><img class="tick" src="img/hype-logo.jpg" alt="HYPE" width="22" height="22" loading="lazy">HYPE-PERP</div>
+          <div class="ta-r" data-field="price">41.270</div>
+          <div class="ta-r up" data-field="change">+3.62%</div>
+          <div class="ta-r up" data-field="funding">+0.0074%</div>
+          <div class="ta-r dim" data-field="interest">$5.6M</div>
           <div class="ta-r muted">20x</div>
         </div>
-        <div class="table-row mono">
-          <div class="market-cell"><span class="tick">SUI</span>SUI-PERP</div>
-          <div class="ta-r">3.8420</div>
-          <div class="ta-r down">-1.47%</div>
-          <div class="ta-r down">-0.0008%</div>
-          <div class="ta-r dim">$3.1M</div>
+        <div class="table-row mono" data-market="SUI">
+          <div class="market-cell"><img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCSUI.svg" alt="SUI" width="22" height="22" loading="lazy">SUI-PERP</div>
+          <div class="ta-r" data-field="price">3.8420</div>
+          <div class="ta-r down" data-field="change">-1.47%</div>
+          <div class="ta-r down" data-field="funding">-0.0008%</div>
+          <div class="ta-r dim" data-field="interest">$3.1M</div>
           <div class="ta-r muted">20x</div>
         </div>
-        <div class="table-row mono">
-          <div class="market-cell"><span class="tick">DOGE</span>DOGE-PERP</div>
-          <div class="ta-r">0.29140</div>
-          <div class="ta-r up">+0.41%</div>
-          <div class="ta-r up">+0.0019%</div>
-          <div class="ta-r dim">$2.4M</div>
+        <div class="table-row mono" data-market="DOGE">
+          <div class="market-cell"><img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCDOGE.svg" alt="DOGE" width="22" height="22" loading="lazy">DOGE-PERP</div>
+          <div class="ta-r" data-field="price">0.29140</div>
+          <div class="ta-r up" data-field="change">+0.41%</div>
+          <div class="ta-r up" data-field="funding">+0.0019%</div>
+          <div class="ta-r dim" data-field="interest">$2.4M</div>
           <div class="ta-r muted">10x</div>
         </div>
 
         <div class="table-foot">
-          <span>Funding tất toán mỗi giờ. Funding âm trả cho vị thế Long.</span>
+          <span>Funding tất toán mỗi 8 giờ. Funding âm trả cho vị thế Long.</span>
           <span class="mono">Oracle: Arc median · 12 feeds</span>
         </div>
       </div>
@@ -237,7 +239,7 @@
       <div>
         <div class="eyebrow-sm">Arc testnet</div>
         <h2 class="h2">Ba bước để có ví testnet đầy tài sản</h2>
-        <p class="section-lead">Test fund không có giá trị thực và sẽ reset mỗi khi network nâng cấp. Mọi hoạt động ở đây đều được tính vào hạng trader trên mainnet.</p>
+        <p class="section-lead">Kết nối ví thật trên Arc Testnet để xem số dư USDC thử nghiệm. Các lệnh trong giao diện Railflow hiện dùng tài khoản demo riêng.</p>
 
         <div class="steps">
           <div class="step">
@@ -250,33 +252,33 @@
           <div class="step">
             <div class="step__num">2</div>
             <div>
-              <h4>Nhận 10,000 USDC test</h4>
-              <p>Mỗi ví được nhận một lần mỗi 24 giờ từ faucet. Gas được tài trợ sẵn, không cần số dư native để bắt đầu.</p>
+              <h4>Nhận USDC test từ Circle</h4>
+              <p>Chọn Arc Testnet trên Circle Faucet và nhập địa chỉ ví của bạn. USDC test cũng là tài sản dùng trả phí mạng trên Arc.</p>
             </div>
           </div>
           <div class="step">
             <div class="step__num">3</div>
             <div>
-              <h4>Nạp vào margin và giao dịch</h4>
-              <p>Chuyển USDC vào tài khoản margin chỉ với một chữ ký, rồi mở vị thế đầu tiên trên bất kỳ thị trường nào trong 34 thị trường.</p>
+              <h4>Mở trang giao dịch</h4>
+              <p>Kiểm tra số dư ví trên mạng Arc Testnet và thử đặt lệnh bằng tài khoản demo. Số dư demo được hiển thị riêng với số dư trong ví.</p>
             </div>
           </div>
         </div>
 
         <div class="hero__cta" style="margin-top:28px">
-          <a href="#" class="btn btn--primary">Mở faucet</a>
-          <a href="#" class="btn btn--ghost">Đọc hướng dẫn testnet</a>
+          <a href="https://faucet.circle.com/" class="btn btn--primary" target="_blank" rel="noopener noreferrer">Mở Circle Faucet</a>
+          <a href="https://docs.arc.io/integrate/connect-to-arc" class="btn btn--ghost" target="_blank" rel="noopener noreferrer">Đọc hướng dẫn testnet</a>
         </div>
       </div>
 
       <div class="network-card">
         <div class="network-card__head mono">Chi tiết mạng</div>
         <div class="network-row"><span>Tên mạng</span><span class="mono">Arc Testnet</span></div>
-        <div class="network-row"><span>Chain ID</span><span class="mono">10241</span></div>
-        <div class="network-row"><span>RPC URL</span><span class="mono trunc">rpc.testnet.arc.network</span></div>
-        <div class="network-row"><span>Explorer</span><span class="mono">explorer.testnet.arc.network</span></div>
-        <div class="network-row"><span>Collateral</span><span class="mono">USDC (test)</span></div>
-        <div class="network-row network-row--last"><span>Giới hạn faucet</span><span class="mono accent-text">10,000 / 24h</span></div>
+        <div class="network-row"><span>Chain ID</span><span class="mono">5042002</span></div>
+        <div class="network-row"><span>RPC URL</span><span class="mono trunc">rpc.testnet.arc.io</span></div>
+        <div class="network-row"><span>Explorer</span><span class="mono">testnet.arcscan.app</span></div>
+        <div class="network-row"><span>Tiền tệ / Gas</span><span class="mono">USDC (test)</span></div>
+        <div class="network-row network-row--last"><span>Giới hạn faucet</span><span class="accent-text">Theo Circle Faucet</span></div>
         <div class="network-card__foot">Railflow không bao giờ hỏi seed phrase. Kiểm tra kỹ URL trước khi ký bất kỳ giao dịch nào.</div>
       </div>
     </div>
@@ -336,5 +338,8 @@
   </footer>
 
   <script src="js/main.js"></script>
+  <script src="js/chart-datafeed.js"></script>
+  <script src="js/home-prices.js"></script>
+  <script type="module" src="wallet-widget/main.js"></script>
 </body>
 </html>
