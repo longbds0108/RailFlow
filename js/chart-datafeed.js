@@ -64,7 +64,7 @@
   // that follow, so "connected" alone isn't proof the stream is alive.
   // One watchdog timer, re-armed on open and on every message, covers both
   // "never connects" and "connects but goes silent" the same way.
-  var STREAM_SILENCE_MS = 8000;
+  var STREAM_SILENCE_MS = 4000;
 
   function openKlineStream(symbol, resolution, onCandle, onFail) {
     var pair = FUTURES_SYMBOL[symbol];

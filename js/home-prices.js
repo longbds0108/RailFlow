@@ -30,6 +30,39 @@
   var rows = {};
   document.querySelectorAll('#markets [data-market]').forEach(function (row) { rows[row.dataset.market] = row; });
 
+  // The static numbers baked into index.html are just placeholder markup —
+  // on a real page load they can sit stale for a few seconds before the
+  // first live tick arrives (Binance's WebSocket stream occasionally opens
+  // but then delivers nothing on some networks; js/chart-datafeed.js falls
+  // back to REST polling after a short watchdog timeout). Showing those
+  // stale numbers as if they were current would be exactly the kind of
+  // fabricated-looking price this app is built to avoid, so blank
+  // everything to a neutral "loading" placeholder immediately and let the
+  // first real update (WS or REST) fill it in.
+  function showLoadingState() {
+    Object.keys(rows).forEach(function (symbol) {
+      var row = rows[symbol];
+      ['price', 'change', 'funding', 'interest'].forEach(function (field) {
+        var el = row.querySelector('[data-field="' + field + '"]');
+        if (!el) return;
+        el.textContent = '…';
+        el.classList.remove('up', 'down');
+      });
+    });
+    if (!panel) return;
+    var priceEl = panel.querySelector('.panel__price .price');
+    var chgEl = panel.querySelector('.panel__price .price-chg');
+    if (priceEl) priceEl.textContent = '…';
+    if (chgEl) { chgEl.textContent = '…'; chgEl.classList.remove('up', 'down'); }
+    var mid = panel.querySelector('.ob-mid span:first-child');
+    if (mid) mid.textContent = '…';
+    var entry = panel.querySelector('.order-summary div:first-child span:last-child');
+    if (entry) entry.textContent = '…';
+    var liq = panel.querySelector('.order-summary div:nth-child(2) span:last-child');
+    if (liq) liq.textContent = '…';
+    panel.querySelectorAll('.ob-row span:first-child').forEach(function (el) { el.textContent = '…'; });
+  }
+
   function updateRow(symbol, ticker) {
     var row = rows[symbol];
     if (!row) return;
@@ -74,6 +107,8 @@
     panel.querySelectorAll('.ob-row.ask span:first-child').forEach(function (el, i) { el.textContent = format(ticker.price * (1 + (askOffsets[i] || 0.00001)), digits); });
     panel.querySelectorAll('.ob-row.bid span:first-child').forEach(function (el, i) { el.textContent = format(ticker.price * (1 - (bidOffsets[i] || 0.00006)), digits); });
   }
+
+  showLoadingState();
 
   var sub;
   function start() {

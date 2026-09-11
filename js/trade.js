@@ -6,7 +6,11 @@
     ETH: { name: 'Ethereum', price: 4182.30, oracle: 4182.12, change: 1.08, funding: 0.0026, interest: '$21.7M', volume: '$98.2M', maxLev: 50, step: 0.05 },
     SOL: { name: 'Solana', price: 214.86, oracle: 214.84, change: -0.92, funding: -0.0013, interest: '$12.4M', volume: '$46.8M', maxLev: 25, step: 0.01 }
   };
-  var state = { market: 'BTC', timeframe: '15m', chartType: 'candles', side: 'long', type: 'limit', activity: 'positions', leverage: 10 };
+  var state = { market: 'BTC', timeframe: '15m', chartType: 'candles', side: 'long', type: 'limit', activity: 'positions', leverage: 10, marginMode: 'cross', priceDirty: false };
+  // Fraction of a position's initial margin held back as maintenance margin
+  // once opened (matches the 0.891 "loss before liquidation" constant used
+  // by the isolated liquidation-price estimate below: 1 - 0.891 = 0.109).
+  var MAINT_MARGIN_RATIO = 0.109;
   var $ = function (id) { return document.getElementById(id); };
   var format = function (value, digits) { return Number(value).toLocaleString('en-US', { minimumFractionDigits: digits === undefined ? 2 : digits, maximumFractionDigits: digits === undefined ? 2 : digits }); };
   var money = function (value) { return '$' + format(value); };
@@ -189,7 +193,7 @@
       volumeSeries.update(volume);
       applyLiveTick(candle);
       updateOhlc(candle);
-      if (market === state.market) { markets[market].price = candle.close; renderMarketStrip(market); updateSummary(); drawActivity(); }
+      if (market === state.market) { markets[market].price = candle.close; renderMarketStrip(market); syncOrderPriceLive(market, candle.close); updateSummary(); drawActivity(); }
     });
     $('priceChart').setAttribute('aria-label', market + ' perpetual ' + timeframe + ' ' + window.RailflowChartTypes.label(state.chartType) + ' chart, live from Binance Futures');
   }
@@ -257,17 +261,10 @@
   var toastTimer;
 
   function resetAccount() {
-    // These opening balances reproduce the supplied demo account snapshot.
-    account = {
-      cash: 10258.227,
-      positions: [
-        { id: 1, market: 'BTC', side: 'long', leverage: 10, quantity: .482, entry: 109204, liquidation: 101980.4, margin: 1456.02 },
-        { id: 2, market: 'SOL', side: 'short', leverage: 5, quantity: 128, entry: 219.4, liquidation: 251.8, margin: 770 }
-      ],
-      orders: [{ id: 3, market: 'BTC', side: 'long', type: 'limit', price: 110000, size: 500, leverage: 10, margin: 50 }],
-      fills: [],
-      claimed: false
-    };
+    // Starts with no positions or orders — those only appear once you place
+    // a demo trade through the order form. Claim demo USDC via the faucet
+    // dialog before trading.
+    account = { cash: 0, positions: [], orders: [], orderHistory: [], fills: [], fundingHistory: [], realizedPnl: [], claimed: false };
   }
 
   function pnl(position) { return (markets[position.market].price - position.entry) * position.quantity * (position.side === 'long' ? 1 : -1); }
@@ -280,7 +277,47 @@
     return Number(raw.replace(/,/g, ''));
   }
   function signedMoney(value) { return (value >= 0 ? '+' : '−') + money(Math.abs(value)); }
+  // Isolated: this position's own reserved margin is its only backstop, so
+  // its liquidation price is fixed at entry regardless of the rest of the
+  // account (real isolated-margin behavior).
   function estimatedLiq(price, side, leverage) { return price * (1 + (side === 'long' ? -1 : 1) * (.891 / leverage)); }
+  function maintMargin(position) { return position.margin * MAINT_MARGIN_RATIO; }
+  // Cross: every cross position shares the account's cash and every other
+  // cross position's live P&L as its margin backstop, so its liquidation
+  // price moves as the rest of the account moves. Solves for the price of
+  // this one position (others' mark prices held constant) at which total
+  // cross equity drops to total cross maintenance margin. `excludeId` keeps
+  // an existing position from being double-counted in the "other cross
+  // positions" sums it also belongs to.
+  function crossLiquidationPrice(entry, side, quantity, margin, excludeId) {
+    var others = account.positions.filter(function (p) { return p.marginMode === 'cross' && p.id !== excludeId; });
+    var totalMaint = others.reduce(function (sum, p) { return sum + maintMargin(p); }, 0) + margin * MAINT_MARGIN_RATIO;
+    var othersPnl = others.reduce(function (sum, p) { return sum + pnl(p); }, 0);
+    var budget = account.cash + othersPnl - totalMaint;
+    var sign = side === 'long' ? 1 : -1;
+    return Math.max(0, entry - sign * budget / quantity);
+  }
+  // Binance settles funding every 8h, on the hour, at 00:00/08:00/16:00 UTC.
+  // Rather than fabricate a running funding number, a position only accrues
+  // funding when a real settlement boundary is actually crossed while it's
+  // open, using whatever the live funding rate is at that moment — so most
+  // demo sessions (shorter than 8h) genuinely show $0.00, which is correct,
+  // not a placeholder.
+  function fundingEpoch(ts) { return Math.floor(ts / (8 * 60 * 60 * 1000)); }
+  function applyFundingIfDue(position) {
+    var currentEpoch = fundingEpoch(Date.now());
+    if (currentEpoch <= position.lastFundingEpoch) return;
+    var epochsElapsed = currentEpoch - position.lastFundingEpoch;
+    var market = markets[position.market];
+    var notional = position.quantity * market.price;
+    var rate = market.funding / 100;
+    var sign = position.side === 'long' ? -1 : 1; // longs pay shorts when funding is positive
+    var payment = notional * rate * sign * epochsElapsed;
+    position.fundingPaid += payment;
+    account.cash += payment;
+    account.fundingHistory.unshift({ market: position.market, side: position.side, rate: market.funding, payment: payment, time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
+    position.lastFundingEpoch = currentEpoch;
+  }
   function feeRate(price) {
     var market = markets[state.market];
     var takesLiquidity = state.type === 'limit' && (state.side === 'long' ? price >= market.price + market.step : price <= market.price - market.step);
@@ -307,43 +344,89 @@
     $('headerEquity').textContent = money(equity());
     $('availableBalance').textContent = money(available());
     $('requiredMargin').textContent = validSize ? money(size / state.leverage) : '—';
-    $('liquidationPrice').textContent = validPrice ? format(estimatedLiq(price, state.side, state.leverage)) : '—';
+    var liqReady = state.marginMode === 'isolated' ? validPrice : (validPrice && validSize);
+    $('liquidationPrice').textContent = liqReady
+      ? format(state.marginMode === 'isolated'
+        ? estimatedLiq(price, state.side, state.leverage)
+        : crossLiquidationPrice(price, state.side, size / price, size / state.leverage))
+      : '—';
     $('estimatedFee').textContent = feeRate(price) === 0 ? '0.000%' : '0.025%';
+    $('marginModeNote').textContent = state.marginMode === 'isolated'
+      ? 'Isolated: only this position\'s own reserved margin backs it. Its liquidation price is fixed at entry and losses can\'t exceed the margin you allocate to it.'
+      : 'Cross: shared margin backs every cross position, so a position\'s liquidation price moves with your whole account.';
     $('leverageValue').textContent = state.leverage + 'x';
     $('leverage').style.setProperty('--range-progress', ((state.leverage - 1) / (markets[state.market].maxLev - 1) * 100) + '%');
     $('leverage').setAttribute('aria-valuetext', state.leverage + ' times');
     $('submitOrder').textContent = 'Demo · ' + (state.side === 'long' ? 'Buy / Long ' : 'Sell / Short ') + state.market + '-PERP';
     $('submitOrder').classList.toggle('is-short', state.side === 'short');
     $('marginUsage').textContent = format(equity() > 0 ? usedMargin() / equity() * 100 : 0, 1) + '%';
-    $('maintenanceMargin').textContent = money(account.positions.reduce(function (sum, p) { return sum + p.margin / 2; }, 0));
+    $('maintenanceMargin').textContent = money(account.positions.reduce(function (sum, p) { return sum + maintMargin(p); }, 0));
     $('positionCount').textContent = account.positions.length;
     $('orderCount').textContent = account.orders.length;
+    $('claimBanner').hidden = account.claimed;
   }
 
   function sideLabel(side) { return '<span class="side-badge is-' + side + '">' + side + '</span>'; }
   function table(headers, rows, emptyText) {
     return '<table class="activity-table"><thead><tr>' + headers.map(function (head, index) { return '<th' + (index > 0 ? ' class="ta-r"' : '') + '>' + head + '</th>'; }).join('') + '</tr></thead><tbody>' + (rows || '<tr><td class="empty-state" colspan="' + headers.length + '">' + emptyText + '</td></tr>') + '</tbody></table>';
   }
+  function moneyCell(value, allowZeroColor) {
+    if (!allowZeroColor && value === 0) return '<td class="mono ta-r">' + money(0) + '</td>';
+    return '<td class="mono ta-r ' + (value >= 0 ? 'up' : 'down') + '">' + signedMoney(value) + '</td>';
+  }
+
   function drawActivity() {
     var rows;
+    // Funding accrues in real time regardless of which tab is on screen, so
+    // it must run on every render, not just while the Positions tab is open.
+    account.positions.forEach(applyFundingIfDue);
     if (state.activity === 'positions') {
       rows = account.positions.map(function (p) {
-        var profit = pnl(p);
-        return '<tr><td><span class="position-pair">' + sideLabel(p.side) + '<span>' + p.market + '-PERP</span><small class="mono">' + p.leverage + 'x</small></span></td><td class="mono ta-r">' + format(p.quantity, p.quantity < 1 ? 3 : 1) + ' ' + p.market + '</td><td class="mono ta-r">' + format(p.entry) + '</td><td class="mono ta-r">' + format(markets[p.market].price) + '</td><td class="mono ta-r liq-value">' + format(p.liquidation) + '</td><td class="mono ta-r ' + (profit >= 0 ? 'up' : 'down') + '">' + signedMoney(profit) + '</td><td><button type="button" class="small-button" data-close="' + p.id + '" aria-label="Close ' + p.market + ' ' + p.side + ' position">Close</button></td></tr>';
+        var isolated = p.marginMode === 'isolated';
+        // Isolated risk is capped at the position's own reserved margin;
+        // cross P&L flows straight from mark price since the whole account
+        // backs it.
+        var profit = isolated ? Math.max(pnl(p), -p.margin) : pnl(p);
+        var liq = isolated ? p.liquidation : crossLiquidationPrice(p.entry, p.side, p.quantity, p.margin, p.id);
+        var mark = markets[p.market].price;
+        return '<tr><td><span class="position-pair">' + sideLabel(p.side) + '<span>' + p.market + '-PERP</span><small class="mono">' + p.leverage + 'x · ' + (isolated ? 'Isolated' : 'Cross') + '</small></span></td>'
+          + '<td class="mono ta-r">' + format(p.quantity, p.quantity < 1 ? 3 : 1) + ' ' + p.market + '</td>'
+          + '<td class="mono ta-r">' + format(mark) + '</td>'
+          + '<td class="mono ta-r">' + money(p.quantity * mark) + '</td>'
+          + '<td class="mono ta-r">' + format(p.entry) + '</td>'
+          + '<td class="mono ta-r liq-value">' + format(liq) + '</td>'
+          + '<td class="mono ta-r">' + money(p.margin) + '</td>'
+          + moneyCell(p.fundingPaid)
+          + moneyCell(profit, true)
+          + moneyCell(0)
+          + '<td><button type="button" class="small-button" data-close="' + p.id + '" aria-label="Close ' + p.market + ' ' + p.side + ' position">Close</button></td></tr>';
       }).join('');
-      $('activityPanel').innerHTML = table(['Position', 'Size', 'Entry', 'Mark', 'Liq.', 'UPNL', '<span class="sr-only">Actions</span>'], rows, 'No open positions. Place a market order to start trading.');
+      $('activityPanel').innerHTML = table(['Instrument', 'Quantity', 'Mark', 'Value', 'Entry Price', 'Liq. Price', 'Margin', 'Funding', 'UPNL', 'RPNL', '<span class="sr-only">Actions</span>'], rows, 'No open positions. Place a market order to start trading.');
     } else if (state.activity === 'orders') {
       rows = account.orders.map(function (o) {
-        return '<tr><td><span class="position-pair">' + sideLabel(o.side) + o.market + '-PERP</span></td><td class="mono ta-r">' + (o.type === 'stop' ? 'Stop market' : 'Limit') + '</td><td class="mono ta-r">' + format(o.price) + '</td><td class="mono ta-r">' + money(o.size) + '</td><td class="mono ta-r">' + o.leverage + 'x</td><td><button type="button" class="small-button" data-cancel="' + o.id + '" aria-label="Cancel ' + o.market + ' order">Cancel</button></td></tr>';
+        return '<tr><td><span class="position-pair">' + sideLabel(o.side) + o.market + '-PERP</span></td><td class="mono ta-r">' + (o.type === 'stop' ? 'Stop market' : 'Limit') + '</td><td class="mono ta-r">' + format(o.price) + '</td><td class="mono ta-r">' + money(o.size) + '</td><td class="mono ta-r">' + o.leverage + 'x · ' + (o.marginMode === 'isolated' ? 'Isolated' : 'Cross') + '</td><td><button type="button" class="small-button" data-cancel="' + o.id + '" aria-label="Cancel ' + o.market + ' order">Cancel</button></td></tr>';
       }).join('');
-      $('activityPanel').innerHTML = table(['Order', 'Type', 'Price / trigger', 'Size', 'Leverage', '<span class="sr-only">Actions</span>'], rows, 'No open orders. Limit and stop orders will appear here.');
-    } else if (state.activity === 'fills') {
+      $('activityPanel').innerHTML = table(['Instrument', 'Type', 'Price / trigger', 'Size', 'Leverage', '<span class="sr-only">Actions</span>'], rows, 'No open orders. Limit and stop orders will appear here.');
+    } else if (state.activity === 'trades') {
       rows = account.fills.map(function (f) {
         return '<tr><td>' + f.market + '-PERP</td><td>' + sideLabel(f.side) + '</td><td class="mono ta-r">' + format(f.price) + '</td><td class="mono ta-r">' + money(f.size) + '</td><td class="mono ta-r">' + money(f.fee) + '</td><td class="mono ta-r">' + f.time + '</td></tr>';
       }).join('');
-      $('activityPanel').innerHTML = table(['Market', 'Side', 'Price', 'Size', 'Fee', 'Time'], rows, 'No fills in this session. Executed trades will appear here.');
+      $('activityPanel').innerHTML = table(['Instrument', 'Side', 'Price', 'Size', 'Fee', 'Time'], rows, 'No trades in this session. Executed orders will appear here.');
+    } else if (state.activity === 'orderHistory') {
+      rows = account.orderHistory.map(function (o) {
+        return '<tr><td><span class="position-pair">' + sideLabel(o.side) + o.market + '-PERP</span></td><td class="mono ta-r">' + (o.type === 'stop' ? 'Stop market' : 'Limit') + '</td><td class="mono ta-r">' + format(o.price) + '</td><td class="mono ta-r">' + money(o.size) + '</td><td class="mono ta-r">' + o.status + '</td><td class="mono ta-r">' + o.time + '</td></tr>';
+      }).join('');
+      $('activityPanel').innerHTML = table(['Instrument', 'Type', 'Price / trigger', 'Size', 'Status', 'Time'], rows, 'No order history yet. Cancelled and filled orders will appear here.');
+    } else if (state.activity === 'funding') {
+      rows = account.fundingHistory.map(function (f) {
+        return '<tr><td>' + f.market + '-PERP</td><td class="mono ta-r">' + (f.rate >= 0 ? '+' : '') + format(f.rate, 4) + '%</td>' + moneyCell(f.payment, true) + '<td class="mono ta-r">' + f.time + '</td></tr>';
+      }).join('');
+      $('activityPanel').innerHTML = table(['Instrument', 'Rate', 'Payment', 'Time'], rows, 'No funding payments yet. Funding settles every 8h using Binance\'s real live rate — a position only shows a payment once it stays open across an actual settlement.');
     } else {
-      $('activityPanel').innerHTML = table(['Market', 'Rate', 'Payment', 'Time'], '', 'No funding payments in this demo session. Funding rates above are sample data.');
+      rows = account.realizedPnl.map(function (r) {
+        return '<tr><td><span class="position-pair">' + sideLabel(r.side) + r.market + '-PERP</span></td><td class="mono ta-r">' + format(r.quantity, r.quantity < 1 ? 3 : 1) + ' ' + r.market + '</td><td class="mono ta-r">' + format(r.entry) + '</td><td class="mono ta-r">' + format(r.exit) + '</td>' + moneyCell(r.pnl, true) + '<td class="mono ta-r">' + r.time + '</td></tr>';
+      }).join('');
+      $('activityPanel').innerHTML = table(['Instrument', 'Quantity', 'Entry Price', 'Exit Price', 'RPNL', 'Time'], rows, 'No realized PNL yet. Closing a position will log it here.');
     }
   }
 
@@ -370,8 +453,20 @@
     $('priceField').hidden = type === 'market';
     $('marketPriceNote').hidden = type !== 'market';
     $('priceLabel').textContent = type === 'stop' ? 'Trigger price' : 'Price';
+    // Re-entering Limit/Stop should resume tracking the live market price
+    // unless the user types their own value again.
+    if (type !== 'market') { $('orderPrice').value = format(markets[state.market].price); state.priceDirty = false; }
     error('');
     updateSummary();
+  }
+
+  // Keeps the Limit/Stop price field tracking the live market price until
+  // the user actually types their own value into it (state.priceDirty,
+  // set by the input listener below) — so it never sits on a stale seed
+  // price, but also never fights someone mid-edit.
+  function syncOrderPriceLive(symbol, price) {
+    if (symbol !== state.market || state.type === 'market' || state.priceDirty) return;
+    $('orderPrice').value = format(price);
   }
 
   function renderMarketStrip(symbol) {
@@ -406,7 +501,7 @@
       if (ticker.fundingRate !== undefined) markets[symbol].funding = ticker.fundingRate;
       if (ticker.openInterestUsd !== undefined) markets[symbol].interest = formatCompactUsd(ticker.openInterestUsd);
       if (ticker.volumeUsd !== undefined) markets[symbol].volume = formatCompactUsd(ticker.volumeUsd);
-      if (symbol === state.market) { renderMarketStrip(symbol); updateSummary(); }
+      if (symbol === state.market) { renderMarketStrip(symbol); syncOrderPriceLive(symbol, markets[symbol].price); updateSummary(); }
       drawActivity(); // keeps Positions' Mark/UPNL live for every open market, not just the selected one
     });
   }
@@ -421,6 +516,7 @@
     $('marketLogo').src = window.RailflowTokenIcons.logoUrl(symbol);
     $('marketLogo').alt = symbol;
     $('orderPrice').value = format(market.price);
+    state.priceDirty = false;
     $('leverage').max = market.maxLev;
     state.leverage = Math.min(state.leverage, market.maxLev);
     $('leverage').value = state.leverage;
@@ -462,12 +558,12 @@
     error('');
     if (marketable) {
       account.cash -= fee;
-      account.positions.push({ id: nextId++, market: state.market, side: state.side, leverage: state.leverage, quantity: size / mark, entry: mark, liquidation: estimatedLiq(mark, state.side, state.leverage), margin: margin });
+      account.positions.push({ id: nextId++, market: state.market, side: state.side, leverage: state.leverage, quantity: size / mark, entry: mark, liquidation: estimatedLiq(mark, state.side, state.leverage), margin: margin, marginMode: state.marginMode, fundingPaid: 0, lastFundingEpoch: fundingEpoch(Date.now()) });
       recordFill(state.market, state.side, mark, size, fee);
       setActivity('positions');
-      notify(state.market + ' ' + state.side + ' position opened · ' + money(size) + ' simulated.');
+      notify(state.market + ' ' + state.side + ' position opened · ' + money(size) + ' simulated (' + (state.marginMode === 'isolated' ? 'isolated' : 'cross') + ' margin).');
     } else {
-      account.orders.push({ id: nextId++, market: state.market, side: state.side, type: state.type, price: price, size: size, leverage: state.leverage, margin: margin + fee });
+      account.orders.push({ id: nextId++, market: state.market, side: state.side, type: state.type, price: price, size: size, leverage: state.leverage, margin: margin + fee, marginMode: state.marginMode });
       setActivity('orders');
       notify(state.type === 'stop' ? 'Demo stop order placed. Cancel it in Open orders.' : 'Demo limit order placed. Margin reserved.');
     }
@@ -480,13 +576,19 @@
     if (close) {
       var position = account.positions.find(function (p) { return p.id === Number(close.dataset.close); });
       if (!position) return;
-      var size = position.quantity * markets[position.market].price;
+      applyFundingIfDue(position); // settle any pending funding before realizing P&L
+      var exitPrice = markets[position.market].price;
+      var size = position.quantity * exitPrice;
       var fee = size * .00025;
-      account.cash += pnl(position) - fee;
-      recordFill(position.market, position.side === 'long' ? 'short' : 'long', markets[position.market].price, size, fee);
+      var profit = position.marginMode === 'isolated' ? Math.max(pnl(position), -position.margin) : pnl(position);
+      account.cash += profit - fee;
+      recordFill(position.market, position.side === 'long' ? 'short' : 'long', exitPrice, size, fee);
+      account.realizedPnl.unshift({ market: position.market, side: position.side, quantity: position.quantity, entry: position.entry, exit: exitPrice, pnl: profit, time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
       account.positions = account.positions.filter(function (p) { return p.id !== position.id; });
       notify(position.market + ' demo position closed. Margin released.');
     } else if (cancel) {
+      var order = account.orders.find(function (o) { return o.id === Number(cancel.dataset.cancel); });
+      if (order) account.orderHistory.unshift({ market: order.market, side: order.side, type: order.type, price: order.price, size: order.size, status: 'Cancelled', time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
       account.orders = account.orders.filter(function (o) { return o.id !== Number(cancel.dataset.cancel); });
       notify('Demo order cancelled. Reserved margin released.');
     } else return;
@@ -503,6 +605,13 @@
     });
   });
   document.querySelectorAll('[data-order-type]').forEach(function (button) { button.addEventListener('click', function () { setOrderType(button.dataset.orderType); }); });
+  document.querySelectorAll('[data-margin-mode]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      state.marginMode = button.dataset.marginMode;
+      document.querySelectorAll('[data-margin-mode]').forEach(function (option) { var active = option === button; option.classList.toggle('is-active', active); option.setAttribute('aria-pressed', String(active)); });
+      updateSummary();
+    });
+  });
   document.querySelectorAll('[data-timeframe]').forEach(function (button) {
     button.addEventListener('click', function () {
       state.timeframe = button.dataset.timeframe;
@@ -533,11 +642,11 @@
     });
   });
   ['orderPrice', 'orderSize'].forEach(function (id) {
-    $(id).addEventListener('input', function () { error(''); updateSummary(); });
+    $(id).addEventListener('input', function () { if (id === 'orderPrice') state.priceDirty = true; error(''); updateSummary(); });
     $(id).addEventListener('blur', function () { var amount = parseAmount($(id).value); if (Number.isFinite(amount) && amount > 0) $(id).value = format(amount); updateSummary(); });
   });
   $('leverage').addEventListener('input', function () { state.leverage = Number(this.value); error(''); updateSummary(); });
-  $('useMid').addEventListener('click', function () { $('orderPrice').value = format(markets[state.market].price); error(''); updateSummary(); });
+  $('useMid').addEventListener('click', function () { $('orderPrice').value = format(markets[state.market].price); state.priceDirty = false; error(''); updateSummary(); });
   $('bookPrecision').addEventListener('change', function () { if (lastBook) renderOrderBook(lastBook); });
   ['bookAsks', 'bookBids'].forEach(function (id) {
     $(id).addEventListener('click', function (event) { var button = event.target.closest('[data-book-price]'); if (button) { setOrderType('limit'); $('orderPrice').value = format(Number(button.dataset.bookPrice)); updateSummary(); } });
@@ -565,13 +674,31 @@
   $('vaultsLink').addEventListener('click', function () { dialog('Vaults', '<p>Vaults are not available in this trading demo. You can explore trading with the simulated funds in your margin account.</p><button type="button" class="place-order" data-dialog-dismiss>Back to trading</button>'); });
   $('accountDetails').addEventListener('click', function () { dialog('Demo account', '<p>These positions and balances belong to a simulated trading account, separate from your connected wallet. Demo balances reset when you reload the page.</p><dl class="trade-summary"><div><dt>Demo equity</dt><dd class="mono">' + money(equity()) + '</dd></div><div><dt>Demo available margin</dt><dd class="mono">' + money(available()) + '</dd></div><div><dt>Demo open positions</dt><dd class="mono">' + account.positions.length + '</dd></div></dl>'); });
   $('faucetLink').addEventListener('click', function () { dialog('USDC test funds', '<p>To fund your actual wallet, open Circle Faucet, select Arc Testnet, and enter your wallet address.</p><a class="btn btn--primary wallet-faucet-link" href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer">Open Circle Faucet</a><div class="wallet-menu-divider"></div><p>For the trading demo, add 10,000 simulated USDC once per session. This does not send tokens to your wallet.</p><button type="button" class="place-order" id="claimFunds"' + (account.claimed ? ' disabled' : '') + '>' + (account.claimed ? 'Demo funds already added' : 'Add 10,000 demo USDC') + '</button>'); });
+  function claimDemoFunds() {
+    if (account.claimed) return;
+    account.cash += 10000;
+    account.claimed = true;
+    updateSummary();
+    notify('10,000 simulated USDC added to your margin account.');
+  }
   $('dialogContent').addEventListener('click', function (event) {
     if (event.target.closest('[data-dialog-dismiss]')) $('infoDialog').close();
-    if (event.target.id === 'claimFunds' && !account.claimed) { account.cash += 10000; account.claimed = true; updateSummary(); $('infoDialog').close(); notify('10,000 simulated USDC added to your margin account.'); }
+    if (event.target.id === 'claimFunds' && !account.claimed) { claimDemoFunds(); $('infoDialog').close(); }
   });
+  $('claimInline').addEventListener('click', claimDemoFunds);
   $('closeDialog').addEventListener('click', function () { $('infoDialog').close(); });
   $('infoDialog').addEventListener('click', function (event) { if (event.target === this) { var rect = this.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) this.close(); } });
-  $('resetDemo').addEventListener('click', function () { resetAccount(); state.leverage = 10; $('leverage').value = 10; $('orderSize').value = '5,000'; selectMarket('BTC'); setActivity('positions'); notify('Demo account reset.'); });
+  $('resetDemo').addEventListener('click', function () {
+    resetAccount();
+    state.leverage = 10;
+    state.marginMode = 'cross';
+    $('leverage').value = 10;
+    $('orderSize').value = '5,000';
+    document.querySelectorAll('[data-margin-mode]').forEach(function (option) { var active = option.dataset.marginMode === 'cross'; option.classList.toggle('is-active', active); option.setAttribute('aria-pressed', String(active)); });
+    selectMarket('BTC');
+    setActivity('positions');
+    notify('Demo account reset.');
+  });
 
   initChartTypeMenu();
   resetAccount();
