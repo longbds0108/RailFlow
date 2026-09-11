@@ -359,6 +359,21 @@ function RealLend() {
   const utilizationPct = data.collateralValue > 0n ? Math.min(100, (Number(data.borrowValue) / Number(data.collateralValue)) * 100) : 0;
   const utilZone = utilizationPct < 60 ? "safe" : utilizationPct < 85 ? "caution" : "risk";
 
+  // Health factor: liquidation-threshold-weighted collateral / borrowed —
+  // Aave's classic metric. >1 means safe from liquidation; the contract's
+  // own isLiquidatable() is the authoritative source of truth, this is the
+  // same math computed client-side so the UI can show a live number and a
+  // before/after preview without a second contract read.
+  const borrowValueUsd = Number(formatUnits(data.borrowValue, USDC_DECIMALS));
+  const liquidationCollateralUsd = SYMBOLS.reduce((sum, s) => {
+    const a = data.assets[s];
+    const priceUsd = Number(formatUnits(a.priceInUsdc, USDC_DECIMALS));
+    const suppliedWhole = Number(formatUnits(a.supplied, a.decimals));
+    return sum + (suppliedWhole * priceUsd * Number(a.liquidationThresholdBps)) / 10000;
+  }, 0);
+  const healthFactor = borrowValueUsd > 0 ? liquidationCollateralUsd / borrowValueUsd : null;
+  const healthZone = data.isLiquidatable ? "risk" : healthFactor == null ? "safe" : healthFactor < 1.3 ? "caution" : "safe";
+
   // "Max" for borrow/repay is computed in the selected token's own units —
   // repay is capped by wallet balance too (can't repay more than you hold).
   const availableToBorrowInToken =
@@ -380,6 +395,30 @@ function RealLend() {
     }
   })();
   const needsApprove = modeConfig.needsApprove && amountRaw > 0n && asset.allowance < amountRaw;
+
+  // Preview what this specific pending action would do to health factor —
+  // before the user signs anything. Mirrors what the contract itself will
+  // check (borrow/withdraw revert if this would push health below 1).
+  const amountValueUsd = Number(formatUnits(amountRaw, asset.decimals)) * priceWhole;
+  const cfWeight = Number(asset.collateralFactorBps) / 10000;
+  const liqWeight = Number(asset.liquidationThresholdBps) / 10000;
+  let previewCollateralUsd = Number(formatUnits(data.collateralValue, USDC_DECIMALS));
+  let previewLiqCollateralUsd = liquidationCollateralUsd;
+  let previewBorrowUsd = borrowValueUsd;
+  if (mode === "supply") {
+    previewCollateralUsd += amountValueUsd * cfWeight;
+    previewLiqCollateralUsd += amountValueUsd * liqWeight;
+  } else if (mode === "withdraw") {
+    previewCollateralUsd = Math.max(0, previewCollateralUsd - amountValueUsd * cfWeight);
+    previewLiqCollateralUsd = Math.max(0, previewLiqCollateralUsd - amountValueUsd * liqWeight);
+  } else if (mode === "borrow") {
+    previewBorrowUsd += amountValueUsd;
+  } else if (mode === "repay") {
+    previewBorrowUsd = Math.max(0, previewBorrowUsd - amountValueUsd);
+  }
+  const previewUtilizationPct = previewCollateralUsd > 0 ? (previewBorrowUsd / previewCollateralUsd) * 100 : previewBorrowUsd > 0 ? 999 : 0;
+  const previewHealthFactor = previewBorrowUsd > 0 ? previewLiqCollateralUsd / previewBorrowUsd : null;
+  const previewWouldRevert = (mode === "borrow" || mode === "withdraw") && previewBorrowUsd > previewCollateralUsd;
 
   const busy = approve?.isPending || approve?.isConfirming || action.isPending || action.isConfirming;
   const spenderAmount = parseUnits("1000000000", asset.decimals); // one-time approval per token
@@ -412,7 +451,7 @@ function RealLend() {
         <h1>Lend</h1>
         <p className={styles.lead}>
           Supply USDC, EURC or cirBTC from your own wallet, and borrow any of the three against your combined
-          collateral. Every action is a transaction you sign yourself.
+          collateral, at a real variable rate that moves with each asset's utilization.
         </p>
       </div>
 
@@ -436,15 +475,20 @@ function RealLend() {
           </div>
         </div>
         <div className={styles.statTile}>
-          <div className={styles.statIcon} style={{ color: "var(--text-accent)" }}>
+          <div
+            className={styles.statIcon}
+            style={{ color: healthZone === "risk" ? "var(--text-danger)" : healthZone === "caution" ? "var(--text-warning)" : "var(--text-success)" }}
+          >
             <IconShield />
           </div>
           <div className={styles.statBody}>
-            <p className={styles.statLabel}>Borrow limit used</p>
-            <p className={styles.statValue} style={{ color: "var(--text-success)" }}>{utilizationPct.toFixed(0)}%</p>
-            <div className={styles.healthGauge} aria-hidden="true">
-              <span className={cx(styles.healthGaugeFill, ZONE_CLASS[utilZone])} style={{ width: `${utilizationPct}%` }} />
-            </div>
+            <p className={styles.statLabel}>Health factor</p>
+            <p
+              className={styles.statValue}
+              style={{ color: healthZone === "risk" ? "var(--text-danger)" : healthZone === "caution" ? "var(--text-warning)" : "var(--text-success)" }}
+            >
+              {healthFactor == null ? "∞" : healthFactor.toFixed(2)}
+            </p>
           </div>
         </div>
         <div className={styles.statTile}>
@@ -452,8 +496,16 @@ function RealLend() {
             <IconPercent />
           </div>
           <div className={styles.statBody}>
-            <p className={styles.statLabel}>{symbol} pool liquidity</p>
-            <p className={styles.statValue}>{fmt(asset.liquidity, asset.decimals, 2)}</p>
+            <p className={styles.statLabel}>Borrow limit used</p>
+            <p
+              className={styles.statValue}
+              style={{ color: utilZone === "risk" ? "var(--text-danger)" : utilZone === "caution" ? "var(--text-warning)" : "var(--text-success)" }}
+            >
+              {utilizationPct.toFixed(0)}%
+            </p>
+            <div className={styles.healthGauge} aria-hidden="true">
+              <span className={cx(styles.healthGaugeFill, ZONE_CLASS[utilZone])} style={{ width: `${utilizationPct}%` }} />
+            </div>
           </div>
         </div>
       </div>
@@ -466,14 +518,14 @@ function RealLend() {
             </span>
             <p className={styles.panelTitle}>Markets</p>
           </div>
-          <p className={styles.panelSub}>All three assets can be supplied as collateral or borrowed.</p>
+          <p className={styles.panelSub}>Real variable rates — they move with each asset's own utilization.</p>
           <div className={styles.table}>
             <div className={styles.tableHead}>
               <span className={styles.colAsset}>Asset</span>
-              <span className={styles.colNum}>Price</span>
+              <span className={styles.colNum}>Supply APY</span>
+              <span className={styles.colNum}>Borrow APY</span>
+              <span className={styles.colNum}>Utilization</span>
               <span className={styles.colNum}>LTV</span>
-              <span className={styles.colNum}>My supply</span>
-              <span className={styles.colNum}>My borrow</span>
             </div>
             {SYMBOLS.map((s, i) => {
               const a = data.assets[s];
@@ -487,18 +539,17 @@ function RealLend() {
                     <img className={styles.tokenLogo} src={TOKEN_LOGOS[s]} alt="" />
                     {s}
                   </span>
-                  <span className={cx(styles.colNum, styles.figures, styles.muted)}>
-                    ${Number(formatUnits(a.priceInUsdc, USDC_DECIMALS)).toLocaleString("en-US")}
-                  </span>
+                  <span className={cx(styles.colNum, styles.figures, styles.kvPositive)}>{(Number(a.supplyRateBps) / 100).toFixed(2)}%</span>
+                  <span className={cx(styles.colNum, styles.figures)}>{(Number(a.borrowRateBps) / 100).toFixed(2)}%</span>
+                  <span className={cx(styles.colNum, styles.muted)}>{(Number(a.utilizationBps) / 100).toFixed(0)}%</span>
                   <span className={cx(styles.colNum, styles.muted)}>{(Number(a.collateralFactorBps) / 100).toFixed(0)}%</span>
-                  <span className={cx(styles.colNum, styles.figures)}>{fmt(a.supplied, a.decimals, 4)}</span>
-                  <span className={cx(styles.colNum, styles.figures, styles.muted)}>{fmt(a.borrowed, a.decimals, 4)}</span>
                 </button>
               );
             })}
           </div>
           <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 12 }}>
-            No price oracle on testnet — prices are set by the contract owner, not a live feed.
+            My supply {fmt(asset.supplied, asset.decimals, 4)} {symbol} · My borrow {fmt(asset.borrowed, asset.decimals, 4)} {symbol} · Prices are
+            set by the contract owner, not a live oracle.
           </p>
         </div>
 
@@ -553,13 +604,36 @@ function RealLend() {
               <span className={styles.muted}>{symbol} value supplied</span>
               <span className={styles.figures}>{fmtUsd(parseUnits(suppliedUsd.toFixed(2), USDC_DECIMALS))}</span>
             </div>
-            <div className={styles.kvRow} style={{ marginBottom: 16 }}>
+            <div className={styles.kvRow} style={{ marginBottom: amountRaw > 0n ? 10 : 16 }}>
               <span className={styles.muted}>Available to borrow (all assets)</span>
               <span className={styles.figures}>{fmtUsd(availableUsdRaw)}</span>
             </div>
 
-            <button className={styles.ctaButton} onClick={handlePrimary} disabled={busy || amountRaw <= 0n}>
-              {primaryLabel}
+            {amountRaw > 0n && (
+              <div className={styles.noteBanner} style={{ marginBottom: 16 }}>
+                <p className={styles.noteText} style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                  <span>After this transaction</span>
+                  <span className={styles.figures}>
+                    Health factor {healthFactor == null ? "∞" : healthFactor.toFixed(2)} →{" "}
+                    <strong style={{ color: previewWouldRevert ? "var(--text-danger)" : previewHealthFactor == null ? undefined : previewHealthFactor < 1.3 ? "var(--text-warning)" : "var(--text-success)" }}>
+                      {previewWouldRevert ? "reverts" : previewHealthFactor == null ? "∞" : previewHealthFactor.toFixed(2)}
+                    </strong>
+                  </span>
+                </p>
+                {previewWouldRevert ? (
+                  <p className={styles.noteText} style={{ color: "var(--text-danger)", marginTop: 4 }}>
+                    This would push your borrow above your collateral limit — the contract will reject it.
+                  </p>
+                ) : (
+                  <p className={styles.noteText} style={{ marginTop: 4 }}>
+                    Borrow limit used {utilizationPct.toFixed(0)}% → {Math.min(999, previewUtilizationPct).toFixed(0)}%
+                  </p>
+                )}
+              </div>
+            )}
+
+            <button className={styles.ctaButton} onClick={handlePrimary} disabled={busy || amountRaw <= 0n || previewWouldRevert}>
+              {previewWouldRevert ? "Exceeds collateral limit" : primaryLabel}
             </button>
 
             {(approve?.error || action.error) && (

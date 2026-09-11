@@ -8,7 +8,7 @@ export const LENDING_POOL_ADDRESS = process.env.NEXT_PUBLIC_LENDING_POOL_ADDRESS
 // Block this pool was deployed at (see contracts/deployed-pool.json) — event
 // queries (the agent decision log) start here instead of block 0, since
 // Arc's RPC prunes old history and rejects a full-range eth_getLogs call.
-export const LENDING_POOL_DEPLOYED_BLOCK = 61377451n;
+export const LENDING_POOL_DEPLOYED_BLOCK = 61514621n;
 
 // Dedicated agent keeper wallet address the debt-guardrail mandate points
 // at by default — a separate identity from the connected user's own wallet,
@@ -65,8 +65,8 @@ export const lendingPoolAbi = [
       { name: "", type: "address" },
     ],
     outputs: [
-      { name: "supplied", type: "uint256" },
-      { name: "borrowed", type: "uint256" },
+      { name: "scaledSupplied", type: "uint256" },
+      { name: "scaledBorrowed", type: "uint256" },
     ],
   },
   {
@@ -78,9 +78,71 @@ export const lendingPoolAbi = [
       { name: "decimals", type: "uint8" },
       { name: "priceInUsdc", type: "uint256" },
       { name: "collateralFactorBps", type: "uint256" },
+      { name: "liquidationThresholdBps", type: "uint256" },
+      { name: "liquidationBonusBps", type: "uint256" },
       { name: "borrowable", type: "bool" },
       { name: "listed", type: "bool" },
     ],
+  },
+  {
+    type: "function",
+    name: "supplyBalanceOf",
+    stateMutability: "view",
+    inputs: [
+      { name: "user", type: "address" },
+      { name: "token", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "borrowBalanceOf",
+    stateMutability: "view",
+    inputs: [
+      { name: "user", type: "address" },
+      { name: "token", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "utilizationBps",
+    stateMutability: "view",
+    inputs: [{ name: "token", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "borrowRateBps",
+    stateMutability: "view",
+    inputs: [{ name: "token", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "supplyRateBps",
+    stateMutability: "view",
+    inputs: [{ name: "token", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "isLiquidatable",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "liquidate",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "user", type: "address" },
+      { name: "debtToken", type: "address" },
+      { name: "collateralToken", type: "address" },
+      { name: "repayAmount", type: "uint256" },
+    ],
+    outputs: [],
   },
   {
     type: "function",
@@ -164,6 +226,18 @@ export const lendingPoolAbi = [
     type: "event",
     name: "MandateRevoked",
     inputs: [{ name: "user", type: "address", indexed: true }],
+  },
+  {
+    type: "event",
+    name: "Liquidated",
+    inputs: [
+      { name: "user", type: "address", indexed: true },
+      { name: "liquidator", type: "address", indexed: true },
+      { name: "debtToken", type: "address", indexed: false },
+      { name: "collateralToken", type: "address", indexed: false },
+      { name: "repaidAmount", type: "uint256", indexed: false },
+      { name: "collateralSeized", type: "uint256", indexed: false },
+    ],
   },
   {
     type: "event",

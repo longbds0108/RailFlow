@@ -30,12 +30,6 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={plexMono.variable}>
       <body>
-        <div className="bg-photo" aria-hidden="true" />
-        <div className="ambient" aria-hidden="true">
-          <span className="ambient-orb ambient-orb-1" />
-          <span className="ambient-orb ambient-orb-2" />
-          <span className="ambient-orb ambient-orb-3" />
-        </div>
         <Providers>{children}</Providers>
       </body>
     </html>

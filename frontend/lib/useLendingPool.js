@@ -35,38 +35,57 @@ export function useLendingPoolPosition(address, refreshKey = 0) {
 
     const perAsset = SYMBOLS.map(async (symbol) => {
       const token = TOKENS[symbol];
-      const [position, config, balance, allowance, liquidity] = await Promise.all([
-        client.readContract({ ...pool, functionName: "userAssets", args: [address, token.address] }),
+      // supplyBalanceOf/borrowBalanceOf return the real, currently-accrued
+      // amount (principal + interest so far) — userAssets() alone only
+      // holds the raw scaled-by-index storage value now that both sides
+      // compound via a per-asset index.
+      const [supplied, borrowed, config, balance, allowance, liquidity, supplyRateBps, borrowRateBps, utilizationBps] = await Promise.all([
+        client.readContract({ ...pool, functionName: "supplyBalanceOf", args: [address, token.address] }),
+        client.readContract({ ...pool, functionName: "borrowBalanceOf", args: [address, token.address] }),
         client.readContract({ ...pool, functionName: "assets", args: [token.address] }),
         client.readContract({ address: token.address, abi: readAbi, functionName: "balanceOf", args: [address] }),
         client.readContract({ address: token.address, abi: readAbi, functionName: "allowance", args: [address, LENDING_POOL_ADDRESS] }),
         client.readContract({ address: token.address, abi: readAbi, functionName: "balanceOf", args: [LENDING_POOL_ADDRESS] }),
+        client.readContract({ ...pool, functionName: "supplyRateBps", args: [token.address] }),
+        client.readContract({ ...pool, functionName: "borrowRateBps", args: [token.address] }),
+        client.readContract({ ...pool, functionName: "utilizationBps", args: [token.address] }),
       ]);
       return [
         symbol,
         {
-          supplied: position[0],
-          borrowed: position[1],
+          supplied,
+          borrowed,
           decimals: config[0],
           priceInUsdc: config[1],
           collateralFactorBps: config[2],
-          borrowable: config[3],
-          listed: config[4],
+          liquidationThresholdBps: config[3],
+          liquidationBonusBps: config[4],
+          borrowable: config[5],
+          listed: config[6],
           balance,
           allowance,
           liquidity,
+          supplyRateBps,
+          borrowRateBps,
+          utilizationBps,
         },
       ];
     });
 
-    Promise.all([...perAsset, client.readContract({ ...pool, functionName: "accountData", args: [address] })])
+    Promise.all([
+      ...perAsset,
+      client.readContract({ ...pool, functionName: "accountData", args: [address] }),
+      client.readContract({ ...pool, functionName: "isLiquidatable", args: [address] }),
+    ])
       .then((results) => {
         if (!active) return;
+        const isLiquidatable = results.pop();
         const accountData = results.pop();
         setData({
           assets: Object.fromEntries(results),
           collateralValue: accountData[0],
           borrowValue: accountData[1],
+          isLiquidatable,
         });
         setLoading(false);
       })
@@ -162,7 +181,7 @@ export function useMandateStatus(address, refreshKey = 0) {
           return;
         }
         const [borrowed, walletBalance, allowance] = await Promise.all([
-          client.readContract({ ...pool, functionName: "userAssets", args: [address, repayToken] }).then((p) => p.borrowed),
+          client.readContract({ ...pool, functionName: "borrowBalanceOf", args: [address, repayToken] }),
           client.readContract({ address: repayToken, abi: readAbi, functionName: "balanceOf", args: [address] }),
           client.readContract({ address: repayToken, abi: readAbi, functionName: "allowance", args: [address, LENDING_POOL_ADDRESS] }),
         ]);

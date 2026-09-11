@@ -86,15 +86,17 @@ async function checkAndActOnUser(user) {
   }
 
   const token = new ethers.Contract(repayToken, erc20Abi, provider);
-  const [walletBalance, allowance, [collateralValue, borrowValue], userAsset, assetCfg] = await Promise.all([
+  // borrowBalanceOf returns the real, currently-accrued debt (principal +
+  // interest so far) — userAssets() alone would only give the raw scaled
+  // storage value now that debt compounds via a per-asset index.
+  const [walletBalance, allowance, [collateralValue, borrowValue], borrowed, assetCfg] = await Promise.all([
     token.balanceOf(user),
     token.allowance(user, POOL_ADDRESS),
     pool.accountData(user),
-    pool.userAssets(user, repayToken),
+    pool.borrowBalanceOf(user, repayToken),
     pool.assets(repayToken),
   ]);
 
-  const borrowed = userAsset.borrowed;
   if (borrowed === 0n) return log(user, "  blocked: no outstanding debt in the mandate's repay token");
 
   const maxByReserve = walletBalance > BigInt(reserveAmount) ? walletBalance - BigInt(reserveAmount) : 0n;

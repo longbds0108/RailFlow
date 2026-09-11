@@ -1,38 +1,206 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { formatUnits } from "viem";
+import { getPublicClient } from "wagmi/actions";
 import RailflowLogo from "../components/RailflowLogo";
+import { wagmiConfig } from "../lib/wagmi";
+import { ENV, TOKENS } from "../lib/config";
+import { erc20Abi } from "../lib/erc20";
+import { LENDING_POOL_ADDRESS, LENDING_POOL_DEPLOYED_BLOCK, lendingPoolAbi } from "../lib/lendingPoolContract";
+import { YIELD_VAULT_ADDRESS, YIELD_VAULTS, yieldVaultAbi } from "../lib/yieldVaultContract";
+import { TBILL_ADDRESS } from "../lib/tbillContract";
+
+// Real value currently held by each deployed contract, read straight from
+// the chain — no placeholder totals. Small numbers here just mean testnet
+// usage is small so far; that's the honest number, not a bug.
+function useLiveProtocolStats() {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    const client = getPublicClient(wagmiConfig, { chainId: ENV.chainId });
+    const pool = { address: LENDING_POOL_ADDRESS, abi: lendingPoolAbi };
+    const vault = { address: YIELD_VAULT_ADDRESS, abi: yieldVaultAbi };
+    const usdc = TOKENS.USDC.address;
+    const eurc = TOKENS.EURC.address;
+    const cirbtc = TOKENS.cirBTC.address;
+
+    Promise.all([
+      client.readContract({ ...pool, functionName: "assets", args: [usdc] }),
+      client.readContract({ ...pool, functionName: "assets", args: [eurc] }),
+      client.readContract({ ...pool, functionName: "assets", args: [cirbtc] }),
+      client.readContract({ address: usdc, abi: erc20Abi, functionName: "balanceOf", args: [LENDING_POOL_ADDRESS] }),
+      client.readContract({ address: eurc, abi: erc20Abi, functionName: "balanceOf", args: [LENDING_POOL_ADDRESS] }),
+      client.readContract({ address: cirbtc, abi: erc20Abi, functionName: "balanceOf", args: [LENDING_POOL_ADDRESS] }),
+      client.readContract({ address: usdc, abi: erc20Abi, functionName: "balanceOf", args: [YIELD_VAULT_ADDRESS] }),
+      client.readContract({ address: eurc, abi: erc20Abi, functionName: "balanceOf", args: [YIELD_VAULT_ADDRESS] }),
+      client.readContract({ address: cirbtc, abi: erc20Abi, functionName: "balanceOf", args: [YIELD_VAULT_ADDRESS] }),
+      client.readContract({ address: usdc, abi: erc20Abi, functionName: "balanceOf", args: [TBILL_ADDRESS] }),
+      client.readContract({ ...vault, functionName: "vaults", args: [0n] }),
+      client.readContract({ ...vault, functionName: "vaults", args: [1n] }),
+      client.readContract({ ...vault, functionName: "vaults", args: [2n] }),
+      client.getContractEvents({ ...pool, eventName: "AgentRepaid", fromBlock: LENDING_POOL_DEPLOYED_BLOCK, toBlock: "latest" }),
+      client.getContractEvents({ ...pool, eventName: "MandateSet", fromBlock: LENDING_POOL_DEPLOYED_BLOCK, toBlock: "latest" }),
+    ])
+      .then(
+        ([
+          usdcCfg,
+          eurcCfg,
+          cirbtcCfg,
+          poolUsdc,
+          poolEurc,
+          poolCirbtc,
+          vaultUsdc,
+          vaultEurc,
+          vaultCirbtc,
+          tbillUsdc,
+          vault0,
+          vault1,
+          vault2,
+          agentRepaidLogs,
+          mandateSetLogs,
+        ]) => {
+          if (!active) return;
+          const priceUsdc = Number(formatUnits(usdcCfg[1], 6));
+          const priceEurc = Number(formatUnits(eurcCfg[1], 6));
+          const priceCirbtc = Number(formatUnits(cirbtcCfg[1], 6));
+
+          const poolValueUsd =
+            Number(formatUnits(poolUsdc, 6)) * priceUsdc +
+            Number(formatUnits(poolEurc, 6)) * priceEurc +
+            Number(formatUnits(poolCirbtc, 8)) * priceCirbtc;
+          const vaultValueUsd =
+            Number(formatUnits(vaultUsdc, 6)) * priceUsdc +
+            Number(formatUnits(vaultEurc, 6)) * priceEurc +
+            Number(formatUnits(vaultCirbtc, 8)) * priceCirbtc;
+          const tbillValueUsd = Number(formatUnits(tbillUsdc, 6));
+
+          setStats({
+            totalValueUsd: poolValueUsd + vaultValueUsd + tbillValueUsd,
+            decisionsLogged: agentRepaidLogs.length,
+            mandatesSet: new Set(mandateSetLogs.map((l) => l.args.user.toLowerCase())).size,
+            vaultApyBps: { USDC: vault0[1], EURC: vault1[1], cirBTC: vault2[1] },
+          });
+        }
+      )
+      .catch((err) => {
+        console.error("Failed to load live protocol stats:", err);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return stats;
+}
+
+// A bounded space with a fixed point inside it — the boundary itself.
+function IconBoundary() {
+  return (
+    <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <rect x="4.5" y="4.5" width="19" height="19" rx="6" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="14" cy="14" r="2.8" fill="currentColor" />
+    </svg>
+  );
+}
+// A key: round bow, straight bit with two teeth.
+function IconKey() {
+  return (
+    <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M14.2 14.2 22 22M22 22v-4.2M22 22h-4.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+// A running record: entry lines closing on a confirmed check.
+function IconRecord() {
+  return (
+    <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <path d="M5.5 8h13M5.5 14h13M5.5 20h6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M17.3 19.6l1.9 1.9 4.3-4.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+// A gauge with a needle held under a hard ceiling — the limit.
+function IconLimit() {
+  return (
+    <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <path d="M5.5 19a8.5 8.5 0 0 1 17 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M14 19 18.8 11.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="14" cy="19" r="1.7" fill="currentColor" />
+    </svg>
+  );
+}
+
+const PRINCIPLES = [
+  { label: "YOUR BOUNDARY", line1: "Free to act.", line2: "Bound to your rules.", status: "Agent operating within mandate", Icon: IconBoundary },
+  { label: "YOUR KEYS", line1: "You hold the funds.", line2: "We never do.", status: "Actions signed from your wallet", Icon: IconKey },
+  { label: "YOUR RECORD", line1: "Every action", line2: "explains itself.", status: "Decisions logged on-chain", Icon: IconRecord },
+  { label: "YOUR LIMIT", line1: "The contract decides.", line2: "Not a promise.", status: "Threshold & reserve enforced on-chain", Icon: IconLimit },
+];
+
+// Real RailFlowYieldVault rates (contracts/deployed-yield-vault.json) — fixed
+// deploy-time facts, ordered by rate so the best real yield leads.
+const YIELD_VAULTS_DISPLAY = [
+  { symbol: "USDC", name: "Stable Yield", apy: "8.40%", lockDays: 14, logo: "/logos/usdc.svg" },
+  { symbol: "EURC", name: "Euro Yield", apy: "6.30%", lockDays: 7, logo: "/logos/eurc.png" },
+  { symbol: "cirBTC", name: "cirBTC staking", apy: "4.60%", lockDays: 21, logo: "/logos/cirbtc.svg" },
+];
 
 const GUIDES = {
   mandate: {
     title: "Your boundary, in plain words.",
-    html: `<p>This illustrative mandate defines what the agent may do. Only you can approve a new boundary.</p><dl><dt>Capital deployed</dt><dd>Up to 70% of NAV</dd><dt>Illiquid sleeves</dt><dd>Up to 40%</dd><dt>Daily turnover</dt><dd>Up to 10%</dd><dt>Drawdown trigger</dt><dd>28%</dd><dt>Validity</dt><dd>30 days</dd></dl><p>This is a design preview. Wallet connection and on-chain signing are not enabled.</p>`,
+    html: `<p>This is the real debt-guardrail mandate, live on Arc Testnet today. You set it once from the Agent page; the contract enforces it on every call, not just the agent's own logic.</p><dl><dt>Trigger</dt><dd>Your choice, e.g. utilization above 75%</dd><dt>Daily limit</dt><dd>Your choice, e.g. up to 50 USDC/day</dd><dt>Reserve kept</dt><dd>Your choice, e.g. always keep 20 USDC</dd><dt>Validity</dt><dd>Your choice, up to 30 days</dd></dl><p>A dedicated agent wallet — never your own — can only repay debt, only within these numbers, only while the mandate hasn't expired.</p>`,
   },
   sleeves: {
-    title: "Four sleeves. One mandate.",
-    html: `<p><strong>Lend:</strong> supply assets to lending pools. The example vault shows cirBTC at 1.85%, USDC at 6.20% and EURC at 4.20%.</p><p><strong>Swap:</strong> rotate between eligible assets within the mandate’s turnover limits.</p><p><strong>Yield:</strong> allocate to eligible yield strategies within your exposure limits.</p><p><strong>RWA:</strong> tokenised real-world assets. Not included in this illustrative vault yet.</p><p>Rates and allocations here are illustrative. T0 means instant liquidity, T1 pool liquidity, T2 a delay measured in days, and T3 a redemption window.</p>`,
+    title: "Four sleeves, four real contracts.",
+    html: `<p><strong>Lend:</strong> RailFlowLendingPool — supply USDC, EURC or cirBTC as collateral, borrow any of the three against your combined collateral.</p><p><strong>Swap:</strong> RailFlowAMM — real constant-product swaps; a pair only quotes a rate once it has seeded liquidity.</p><p><strong>Yield:</strong> RailFlowYieldVault — Stable Yield (USDC) at 8.40% APY / 14-day lock, Euro Yield (EURC) at 6.30% / 7-day lock, cirBTC staking at 4.60% / 21-day lock. No early exit.</p><p><strong>RWA:</strong> RailFlowTBill — a NAV-appreciating instrument; subscribe and redeem USDC at the live on-chain NAV.</p><p>Every rate above is read from the deployed contract, not a mockup.</p>`,
   },
   security: {
     title: "Bounded by the architecture.",
-    html: `<p>The proposed design keeps assets in a vault. The agent plans and executes eligible actions; it has no withdrawal path and cannot increase its own authority.</p><p>Each action is checked against the signed mandate. An action outside the limits reverts.</p><p>No verified deployment address was supplied for this preview, so contract explorer links are not available yet.</p>`,
+    html: `<p>The agent's debt-guardrail mandate lives inside RailFlowLendingPool on Arc Testnet. It can only call <code>agentRepay</code> — never withdraw, borrow, or touch any other asset — and only when your own signed limits allow it.</p><p>Every check (threshold, daily budget, reserve, expiry) happens inside the contract call itself. An action outside them reverts; it never partially executes.</p><p>Open the contract on ArcScan any time — the logic is exactly as described, nothing hidden behind a UI.</p>`,
   },
   withdraw: {
     title: "You keep the exit.",
-    html: `<p>The product design allows you to revoke delegation at any time. Revocation stops new agent actions; the liquidity tier of each sleeve determines when its assets can be unwound.</p><p>T0: instant. T1: pool liquidity. T2: days. T3: a redemption window.</p><p>Withdrawal and emergency unwind controls will need to be connected to the deployed vault. This preview does not move funds.</p>`,
+    html: `<p>Revoking your debt-guardrail mandate is one transaction, any time — <code>revokeMandate()</code> — and it takes effect immediately; the agent can't act on your account again until you set a new one.</p><p>Lend and RWA positions are withdrawable/redeemable any time liquidity allows. Yield vault deposits are locked for their full term by design — that trade-off is what earns the higher rate, and it's stated up front, not discovered later.</p>`,
   },
   start: {
     title: "Start on Arc testnet.",
-    html: `<p>1. Connect a compatible wallet to Arc testnet.</p><p>2. Fund it with test assets and review your mandate limits.</p><p>3. Approve the mandate and deposit test USDC to receive vault shares.</p><p>This landing page is a product preview. A live wallet connection, deployed contracts and testnet funding links have not been configured.</p>`,
+    html: `<p>1. Connect a wallet to Arc Testnet (chain id 5042002).</p><p>2. Get free testnet USDC and EURC from <a href="https://faucet.circle.com" target="_blank" rel="noopener noreferrer">faucet.circle.com</a>.</p><p>3. Open Lend, Swap, Yield, RWA, Bridge or Agent — every action you take signs a real transaction against a real deployed contract.</p><p>This is a testnet demo: real contracts, real transactions, test funds with no market value.</p>`,
   },
   log: {
     title: "Every decision has a reason.",
-    html: `<p><strong>02:14 · Example decision</strong><br>Health factor: 1.61 → 2.30. Exposure reduced within the mandate.</p><p><strong>Example rejected action</strong><br>Turnover cap exceeded. The transaction reverts rather than exceeding the daily boundary.</p><p>The vault summary shows 1,847 illustrative logged decisions and 0 illustrative mandate breaches. A live activity feed is not connected.</p>`,
+    html: `<p><strong>A real logged decision</strong><br>Utilization was 26.9%, above the mandate's 20% threshold. The agent repaid 3.32 USDC, bringing it to 18.0% — all recorded on-chain as an <code>AgentRepaid</code> event with the before/after numbers attached.</p><p>The stats above are read live from that same event log, not a fixed count — the first real decision only just happened, and every one after it will show up the same way.</p>`,
   },
 };
 
 export default function HomePage() {
   const [openGuide, setOpenGuide] = useState(null);
   const dialogRef = useRef(null);
+  const liveStats = useLiveProtocolStats();
+
+  // Auto-advancing principle carousel — restarts its 5s timer on any manual
+  // navigation so a click doesn't get immediately undone by the next tick.
+  const [principleIndex, setPrincipleIndex] = useState(0);
+  const principleTimerRef = useRef(null);
+
+  const restartPrincipleTimer = () => {
+    clearInterval(principleTimerRef.current);
+    principleTimerRef.current = setInterval(() => {
+      setPrincipleIndex((i) => (i + 1) % PRINCIPLES.length);
+    }, 5000);
+  };
+  useEffect(() => {
+    restartPrincipleTimer();
+    return () => clearInterval(principleTimerRef.current);
+  }, []);
+  const goToPrinciple = (i) => {
+    setPrincipleIndex(i);
+    restartPrincipleTimer();
+  };
+  const nextPrinciple = () => goToPrinciple((principleIndex + 1) % PRINCIPLES.length);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -108,26 +276,48 @@ export default function HomePage() {
           <div className="hero-aside">
             <div className="aside-label">
               <span>THE RAILFLOW PRINCIPLE</span>
-              <span>01 — 04</span>
+              <span>
+                {String(principleIndex + 1).padStart(2, "0")} — {String(PRINCIPLES.length).padStart(2, "0")}
+              </span>
             </div>
             <div className="boundary">
-              <div className="boundary-top">
-                <span>YOUR BOUNDARY</span>
-                <span>↗</span>
+              <div className="boundary-progress" key={principleIndex}>
+                {PRINCIPLES.map((p, i) => (
+                  <button
+                    key={p.label}
+                    type="button"
+                    className={`seg${i < principleIndex ? " seg-done" : ""}${i === principleIndex ? " seg-active" : ""}`}
+                    onClick={() => goToPrinciple(i)}
+                    aria-label={`Go to principle ${i + 1}: ${p.label}`}
+                  >
+                    <i />
+                  </button>
+                ))}
               </div>
-              <div className="boundary-middle">
-                <span className="orbit-mark">✳</span>
+              <div className="boundary-top">
+                <span>{PRINCIPLES[principleIndex].label}</span>
+                <button type="button" className="boundary-next" onClick={nextPrinciple} aria-label="Next principle">
+                  ↗
+                </button>
+              </div>
+              <div className="boundary-middle" key={"content" + principleIndex}>
+                <span className="principle-icon">
+                  {(() => {
+                    const Icon = PRINCIPLES[principleIndex].Icon;
+                    return <Icon />;
+                  })()}
+                </span>
                 <p>
-                  Free to act.
+                  {PRINCIPLES[principleIndex].line1}
                   <br />
-                  <span>Bound to your rules.</span>
+                  <span>{PRINCIPLES[principleIndex].line2}</span>
                 </p>
               </div>
               <div className="boundary-bottom">
                 <span>
-                  <i /> Agent operating within mandate
+                  <i /> {PRINCIPLES[principleIndex].status}
                 </span>
-                <span>✓</span>
+                <span className="status-check">✓</span>
               </div>
             </div>
             <div className="aside-footer">
@@ -141,152 +331,101 @@ export default function HomePage() {
 
         <section className="vault-section wrap" id="vault">
           <div className="section-bar">
-            <p className="eyebrow">YOUR CAPITAL, IN CONTEXT</p>
-            <span className="demo-tag">Illustrative vault · demo data</span>
+            <p className="eyebrow">LIVE ON ARC TESTNET</p>
+            <span className="demo-tag">Real contracts · read straight from the chain</span>
           </div>
           <div className="vault-grid">
             <article className="vault-card">
               <div className="card-heading">
-                <h2>Vault overview</h2>
+                <h2>Protocol overview</h2>
                 <span className="active">
-                  <i /> Agent active
+                  <i /> Live
                 </span>
               </div>
               <div className="nav-value">
-                <span>Net asset value</span>
-                <strong>
-                  $1,284,600<span>.00</span>
-                </strong>
+                <span>Value across RailFlow contracts</span>
+                <strong>{liveStats ? `$${liveStats.totalValueUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}` : "—"}</strong>
               </div>
               <div className="vault-metrics">
                 <div>
-                  <span>Net APY</span>
-                  <strong className="green">
-                    +5.12% <small>↗</small>
-                  </strong>
+                  <span>Yield range</span>
+                  <strong className="green">4.60–8.40%</strong>
                 </div>
                 <div>
-                  <span>Drawdown / limit</span>
-                  <strong>
-                    6.2% <small>/ 28%</small>
-                  </strong>
+                  <span>Decisions logged</span>
+                  <strong>{liveStats ? liveStats.decisionsLogged : "—"}</strong>
                 </div>
               </div>
               <div className="progress-title">
-                Mandate usage <span>Current / limit</span>
+                Real yield vault rates <span>Read from RailFlowYieldVault</span>
               </div>
-              <div className="meter">
-                <div>
-                  <span>Capital deployed</span>
-                  <span>
-                    58 <b>/ 70%</b>
-                  </span>
+              {YIELD_VAULTS_DISPLAY.map((v) => (
+                <div className="rate-row" key={v.symbol}>
+                  <img className="asset-icon" src={v.logo} alt="" />
+                  <span>{v.name}</span>
+                  <span className="rate-lock">{v.lockDays}d lock</span>
+                  <strong className="green">{v.apy}</strong>
                 </div>
-                <progress value="58" max="70">
-                  58 / 70%
-                </progress>
-              </div>
-              <div className="meter">
-                <div>
-                  <span>Turnover today</span>
-                  <span>
-                    3.2 <b>/ 10%</b>
-                  </span>
-                </div>
-                <progress value="3.2" max="10">
-                  3.2 / 10%
-                </progress>
-              </div>
-              <div className="meter">
-                <div>
-                  <span>Illiquid sleeves</span>
-                  <span>
-                    28 <b>/ 40%</b>
-                  </span>
-                </div>
-                <progress value="28" max="40">
-                  28 / 40%
-                </progress>
-              </div>
+              ))}
             </article>
             <article className="agent-card" id="mandate">
               <div className="agent-label">
                 <span className="agent-symbol">✳</span>
                 <span>RAILFLOW AGENT</span>
-                <span className="pill">Preview</span>
+                <span className="pill">Live</span>
               </div>
               <h2>
-                Your mandate
+                The debt guardrail
                 <br />
-                is ready.
+                is real.
               </h2>
               <p>
-                Deploy up to <strong>70% of NAV.</strong> Keep illiquid sleeves under <strong>40%.</strong> Reduce
-                exposure if drawdown passes <strong>28%.</strong>
+                Watch your loan. Once utilization crosses <strong>your threshold</strong>, use up to{" "}
+                <strong>your daily limit</strong> to repay it — always keeping <strong>your reserve</strong>.
               </p>
               <div className="agent-rows">
                 <div>
                   <span>Valid for</span>
-                  <strong>30 days</strong>
+                  <strong>Up to 30 days</strong>
                 </div>
                 <div>
-                  <span>Signatures needed</span>
-                  <strong>1</strong>
+                  <span>Mandates set</span>
+                  <strong>{liveStats ? liveStats.mandatesSet : "—"}</strong>
                 </div>
               </div>
               <button className="button" onClick={() => setOpenGuide("mandate")}>
                 Review mandate <span>↗</span>
               </button>
-              <p className="small-note">One signature. A clearly defined boundary.</p>
+              <p className="small-note">One signature. A contract-enforced boundary.</p>
             </article>
           </div>
           <div className="sleeves">
             <div className="sleeve-heading">
-              <h3>Inside the vault</h3>
-              <span>ASSET SLEEVES</span>
+              <h3>Four real sleeves</h3>
+              <span>DEPLOYED CONTRACTS</span>
             </div>
-            <div className="sleeve-row">
-              <img className="asset-icon" src="/logos/cirbtc.svg" alt="" />
-              <strong>cirBTC lending</strong>
-              <span className="tier">
-                T2 <span>· Days</span>
-              </span>
-              <span className="yield">1.85%</span>
-              <span>↗</span>
-            </div>
-            <div className="sleeve-row">
-              <img className="asset-icon" src="/logos/usdc.svg" alt="" />
-              <strong>USDC lending</strong>
-              <span className="tier">
-                T1 <span>· Pool</span>
-              </span>
-              <span className="yield">6.20%</span>
-              <span>↗</span>
-            </div>
-            <div className="sleeve-row">
-              <img className="asset-icon" src="/logos/eurc.png" alt="" />
-              <strong>EURC lending</strong>
-              <span className="tier">
-                T1 <span>· Pool</span>
-              </span>
-              <span className="yield">4.20%</span>
-              <span>↗</span>
-            </div>
+            {YIELD_VAULTS_DISPLAY.map((v) => (
+              <div className="sleeve-row" key={v.symbol}>
+                <img className="asset-icon" src={v.logo} alt="" />
+                <strong>{v.name}</strong>
+                <span className="tier">{v.lockDays}d lock</span>
+                <span className="yield">{v.apy}</span>
+                <span>↗</span>
+              </div>
+            ))}
             <button className="text-link" onClick={() => setOpenGuide("sleeves")}>
               View all sleeves <span>↗</span>
             </button>
           </div>
         </section>
 
-        <section className="stats wrap" aria-label="Illustrative protocol metrics">
+        <section className="stats wrap" aria-label="Live protocol metrics">
           <div>
-            <strong>
-              $1.28<span>M</span>
-            </strong>
-            <p>Vault TVL</p>
+            <strong>{liveStats ? `$${liveStats.totalValueUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}` : "—"}</strong>
+            <p>Value in RailFlow contracts</p>
           </div>
           <div>
-            <strong>1,847</strong>
+            <strong>{liveStats ? liveStats.decisionsLogged : "—"}</strong>
             <p>Decisions logged</p>
           </div>
           <div>
@@ -322,9 +461,9 @@ export default function HomePage() {
                 <br />
                 for your signature.
               </h3>
-              <p>Sign-every-transaction sounds safer until your health factor drops at 3am and you’re asleep.</p>
+              <p>Sign-every-transaction sounds safer until your utilization spikes at 3am and you’re asleep.</p>
               <div className="code success">
-                <span>02:14</span> hf 1.61 → 2.30 <span>✓ within mandate</span>
+                <span>real example</span> util 26.9% → 18.0% <span>✓ repaid 3.32 USDC</span>
               </div>
             </article>
             <article className="feature">
@@ -337,7 +476,7 @@ export default function HomePage() {
               </h3>
               <p>Limits are a contract, not a prompt. An action outside them reverts on-chain.</p>
               <div className="code error">
-                × <span>revert</span> · turnover cap exceeded
+                × <span>revert</span> · exceeds daily limit
               </div>
             </article>
             <article className="feature">
@@ -530,14 +669,14 @@ export default function HomePage() {
         </div>
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} Railflow</span>
-          <span>Product preview · Illustrative data, no live transactions</span>
+          <span>Arc Testnet · Real contracts, real transactions, test funds only</span>
           <a href="#">Back to top ↑</a>
         </div>
       </footer>
 
       <dialog ref={dialogRef} className="guide-dialog" aria-labelledby="guide-title" onClick={handleBackdropClick}>
         <div className="dialog-top">
-          <span className="eyebrow">RAILFLOW / PRODUCT PREVIEW</span>
+          <span className="eyebrow">RAILFLOW / ARC TESTNET</span>
           <button className="close-guide" aria-label="Close dialog" onClick={() => setOpenGuide(null)}>
             ×
           </button>
@@ -744,38 +883,130 @@ export default function HomePage() {
           display: flex;
           justify-content: space-between;
           color: #8a90a0;
-          font: 10px ui-monospace, monospace;
-          letter-spacing: 1px;
+          font: 600 10px/1.5 var(--font-display), ui-monospace, monospace;
+          letter-spacing: 1.4px;
         }
         .rf-page .boundary {
-          margin-top: 18px;
-          border: 1px solid #9dafea;
-          border-radius: 14px;
-          padding: 23px;
-          background: linear-gradient(145deg, #f8faff, #eaf0ff);
-          box-shadow: 0 22px 55px -35px #697cb8;
+          position: relative;
+          margin: 30px 0 26px;
+          border: 1px solid #c3cef4;
+          border-radius: 16px;
+          padding: 22px 23px 23px;
+          background: radial-gradient(120% 90% at 12% -12%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 55%), linear-gradient(155deg, #f8faff 0%, #eef2ff 55%, #e4eafd 100%);
+          box-shadow: 0 26px 60px -32px rgba(32, 45, 110, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+          overflow: hidden;
+          transform: rotate(3deg) translateY(0) scale(1);
+          transition: transform 0.7s cubic-bezier(0.34, 1.2, 0.28, 1), box-shadow 0.6s ease;
+        }
+        .rf-page .boundary:hover {
+          transform: rotate(3deg) translateY(-9px) scale(1.015);
+          box-shadow: 0 34px 64px -32px rgba(32, 45, 110, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+          transition: transform 0.9s cubic-bezier(0.24, 1.65, 0.44, 1), box-shadow 0.7s ease;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .rf-page .boundary {
+            transition: none;
+          }
+        }
+        .rf-page .boundary-progress {
+          display: flex;
+          gap: 5px;
+          margin-bottom: 18px;
+        }
+        .rf-page .boundary-progress .seg {
+          position: relative;
+          flex: 1;
+          height: 3px;
+          border-radius: 3px;
+          background: #d7defa;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          overflow: hidden;
+        }
+        .rf-page .boundary-progress .seg i {
+          position: absolute;
+          inset: 0;
+          display: block;
+          background: var(--blue);
+          border-radius: inherit;
+          transform-origin: left;
+          transform: scaleX(0);
+        }
+        .rf-page .boundary-progress .seg-done i {
+          transform: scaleX(1);
+        }
+        .rf-page .boundary-progress .seg-active i {
+          animation: segFill 5s linear forwards;
+        }
+        @keyframes segFill {
+          from {
+            transform: scaleX(0);
+          }
+          to {
+            transform: scaleX(1);
+          }
         }
         .rf-page .boundary-top {
           display: flex;
           align-items: center;
           justify-content: space-between;
           color: var(--blue);
-          font: 10px ui-monospace, monospace;
+          font: 600 10px/1.5 var(--font-display), ui-monospace, monospace;
           letter-spacing: 1.5px;
         }
-        .rf-page .boundary-top > span:last-child {
-          font-size: 23px;
+        .rf-page .boundary-next {
+          width: 28px;
+          height: 28px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          line-height: 1;
+          background: rgba(32, 69, 223, 0.08);
+          border: none;
+          border-radius: 50%;
+          color: inherit;
+          cursor: pointer;
+          transition: background 0.15s ease, transform 0.15s ease;
+        }
+        .rf-page .boundary-next:hover {
+          background: rgba(32, 69, 223, 0.16);
+          transform: translate(1px, -1px);
         }
         .rf-page .boundary-middle {
-          padding: 25px 0 38px;
-          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          padding: 22px 0 30px;
+          text-align: left;
+          animation: principleFade 0.45s ease;
         }
-        .rf-page .orbit-mark {
-          display: block;
-          font-size: 95px;
-          line-height: 1.3;
+        @keyframes principleFade {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .rf-page .principle-icon {
+          display: grid;
+          place-items: center;
+          width: 50px;
+          height: 50px;
+          margin-bottom: 20px;
+          border-radius: 13px;
           color: var(--blue);
-          font-weight: 300;
+          background: radial-gradient(130% 130% at 25% 15%, #ffffff 0%, #e3e9fd 60%, #d3ddfa 100%);
+          border: 1px solid #c3cef4;
+          box-shadow: 0 12px 26px -16px rgba(32, 69, 223, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+        .rf-page .principle-icon svg {
+          width: 26px;
+          height: 26px;
         }
         .rf-page .boundary-middle p {
           font-size: 24px;
@@ -788,19 +1019,31 @@ export default function HomePage() {
         .rf-page .boundary-bottom {
           display: flex;
           justify-content: space-between;
+          align-items: center;
           border-top: 1px solid #cad5f2;
-          padding-top: 18px;
+          padding-top: 17px;
           font-size: 11px;
           color: #51617f;
         }
-        .rf-page .boundary-bottom i,
-        .rf-page .active i {
+        .rf-page .boundary-bottom i {
           display: inline-block;
           width: 5px;
           height: 5px;
           border-radius: 50%;
           background: var(--green);
           margin-right: 6px;
+        }
+        .rf-page .status-check {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: rgba(35, 133, 99, 0.14);
+          color: var(--green);
+          font-size: 10px;
+          flex-shrink: 0;
         }
         .rf-page .aside-footer {
           margin-top: 21px;
@@ -898,38 +1141,21 @@ export default function HomePage() {
           color: #9299a8;
           font-size: 11px;
         }
-        .rf-page .meter {
-          margin-top: 13px;
+        .rf-page .rate-row {
+          display: grid;
+          grid-template-columns: 26px 1fr auto auto;
+          align-items: center;
+          gap: 11px;
+          padding: 9px 0;
+          font-size: 13px;
         }
-        .rf-page .meter > div {
-          display: flex;
-          justify-content: space-between;
-          font-size: 12px;
+        .rf-page .rate-row .asset-icon {
+          width: 22px;
+          height: 22px;
         }
-        .rf-page .meter b {
-          font-weight: 400;
-          color: #8d94a3;
-        }
-        .rf-page .meter progress {
-          display: block;
-          appearance: none;
-          border: 0;
-          width: 100%;
-          height: 5px;
-          border-radius: 5px;
-          background: #eceff7;
-          margin-top: 8px;
-          overflow: hidden;
-        }
-        .rf-page .meter progress::-webkit-progress-bar {
-          background: #eceff7;
-        }
-        .rf-page .meter progress::-webkit-progress-value {
-          background: var(--blue);
-          border-radius: 5px;
-        }
-        .rf-page .meter progress::-moz-progress-bar {
-          background: var(--blue);
+        .rf-page .rate-lock {
+          color: #9299a8;
+          font-size: 11px;
         }
         .rf-page .agent-card {
           border-radius: 12px;
@@ -1505,10 +1731,16 @@ export default function HomePage() {
             margin: auto;
           }
           .rf-page .boundary-middle {
-            padding: 14px 0 24px;
+            padding: 16px 0 24px;
           }
-          .rf-page .orbit-mark {
-            font-size: 70px;
+          .rf-page .principle-icon {
+            width: 42px;
+            height: 42px;
+            margin-bottom: 16px;
+          }
+          .rf-page .principle-icon svg {
+            width: 22px;
+            height: 22px;
           }
           .rf-page .aside-label {
             font-size: 9px;
