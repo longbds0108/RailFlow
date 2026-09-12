@@ -545,27 +545,17 @@ export function VaultPage() {
                   <div><dt>Deposit fee</dt><dd className="mono">0.000%</dd></div>
                 </dl>
 
-                <a className="vault-risk-link" href="#riskDisclosure">Read Risk Disclosure before depositing</a>
                 <button type="submit" className="place-order" disabled={busy || transactionBusy}>
                   {transactionBusy
                     ? (mode === 'deposit' ? 'Depositing…' : 'Withdrawing…')
                     : (amountForMode ? `${mode === 'deposit' ? 'Deposit' : 'Withdraw'} ${amountForMode} USDC` : (mode === 'deposit' ? 'Deposit' : 'Withdraw'))}
                 </button>
-                <p className="vault-disclaimer">Real Arc Testnet transaction, signed directly by your connected wallet. This contract currently tracks collateral only; return accounting will appear after the strategy data layer is connected.</p>
               </form>
 
               {error && <p className="collateral-error">{error}</p>}
             </>
           )}
 
-          <div className="how-it-works">
-            <div className="how-it-works__head">How the vault works</div>
-            <div className="how-it-works__step"><span>1</span><p>Your USDC moves directly from your connected wallet into the RailflowVault contract on Arc Testnet.</p></div>
-            <div className="how-it-works__step"><span>2</span><p>When the strategy is live, Vault capital may support liquidation activity, native money-market lending, and a share of trading fees.</p></div>
-            <div className="how-it-works__step"><span>3</span><p>Withdraw through the same wallet; transaction availability and any future return depend on the live protocol configuration.</p></div>
-          </div>
-
-          <div className="vault-risk vault-risk--expanded" id="riskDisclosure">⚠ The RailFlow Vault seeks to generate returns through liquidation activity, lending within RailFlow’s native money market, and a share of trading fees. By depositing assets into the Vault, you acknowledge that your funds will be used in these activities and accept the associated risks. The value of your Vault holdings may increase or decrease over time. Returns are variable and not guaranteed, and you may lose some or all of your deposited assets. Please review RailFlow’s Risk Disclosure before depositing.</div>
         </aside>
       </div>
 
