@@ -126,6 +126,29 @@
 .balance-track { flex: 1; height: 5px; background: var(--down); border-radius: 5px; overflow: hidden; }
 .balance-track span { display: block; width: 58%; height: 100%; background: var(--up); }
 .order-card { padding: 17px; }
+.trade-collateral { padding: 14px; margin: -2px -2px 18px; border: 1px solid #21483f; border-radius: 11px; background: linear-gradient(135deg, #0d211e, #0d141a 72%); }
+.trade-collateral__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
+.trade-collateral__heading h2 { margin-top: 3px; color: var(--text); font-size: 15px; font-weight: 600; }
+.trade-collateral__heading .text-link { flex: none; font-size: 11px; }
+.trade-collateral__eyebrow { color: var(--accent); font: 10px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.trade-collateral__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.trade-collateral__stats > div { display: flex; flex-direction: column; gap: 4px; padding: 9px 10px; border: 1px solid #1d3835; border-radius: 8px; background: rgba(4, 15, 14, .34); }
+.trade-collateral__stats span { color: var(--text-faint); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+.trade-collateral__stats strong { color: var(--text-3); font-size: 13px; font-weight: 500; }
+.trade-collateral__form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; margin: 0; }
+.trade-collateral__input-wrap { position: relative; min-width: 0; }
+.trade-collateral__input-wrap input { width: 100%; height: 40px; padding: 9px 48px 9px 11px; border: 1px solid #294640; border-radius: 8px; background: #0b1516; color: var(--text-3); font: 13px var(--font-mono); }
+.trade-collateral__input-wrap input:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 2px #5ee3c417; }
+.trade-collateral__input-wrap span { position: absolute; top: 12px; right: 10px; color: var(--text-muted); font: 10px var(--font-mono); }
+.trade-collateral__max, .trade-collateral__deposit { height: 40px; border-radius: 8px; font-size: 12px; }
+.trade-collateral__max { padding: 0 10px; border: 1px solid #294640; background: transparent; color: var(--accent); }
+.trade-collateral__max:hover:not(:disabled) { background: #123b33; }
+.trade-collateral__deposit { grid-column: 1 / -1; border: 0; background: var(--accent); color: #05201a; font-weight: 600; }
+.trade-collateral__deposit:hover:not(:disabled), .trade-collateral__connect:hover { background: var(--accent-hover); }
+.trade-collateral__deposit:disabled, .trade-collateral__max:disabled { cursor: not-allowed; opacity: .55; }
+.trade-collateral__connect { width: 100%; height: 40px; border: 0; border-radius: 8px; background: var(--accent); color: #05201a; font-size: 12px; font-weight: 600; }
+.trade-collateral__error { margin: 8px 0 0; color: #ff8996; font-size: 11px; line-height: 1.45; }
+.trade-collateral__note { margin: 9px 0 0; color: var(--text-faint); font-size: 10.5px; line-height: 1.45; }
 .trade-side-toggle { display: grid; grid-template-columns: 1fr 1fr; background: #0d141a; border-radius: 10px; overflow: hidden; }
 .trade-side-toggle button { background: none; border: 0; padding: 12px; color: var(--text-dim); font-size: 15px; }
 .trade-side-toggle .is-active { background: #123b33; color: var(--accent); font-weight: 600; }

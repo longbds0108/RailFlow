@@ -6,6 +6,7 @@ import { TradeWalletButton } from './TradeWalletButton.jsx';
 import { ConnectionBar } from './ConnectionBar.jsx';
 import { VaultBridge } from './VaultBridge.jsx';
 import { VaultPage } from './VaultPage.jsx';
+import { TradeCollateral } from './TradeCollateral.jsx';
 import { PortfolioBridge } from './PortfolioBridge.jsx';
 
 // One bundle serves all pages. Each page only has the mount points it
@@ -21,6 +22,7 @@ function App() {
   const connectionBar = document.getElementById('wallet-connection-root');
   const vaultPage = document.getElementById('wallet-vault-root');
   const portfolioPage = document.getElementById('wallet-portfolio-root');
+  const tradeCollateral = document.getElementById('wallet-collateral-root');
   return (
     <Providers>
       <VaultBridge />
@@ -29,6 +31,7 @@ function App() {
       {tradeButton && createPortal(<TradeWalletButton />, tradeButton)}
       {connectionBar && createPortal(<ConnectionBar />, connectionBar)}
       {vaultPage && createPortal(<VaultPage />, vaultPage)}
+      {tradeCollateral && createPortal(<TradeCollateral />, tradeCollateral)}
     </Providers>
   );
 }
