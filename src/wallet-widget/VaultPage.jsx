@@ -193,7 +193,6 @@ export function VaultPage() {
   const [topUpAmount, setTopUpAmount] = useState('');
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [riskAcknowledged, setRiskAcknowledged] = useState(false);
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [chartRange, setChartRange] = useState('ALL');
@@ -384,7 +383,6 @@ export function VaultPage() {
 
   function handleDeposit(event) {
     event.preventDefault();
-    if (!riskAcknowledged) return setError('Review and acknowledge the Vault Risk Disclosure before depositing.');
     const value = parsePositiveDecimal(depositAmount);
     if (Number.isNaN(value)) return setError('Enter a valid deposit amount greater than zero.');
     if (value > circleBalanceUsdc) return setError('Amount exceeds your Circle wallet balance — top up first.');
@@ -540,14 +538,8 @@ export function VaultPage() {
                   <div><dt>Deposit fee</dt><dd className="mono">0.000%</dd></div>
                 </dl>
 
-                {mode === 'deposit' && (
-                  <label className="vault-risk-check">
-                    <input type="checkbox" checked={riskAcknowledged} onChange={(event) => { setRiskAcknowledged(event.target.checked); setError(''); }} />
-                    <span>I acknowledge that deposited assets may be used for liquidation activity, native money-market lending, and a share of trading fees. I understand returns are variable, not guaranteed, and I may lose some or all of my deposited assets.</span>
-                  </label>
-                )}
                 <a className="vault-risk-link" href="#riskDisclosure">Read Risk Disclosure before depositing</a>
-                <button type="submit" className="place-order" disabled={busy || (mode === 'deposit' && !riskAcknowledged)}>
+                <button type="submit" className="place-order" disabled={busy}>
                   {busyStep === mode
                     ? (mode === 'deposit' ? 'Depositing…' : 'Withdrawing…')
                     : (amountForMode ? `${mode === 'deposit' ? 'Deposit' : 'Withdraw'} ${amountForMode} USDC` : (mode === 'deposit' ? 'Deposit' : 'Withdraw'))}
