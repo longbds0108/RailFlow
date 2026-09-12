@@ -468,14 +468,37 @@ export function VaultPage() {
     <div className="vault-page">
       <section className="vault-hero">
         <div className="vault-hero__copy">
-          <div className="vault-hero__eyebrow">Vault</div>
-          <h1>Deposit USDC. Fund your demo trading margin.</h1>
-          <p>The RailFlow Vault seeks to generate returns through liquidation activity, lending within RailFlow’s native money market, and a share of trading fees. Deposits are used in these activities and carry risk; the current Arc Testnet preview keeps the return data layer clearly marked as not yet live.</p>
+          <div className="vault-hero__eyebrow"><span className="vault-live-dot"></span>Arc Testnet · Vault</div>
+          <h1>One place to manage your Railflow Vault.</h1>
+          <p>Deposit USDC from your Circle wallet, follow on-chain Vault Equity, and withdraw when you need it. Strategy returns are shown only after their data source is live.</p>
         </div>
         <div className="vault-hero__pills">
           <div className="vault-pill"><span className="vault-pill__value mono">{formatNum(tvlUsdc, 2)}</span><span className="vault-pill__label">Total value locked</span></div>
           <div className="vault-pill"><span className="vault-pill__value mono">{globalStats.loading ? '…' : globalStats.depositorCount}</span><span className="vault-pill__label">Depositors</span></div>
           <div className="vault-pill"><span className="vault-pill__value mono">{vaultAgeDays !== null ? vaultAgeDays + 'd' : '—'}</span><span className="vault-pill__label">Vault age</span></div>
+        </div>
+      </section>
+
+      <section className="vault-overview" aria-label="Vault overview">
+        <div className="vault-overview__item vault-overview__item--primary">
+          <span className="vault-overview__label">Vault Equity</span>
+          <strong className="mono">{formatNum(tvlUsdc, 2)} USDC</strong>
+          <small>On-chain balance</small>
+        </div>
+        <div className="vault-overview__item">
+          <span className="vault-overview__label">Your position</span>
+          <strong className="mono">{formatNum(collateralUsdc, 4)} USDC</strong>
+          <small>{circleWallet ? 'Circle wallet position' : 'Connect to view position'}</small>
+        </div>
+        <div className="vault-overview__item">
+          <span className="vault-overview__label">Vault share</span>
+          <strong className="mono">{circleWallet ? formatNum(vaultShare, 3) + '%' : '—'}</strong>
+          <small>Pro-rata UI calculation</small>
+        </div>
+        <div className="vault-overview__item">
+          <span className="vault-overview__label">APR</span>
+          <strong className="mono vault-value-muted">—</strong>
+          <small>Return data not live</small>
         </div>
       </section>
 
@@ -498,14 +521,15 @@ export function VaultPage() {
           <div className="vault-card__head">
             <span className="vault-icon">RF</span>
             <div>
-              <h2>Railflow Vault<span className="vault-badge">Self-custodial</span></h2>
+              <h2>Railflow Vault<span className="vault-badge">Arc Testnet</span><span className="vault-badge vault-badge--muted">Self-custodial</span></h2>
               <p className="mono vault-address">{shortAddress(VAULT_ADDRESS)}<CopyButton text={VAULT_ADDRESS} /><a className="text-link" href={'https://testnet.arcscan.app/address/' + VAULT_ADDRESS} target="_blank" rel="noopener noreferrer">View on Arcscan ↗</a></p>
             </div>
           </div>
-          <p className="vault-desc">Deposit and withdraw your own testnet USDC through the Vault. Vault Equity is calculated from on-chain deposits and withdrawals; PnL and APR appear only when live strategy data is available.</p>
+          <div className="vault-card__notice"><span className="vault-card__notice-dot"></span><span>On-chain accounting active</span><span className="vault-card__notice-divider">·</span><span>Performance accounting pending</span></div>
+          <p className="vault-desc">Deposit and withdraw your own testnet USDC through the Vault. Vault Equity is calculated from the contract balance and deposit/withdrawal history; PnL and APR appear only when live strategy data is available.</p>
           <div className="vault-metrics">
             <div><dt>TVL</dt><dd className="mono">{formatNum(tvlUsdc, 2)} USDC</dd></div>
-            <div><dt>Returns</dt><dd className="mono">Variable</dd></div>
+            <div><dt>APR</dt><dd className="mono vault-value-muted">Not live</dd></div>
             <div><dt>Lock window</dt><dd className="mono">None</dd></div>
             <div><dt>Deposit fee</dt><dd className="mono">0.000%</dd></div>
           </div>
@@ -568,6 +592,10 @@ export function VaultPage() {
             </>
           ) : (
             <>
+              <div className="vault-panel__title-row">
+                <div><span className="vault-panel__eyebrow">Position</span><h2>Manage your vault</h2></div>
+                <span className="vault-panel__network">ARC</span>
+              </div>
               <div className="vault-flow-guide">
                 <div className="vault-flow-guide__title">Deposit flow</div>
                 <div className="vault-flow-guide__step"><span>1</span><p>Top up the Circle wallet from your connected external wallet.</p></div>
@@ -616,7 +644,7 @@ export function VaultPage() {
                     ? (mode === 'deposit' ? 'Depositing…' : 'Withdrawing…')
                     : (amountForMode ? `${mode === 'deposit' ? 'Deposit' : 'Withdraw'} ${amountForMode} USDC` : (mode === 'deposit' ? 'Deposit' : 'Withdraw'))}
                 </button>
-                <p className="vault-disclaimer">Real testnet transaction, signed by your Circle wallet. Returns are variable and not guaranteed; live return accounting will appear only after the strategy data layer is connected.</p>
+                <p className="vault-disclaimer">Real Arc Testnet transaction, signed by your Circle wallet. This contract currently tracks collateral only; return accounting will appear after the strategy data layer is connected.</p>
               </form>
 
               {error && <p className="collateral-error">{error}</p>}
