@@ -434,6 +434,7 @@
   }
 
   function sideLabel(side) { return '<span class="side-badge is-' + side + '">' + side + '</span>'; }
+  function orderTypeLabel(type) { return type === 'stop' ? 'Stop market' : type === 'market' ? 'Market' : 'Limit'; }
   function table(headers, rows, emptyText) {
     return '<table class="activity-table"><thead><tr>' + headers.map(function (head, index) { return '<th' + (index > 0 ? ' class="ta-r"' : '') + '>' + head + '</th>'; }).join('') + '</tr></thead><tbody>' + (rows || '<tr><td class="empty-state" colspan="' + headers.length + '">' + emptyText + '</td></tr>') + '</tbody></table>';
   }
@@ -471,7 +472,7 @@
       $('activityPanel').innerHTML = table(['Instrument', 'Quantity', 'Mark', 'Value', 'Entry Price', 'Liq. Price', 'Margin', 'Funding', 'UPNL', 'RPNL', '<span class="sr-only">Actions</span>'], rows, 'No open positions. Place a market order to start trading.');
     } else if (state.activity === 'orders') {
       rows = account.orders.map(function (o) {
-        return '<tr><td><span class="position-pair">' + sideLabel(o.side) + o.market + '-PERP</span></td><td class="mono ta-r">' + (o.type === 'stop' ? 'Stop market' : 'Limit') + '</td><td class="mono ta-r">' + format(o.price) + '</td><td class="mono ta-r">' + money(o.size) + '</td><td class="mono ta-r">' + o.leverage + 'x · ' + (o.marginMode === 'isolated' ? 'Isolated' : 'Cross') + '</td><td><button type="button" class="small-button" data-cancel="' + o.id + '" aria-label="Cancel ' + o.market + ' order">Cancel</button></td></tr>';
+        return '<tr><td><span class="position-pair">' + sideLabel(o.side) + o.market + '-PERP</span></td><td class="mono ta-r">' + orderTypeLabel(o.type) + '</td><td class="mono ta-r">' + format(o.price) + '</td><td class="mono ta-r">' + money(o.size) + '</td><td class="mono ta-r">' + o.leverage + 'x · ' + (o.marginMode === 'isolated' ? 'Isolated' : 'Cross') + '</td><td><button type="button" class="small-button" data-cancel="' + o.id + '" aria-label="Cancel ' + o.market + ' order">Cancel</button></td></tr>';
       }).join('');
       $('activityPanel').innerHTML = table(['Instrument', 'Type', 'Price / trigger', 'Size', 'Leverage', '<span class="sr-only">Actions</span>'], rows, 'No open orders. Limit and stop orders will appear here.');
     } else if (state.activity === 'trades') {
@@ -481,7 +482,7 @@
       $('activityPanel').innerHTML = table(['Instrument', 'Side', 'Price', 'Size', 'Fee', 'Time'], rows, 'No trades in this session. Executed orders will appear here.');
     } else if (state.activity === 'orderHistory') {
       rows = account.orderHistory.map(function (o) {
-        return '<tr><td><span class="position-pair">' + sideLabel(o.side) + o.market + '-PERP</span></td><td class="mono ta-r">' + (o.type === 'stop' ? 'Stop market' : 'Limit') + '</td><td class="mono ta-r">' + format(o.price) + '</td><td class="mono ta-r">' + money(o.size) + '</td><td class="mono ta-r">' + o.status + '</td><td class="mono ta-r">' + o.time + '</td></tr>';
+        return '<tr><td><span class="position-pair">' + sideLabel(o.side) + o.market + '-PERP</span></td><td class="mono ta-r">' + orderTypeLabel(o.type) + '</td><td class="mono ta-r">' + format(o.price) + '</td><td class="mono ta-r">' + money(o.size) + '</td><td class="mono ta-r">' + o.status + '</td><td class="mono ta-r">' + o.time + '</td></tr>';
       }).join('');
       $('activityPanel').innerHTML = table(['Instrument', 'Type', 'Price / trigger', 'Size', 'Status', 'Time'], rows, 'No order history yet. Cancelled and filled orders will appear here.');
     } else if (state.activity === 'funding') {
@@ -669,6 +670,7 @@
     if (marketable) {
       account.cash -= fee;
       account.positions.push({ id: nextId++, market: state.market, side: state.side, leverage: state.leverage, quantity: size / mark, entry: mark, liquidation: estimatedLiq(mark, state.side, state.leverage), margin: margin, marginMode: state.marginMode, fundingPaid: 0, lastFundingEpoch: fundingEpoch(Date.now()) });
+      account.orderHistory.unshift({ market: state.market, side: state.side, type: 'market', price: mark, size: size, status: 'Filled', time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
       recordFill(state.market, state.side, mark, size, fee);
       setActivity('positions');
       notify(state.market + ' ' + state.side + ' position opened · ' + money(size) + ' simulated (' + (state.marginMode === 'isolated' ? 'isolated' : 'cross') + ' margin).');
@@ -693,6 +695,7 @@
       var fee = size * .00025;
       var profit = position.marginMode === 'isolated' ? Math.max(pnl(position), -position.margin) : pnl(position);
       account.cash += profit - fee;
+      account.orderHistory.unshift({ market: position.market, side: position.side === 'long' ? 'short' : 'long', type: 'market', price: exitPrice, size: size, status: 'Filled', time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
       recordFill(position.market, position.side === 'long' ? 'short' : 'long', exitPrice, size, fee);
       account.realizedPnl.unshift({ market: position.market, side: position.side, quantity: position.quantity, entry: position.entry, exit: exitPrice, pnl: profit, time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
       account.positions = account.positions.filter(function (p) { return p.id !== position.id; });

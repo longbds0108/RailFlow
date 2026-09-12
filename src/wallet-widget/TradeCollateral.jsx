@@ -41,7 +41,13 @@ export function TradeCollateral() {
   const walletUsdc = walletBalance ? Number(formatEther(walletBalance.value)) : 0;
   const busy = isPending || isConfirming;
   const maxDeposit = Math.max(0, walletUsdc - 0.01);
+  const triggerRef = useRef(null);
   const closeButtonRef = useRef(null);
+
+  function closeModal() {
+    setIsOpen(false);
+    requestAnimationFrame(() => triggerRef.current?.focus());
+  }
 
   useEffect(() => {
     if (!isSuccess) return;
@@ -60,7 +66,7 @@ export function TradeCollateral() {
     if (!isOpen) return undefined;
     closeButtonRef.current?.focus();
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setIsOpen(false);
+      if (event.key === 'Escape') closeModal();
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
@@ -85,12 +91,12 @@ export function TradeCollateral() {
 
   return (
     <div className="trade-deposit">
-      <button type="button" className="trade-deposit__trigger" onClick={() => setIsOpen(true)} aria-haspopup="dialog" aria-expanded={isOpen}>
+      <button ref={triggerRef} type="button" className="trade-deposit__trigger" onClick={() => setIsOpen(true)} aria-haspopup="dialog" aria-expanded={isOpen}>
         <span>Deposit</span><small>USDC</small>
       </button>
 
       {isOpen && (
-        <div className="trade-deposit__overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}>
+        <div className="trade-deposit__overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && closeModal()}>
           <section className="trade-deposit__modal" role="dialog" aria-modal="true" aria-labelledby="tradeDepositTitle">
             <div className="trade-deposit__heading">
               <div className="trade-deposit__title">
@@ -100,7 +106,7 @@ export function TradeCollateral() {
                   <h2 id="tradeDepositTitle">Deposit USDC</h2>
                 </div>
               </div>
-              <button ref={closeButtonRef} type="button" className="trade-deposit__close" onClick={() => setIsOpen(false)} aria-label="Close deposit dialog">×</button>
+              <button ref={closeButtonRef} type="button" className="trade-deposit__close" onClick={closeModal} aria-label="Close deposit dialog">×</button>
             </div>
             <p className="trade-deposit__intro">Fund your demo margin with USDC on Arc Testnet.</p>
 
