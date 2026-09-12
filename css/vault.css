@@ -75,6 +75,16 @@
 .vault-panel { padding: 20px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 14px; display: flex; flex-direction: column; gap: 16px; }
 .vault-panel h2 { font-size: 15px; font-weight: 600; }
 
+.vault-backend-warning { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid #4a3a1a; border-radius: 9px; background: #2c210f; color: #f0cd83; font-size: 12px; line-height: 1.5; }
+.vault-backend-warning strong { font-size: 13px; color: #ffe5a6; }
+.vault-backend-warning .mono { overflow-wrap: anywhere; }
+
+.vault-flow-guide { display: flex; flex-direction: column; gap: 9px; padding: 13px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-field); }
+.vault-flow-guide__title { color: var(--text-2, var(--text)); font: 10.5px var(--font-mono); text-transform: uppercase; letter-spacing: .08em; }
+.vault-flow-guide__step { display: flex; gap: 9px; align-items: flex-start; }
+.vault-flow-guide__step span { flex: none; width: 18px; height: 18px; border-radius: 5px; background: var(--accent-bg); color: var(--accent); display: flex; align-items: center; justify-content: center; font: 10px var(--font-mono); }
+.vault-flow-guide__step p { margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+
 .vault-topup label { font-size: 12px; color: var(--text-muted); }
 
 .vault-panel__tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border-radius: 8px; overflow: hidden; }

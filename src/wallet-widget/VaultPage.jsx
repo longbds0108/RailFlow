@@ -4,7 +4,7 @@ import { formatEther, parseEther } from 'viem';
 import { vaultAbi } from './vaultAbi.js';
 import { VAULT_ADDRESS } from './vault.js';
 import { arcTestnet } from './chain.js';
-import { CIRCLE_APP_ID } from './circleConfig.js';
+import { CIRCLE_APP_ID, CIRCLE_BACKEND_IS_LOCAL, CIRCLE_BACKEND_URL } from './circleConfig.js';
 import { requestContractExecution } from './circleApi.js';
 import { useCircleWallet } from './useCircleWallet.js';
 import { shortAddress } from './address.js';
@@ -258,8 +258,13 @@ function useGlobalVaultStats(publicClient) {
 // Circle wallet. Strategy returns are described as a preview until the
 // liquidation, money-market, and fee data layers are connected.
 export function VaultPage() {
-  const { address, isConnected, onArc, circleWallet, checking, status, autoError, setUpWallet, ensureSession, ensureSdk } = useCircleWallet({ autoCreate: true });
+  const { address, isConnected, onArc, circleWallet, checking, status, autoError, setUpWallet, ensureSession, ensureSdk } = useCircleWallet({ autoCreate: false });
   const publicClient = usePublicClient();
+  const hostedBackendUnavailable = typeof window !== 'undefined'
+    && window.location.hostname !== ''
+    && window.location.hostname !== 'localhost'
+    && window.location.hostname !== '127.0.0.1'
+    && CIRCLE_BACKEND_IS_LOCAL;
 
   const [mode, setMode] = useState('deposit');
   const [busyStep, setBusyStep] = useState('');
@@ -389,6 +394,7 @@ export function VaultPage() {
 
   async function handleSetUp() {
     setError('');
+    if (hostedBackendUnavailable) return setError('The hosted Vault is still connected to localhost:8787. Configure a public HTTPS Circle backend before setting up a wallet.');
     setBusyStep('wallet');
     try {
       await setUpWallet();
@@ -401,6 +407,10 @@ export function VaultPage() {
 
   async function runContractExecution({ abiFunctionSignature, abiParameters, amount, stepName, onDone }) {
     setError('');
+    if (hostedBackendUnavailable) {
+      setError('Deposit service is unavailable on this hosted page because the Circle backend is configured as localhost:8787.');
+      return;
+    }
     setBusyStep(stepName);
     try {
       const data = await ensureSession();
@@ -516,6 +526,12 @@ export function VaultPage() {
         </section>
 
         <aside className="vault-panel" ref={panelRef}>
+          {hostedBackendUnavailable && (
+            <div className="vault-backend-warning">
+              <strong>Deposit service is not connected</strong>
+              <span>This hosted page is still pointing to <span className="mono">{CIRCLE_BACKEND_URL}</span>. Circle wallet setup, deposit, and withdrawal need a public HTTPS backend; top up the Circle wallet only after that connection is configured.</span>
+            </div>
+          )}
           {!CIRCLE_APP_ID ? (
             <p className="collateral-note">Circle Wallets isn't configured yet (missing app ID), so the vault can't be managed from here right now.</p>
           ) : !isConnected ? (
@@ -525,7 +541,7 @@ export function VaultPage() {
           ) : !circleWallet ? (
             <>
               <h2>Set up your Circle wallet</h2>
-              <p className="vault-desc">Your Circle wallet is a separate, PIN-secured wallet that actually holds and deposits your collateral. It's funded from the external wallet you connected.</p>
+              <p className="vault-desc">Vault deposits use a separate, PIN-secured Circle wallet. First connect your external wallet, then create the Circle wallet, fund it, and deposit from its balance.</p>
               {checking && !autoError && (
                 <p className="collateral-note">
                   {status === 'session' && 'Starting a Circle session…'}
@@ -544,9 +560,20 @@ export function VaultPage() {
                   </button>
                 </>
               )}
+              {!checking && !autoError && status === 'idle' && !hostedBackendUnavailable && (
+                <button type="button" className="place-order" disabled={busy} onClick={handleSetUp}>
+                  Set up Circle wallet
+                </button>
+              )}
             </>
           ) : (
             <>
+              <div className="vault-flow-guide">
+                <div className="vault-flow-guide__title">Deposit flow</div>
+                <div className="vault-flow-guide__step"><span>1</span><p>Top up the Circle wallet from your connected external wallet.</p></div>
+                <div className="vault-flow-guide__step"><span>2</span><p>Enter an amount up to the Circle wallet balance.</p></div>
+                <div className="vault-flow-guide__step"><span>3</span><p>Click Deposit and confirm the Circle PIN transaction.</p></div>
+              </div>
               <p className="mono vault-address">Circle wallet {shortAddress(circleWallet.address)}<CopyButton text={circleWallet.address} /></p>
 
               <form onSubmit={handleTopUp} className="collateral-form vault-topup">
@@ -584,7 +611,7 @@ export function VaultPage() {
                 </dl>
 
                 <a className="vault-risk-link" href="#riskDisclosure">Read Risk Disclosure before depositing</a>
-                <button type="submit" className="place-order" disabled={busy}>
+                <button type="submit" className="place-order" disabled={busy || hostedBackendUnavailable}>
                   {busyStep === mode
                     ? (mode === 'deposit' ? 'Depositing…' : 'Withdrawing…')
                     : (amountForMode ? `${mode === 'deposit' ? 'Deposit' : 'Withdraw'} ${amountForMode} USDC` : (mode === 'deposit' ? 'Deposit' : 'Withdraw'))}

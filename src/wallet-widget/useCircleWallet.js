@@ -29,11 +29,9 @@ function withTimeout(promise, ms, message) {
 // Shared by VaultBridge (invisible, always mounted on every page, just
 // needs to know the collateral-owning address if one already exists — it
 // must never trigger wallet creation itself, or every page would pop
-// Circle's PIN screen) and VaultPage (the full dashboard, which passes
-// autoCreate: true so landing on vault.html with a connected wallet and no
-// Circle wallet yet kicks off creation immediately instead of waiting for
-// a button click). The PIN step itself still needs the user — that's
-// Circle's hosted UI and can't be skipped — but nothing before it does.
+// Circle's PIN screen) and VaultPage (the full dashboard, which starts
+// creation from an explicit button). The PIN step itself still needs the
+// user — that's Circle's hosted UI and can't be skipped.
 export function useCircleWallet({ autoCreate = false } = {}) {
   const { address, isConnected, chainId } = useAccount();
   const onArc = isConnected && chainId === arcTestnet.id;
@@ -159,7 +157,7 @@ export function useCircleWallet({ autoCreate = false } = {}) {
       } catch (err) {
         log('failed:', err.message, err);
         setStatus('error');
-        if (!cancelled && autoCreate) setAutoError(err.message || 'Could not set up your Circle wallet automatically.');
+        if (!cancelled) setAutoError(err.message || 'Could not connect to the Circle backend.');
       } finally {
         if (!cancelled) setChecking(false);
       }
