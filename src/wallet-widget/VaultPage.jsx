@@ -517,8 +517,6 @@ export function VaultPage() {
                 <div className="vault-flow-guide__step"><span>2</span><p>Enter an amount from your connected wallet balance.</p></div>
                 <div className="vault-flow-guide__step"><span>3</span><p>Confirm the Arc Testnet transaction in your wallet.</p></div>
               </div>
-              <p className="mono vault-address">Connected wallet {shortAddress(address)}<CopyButton text={address} /><a className="text-link" href={'https://testnet.arcscan.app/address/' + address} target="_blank" rel="noopener noreferrer">View on Arcscan ↗</a></p>
-
               <div className="vault-panel__tabs">
                 <button type="button" className={mode === 'deposit' ? 'is-active' : ''} onClick={() => setMode('deposit')}>Deposit</button>
                 <button type="button" className={mode === 'withdraw' ? 'is-active' : ''} onClick={() => setMode('withdraw')}>Withdraw</button>
