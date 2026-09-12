@@ -46,6 +46,57 @@
   --text-faint: #798491;
   --text-faint-2: #6E7987;
   --text-ghost: #5A6573;
+
+  --header-bg: rgba(6,8,11,0.82);
+  --header-trade-bg: #070a0d;
+  --theme-button-bg: #0D141A;
+  --theme-button-border: #1B2732;
+}
+
+html[data-theme="light"] {
+  --bg: #F4F7F8;
+  --bg-card: #FFFFFF;
+  --bg-card-alt: #EEF3F4;
+  --bg-card-head: #F7FAFA;
+  --bg-card-deep: #ECF2F3;
+  --bg-field: #FFFFFF;
+
+  --border: #DCE5E7;
+  --border-mid: #D4DFE2;
+  --border-card: #CBD9DC;
+  --border-field: #C3D1D4;
+  --border-strong: #B5C5C9;
+  --border-hover: #89B5B1;
+  --border-header-strong: #8FA9AD;
+
+  --accent: #078A75;
+  --accent-hover: #067260;
+  --accent-link-hover: #056A5A;
+  --accent-dim: #2B8D7F;
+  --accent-bg: #DDF3EE;
+  --accent-border: #A8D8CD;
+  --accent-soft: #26786D;
+  --accent-white: #145F55;
+
+  --up: #078A66;
+  --down: #D83C52;
+  --down-soft: #C62D44;
+
+  --text: #17252B;
+  --text-2: #26383F;
+  --text-3: #3C5158;
+  --text-muted: #60727A;
+  --text-muted-2: #5A6D75;
+  --text-dim: #63757C;
+  --text-dim-2: #6B7C83;
+  --text-faint: #718289;
+  --text-faint-2: #687980;
+  --text-ghost: #849399;
+
+  --header-bg: rgba(255,255,255,0.9);
+  --header-trade-bg: rgba(255,255,255,0.94);
+  --theme-button-bg: #FFFFFF;
+  --theme-button-border: #C5D3D6;
 }
 
 html { scroll-behavior: smooth; }
@@ -124,7 +175,7 @@ a:hover { color: var(--accent-link-hover); }
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; gap: 24px;
   padding: 14px 28px;
-  background: rgba(6,8,11,0.82);
+  background: var(--header-bg);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
 }
@@ -148,9 +199,22 @@ a:hover { color: var(--accent-link-hover); }
   padding: 7px 12px; border-radius: 8px; font-size: var(--font-size-nav); color: var(--text-muted);
   transition: background .15s, color .15s;
 }
-.nav a:hover { background: #101720; color: var(--text); }
+.nav a:hover { background: var(--bg-card-alt); color: var(--text); }
 
 .header__actions { display: flex; align-items: center; gap: 10px; }
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; padding: 0;
+  border: 1px solid var(--theme-button-border); border-radius: 10px;
+  background: var(--theme-button-bg); color: var(--text-muted);
+  cursor: pointer; transition: color .15s, background .15s, border-color .15s;
+}
+.theme-toggle:hover { color: var(--accent); border-color: var(--border-hover); background: var(--bg-card-alt); }
+.theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.theme-toggle__icon { font-size: 19px; line-height: 1; }
+.theme-toggle__icon--moon { display: none; }
+html[data-theme="light"] .theme-toggle__icon--sun { display: none; }
+html[data-theme="light"] .theme-toggle__icon--moon { display: inline; }
 .network-pill {
   display: flex; align-items: center; gap: 7px;
   padding: 7px 11px; border-radius: 8px;
@@ -173,7 +237,7 @@ a:hover { color: var(--accent-link-hover); }
   background: var(--bg-card-alt); border: 1px solid var(--border-strong);
   color: var(--text-2); font-weight: 500;
 }
-.btn--ghost:hover { border-color: var(--border-header-strong); background: #111922; color: var(--text-2); }
+.btn--ghost:hover { border-color: var(--border-header-strong); background: var(--bg-card-alt); color: var(--text-2); }
 .btn--sm { padding: 9px 16px; font-size: 13.5px; }
 .btn--lg { padding: 14px 24px; font-size: 15px; }
 
@@ -394,3 +458,49 @@ a:hover { color: var(--accent-link-hover); }
   .hero, .section { padding-left: 16px; padding-right: 16px; }
   .cta-banner { padding: 28px 22px; }
 }
+
+/* ============ Light theme surfaces ============ */
+html[data-theme="light"] .trade-page { background: var(--bg); }
+html[data-theme="light"] .trade-header { background: var(--header-trade-bg); }
+html[data-theme="light"] .trade-nav .is-active,
+html[data-theme="light"] .trade-nav a:hover,
+html[data-theme="light"] .trade-nav button:hover { background: var(--bg-card-alt); }
+html[data-theme="light"] .trade-header .network-pill,
+html[data-theme="light"] .wallet-button { background: var(--bg-card-alt); border-color: var(--theme-button-border); }
+html[data-theme="light"] .trading-card,
+html[data-theme="light"] .portfolio-panel,
+html[data-theme="light"] .lending-panel,
+html[data-theme="light"] .vault-card,
+html[data-theme="light"] .vault-panel,
+html[data-theme="light"] .vault-transfers { background: var(--bg-card); border-color: var(--border-card); }
+html[data-theme="light"] .chart-type-button,
+html[data-theme="light"] .order-field input,
+html[data-theme="light"] .size-presets button,
+html[data-theme="light"] .margin-mode-toggle button,
+html[data-theme="light"] .trade-side-toggle,
+html[data-theme="light"] .portfolio-address-row,
+html[data-theme="light"] .lending-selected-asset,
+html[data-theme="light"] .vault-tabs { background: var(--bg-field); border-color: var(--border-field); }
+html[data-theme="light"] .chart-type-menu,
+html[data-theme="light"] .market-menu,
+html[data-theme="light"] .info-dialog { background: var(--bg-card); border-color: var(--border-strong); box-shadow: 0 15px 40px rgba(20,44,49,.18); }
+html[data-theme="light"] .activity-tabs .is-active,
+html[data-theme="light"] .timeframes .is-active,
+html[data-theme="light"] .trade-side-toggle .is-active,
+html[data-theme="light"] .size-presets button:last-child,
+html[data-theme="light"] .margin-mode-toggle .is-active,
+html[data-theme="light"] .vault-tabs button.is-active { background: var(--accent-bg); }
+html[data-theme="light"] .activity-table th,
+html[data-theme="light"] .portfolio-market-labels,
+html[data-theme="light"] .lending-table th { background: var(--bg-card-head); }
+html[data-theme="light"] .positions-footer,
+html[data-theme="light"] .portfolio-ticker,
+html[data-theme="light"] .lending-ticker { background: var(--bg-card-deep); }
+html[data-theme="light"] .portfolio-market-row:hover,
+html[data-theme="light"] .lending-table tbody tr:hover,
+html[data-theme="light"] .book-row:hover { background: var(--bg-card-alt); }
+html[data-theme="light"] .portfolio-refresh-button { background: var(--bg-card-alt); color: var(--text-2); }
+html[data-theme="light"] .vault-risk,
+html[data-theme="light"] .lending-preview-badge { background: #FFF4D9; border-color: #E7C878; color: #87651A; }
+html[data-theme="light"] .connection-bar[data-state="disconnected"] { background: #EEF3F5; border-bottom-color: var(--border); }
+html[data-theme="light"] .connection-bar[data-state="wrong-network"] { background: #FFF4D9; border-bottom-color: #E7C878; color: #87651A; }
