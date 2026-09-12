@@ -23,6 +23,8 @@
       button.setAttribute('aria-label', nextLabel);
       button.setAttribute('title', nextLabel);
       button.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
+      var label = button.querySelector('[data-theme-label]');
+      if (label) label.textContent = theme === 'light' ? 'Sáng' : 'Tối';
     });
     if (persist) {
       try { window.localStorage.setItem(STORAGE_KEY, theme); } catch (error) { /* no-op */ }

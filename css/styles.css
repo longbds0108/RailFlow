@@ -203,15 +203,16 @@ a:hover { color: var(--accent-link-hover); }
 
 .header__actions { display: flex; align-items: center; gap: 10px; }
 .theme-toggle {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 38px; height: 38px; padding: 0;
-  border: 1px solid var(--theme-button-border); border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-width: 72px; height: 36px; padding: 0 11px;
+  border: 1px solid var(--theme-button-border); border-radius: 999px;
   background: var(--theme-button-bg); color: var(--text-muted);
-  cursor: pointer; transition: color .15s, background .15s, border-color .15s;
+  cursor: pointer; transition: color .15s, background .15s, border-color .15s, box-shadow .15s;
 }
-.theme-toggle:hover { color: var(--accent); border-color: var(--border-hover); background: var(--bg-card-alt); }
+.theme-toggle:hover { color: var(--accent); border-color: var(--border-hover); background: var(--bg-card-alt); box-shadow: 0 4px 14px rgba(11, 35, 39, .12); }
 .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.theme-toggle__icon { font-size: 19px; line-height: 1; }
+.theme-toggle__icon { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
+.theme-toggle__label { font-size: 12px; font-weight: 600; letter-spacing: .01em; }
 .theme-toggle__icon--moon { display: none; }
 html[data-theme="light"] .theme-toggle__icon--sun { display: none; }
 html[data-theme="light"] .theme-toggle__icon--moon { display: inline; }
