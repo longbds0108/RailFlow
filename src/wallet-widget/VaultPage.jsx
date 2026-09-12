@@ -421,7 +421,7 @@ export function VaultPage() {
         <div className="vault-hero__copy">
           <div className="vault-hero__eyebrow"><span className="vault-live-dot"></span>Arc Testnet · Vault</div>
           <h1>One place to manage your Railflow Vault.</h1>
-          <p>Connect your wallet, deposit USDC directly into the Vault, and follow your on-chain Vault Equity. Strategy returns are shown only after their data source is live.</p>
+          <p>The RailFlow Vault seeks to generate returns through liquidation activity, lending within RailFlow’s native money market, and a share of trading fees. By depositing assets into the Vault, you acknowledge that your funds will be used in these activities and accept the associated risks. The value of your Vault holdings may increase or decrease over time. Returns are variable and not guaranteed, and you may lose some or all of your deposited assets. Please review RailFlow’s Risk Disclosure before depositing.</p>
         </div>
         <div className="vault-hero__pills">
           <div className="vault-pill"><span className="vault-pill__value mono">{formatNum(tvlUsdc, 2)}</span><span className="vault-pill__label">Total value locked</span></div>
