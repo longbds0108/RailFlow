@@ -38,7 +38,6 @@ export function TradeCollateral() {
   const { sendTransaction, data: hash, isPending } = useSendTransaction();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
   const walletUsdc = walletBalance ? Number(formatEther(walletBalance.value)) : 0;
-  const collateralUsdc = collateral !== undefined ? Number(formatEther(collateral)) : 0;
   const busy = isPending || isConfirming;
 
   useEffect(() => {
@@ -69,11 +68,14 @@ export function TradeCollateral() {
   return (
     <section className="trade-collateral" aria-label="Collateral Vault">
       <div className="trade-collateral__heading">
-        <div>
-          <span className="trade-collateral__eyebrow">Collateral Vault</span>
-          <h2>Fund your demo margin</h2>
+        <div className="trade-collateral__title">
+          <span className="trade-collateral__status-dot" aria-hidden="true" />
+          <div>
+            <span className="trade-collateral__eyebrow">Collateral Vault</span>
+            <h2>Fund demo margin</h2>
+          </div>
         </div>
-        <a className="text-link" href="vault.html">Open Vault ↗</a>
+        <a className="trade-collateral__vault-link" href="vault.html">Vault ↗</a>
       </div>
 
       {!isConnected ? (
@@ -95,21 +97,21 @@ export function TradeCollateral() {
       ) : (
         <>
           <div className="trade-collateral__stats">
-            <div><span>Wallet balance</span><strong className="mono">{formatUsdc(walletBalance?.value)} USDC</strong></div>
-            <div><span>Collateral</span><strong className="mono">{formatUsdc(collateral)} USDC</strong></div>
+            <div><span>Wallet</span><strong className="mono">{formatUsdc(walletBalance?.value)} <small>USDC</small></strong></div>
+            <div><span>In vault</span><strong className="mono">{formatUsdc(collateral)} <small>USDC</small></strong></div>
           </div>
           <form className="trade-collateral__form" onSubmit={handleDeposit}>
             <div className="trade-collateral__input-wrap">
-              <input className="mono" type="text" inputMode="decimal" placeholder="Amount" value={amount} disabled={busy} onChange={(event) => setAmount(event.target.value)} aria-label="USDC deposit amount" />
+              <input className="trade-collateral__amount mono" type="text" inputMode="decimal" placeholder="0.00" value={amount} disabled={busy} onChange={(event) => setAmount(event.target.value)} aria-label="USDC deposit amount" />
               <span>USDC</span>
             </div>
             <button type="button" className="trade-collateral__max" disabled={busy || walletUsdc <= 0} onClick={() => setAmount(trimAmount(walletUsdc))}>Max</button>
             <button type="submit" className="trade-collateral__deposit" disabled={busy || !VAULT_ADDRESS}>
-              {busy ? 'Confirming…' : amount ? `Deposit ${amount} USDC` : 'Deposit USDC'}
+              {busy ? 'Confirming…' : 'Deposit'}
             </button>
           </form>
           {error && <p className="trade-collateral__error" role="alert">{error}</p>}
-          <p className="trade-collateral__note">Deposit is signed directly by your wallet on Arc Testnet. Trading P&amp;L is simulated.</p>
+          <p className="trade-collateral__note"><span aria-hidden="true">●</span> Arc Testnet · wallet signature required</p>
         </>
       )}
     </section>
