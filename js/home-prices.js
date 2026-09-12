@@ -30,6 +30,12 @@
   var rows = {};
   document.querySelectorAll('#markets [data-market]').forEach(function (row) { rows[row.dataset.market] = row; });
 
+  // ---- Top banner ticker (two duplicated sets for a seamless CSS loop) ----
+  var tickerItems = {};
+  document.querySelectorAll('#tickerTrack [data-market]').forEach(function (el) {
+    (tickerItems[el.dataset.market] = tickerItems[el.dataset.market] || []).push(el);
+  });
+
   // The static numbers baked into index.html are just placeholder markup —
   // on a real page load they can sit stale for a few seconds before the
   // first live tick arrives (Binance's WebSocket stream occasionally opens
@@ -47,6 +53,14 @@
         if (!el) return;
         el.textContent = '…';
         el.classList.remove('up', 'down');
+      });
+    });
+    Object.keys(tickerItems).forEach(function (symbol) {
+      tickerItems[symbol].forEach(function (el) {
+        var priceEl = el.querySelector('[data-field="price"]');
+        var changeEl = el.querySelector('[data-field="change"]');
+        if (priceEl) priceEl.textContent = '…';
+        if (changeEl) { changeEl.textContent = '…'; changeEl.className = 'ticker__change mono'; }
       });
     });
     if (!panel) return;
@@ -83,6 +97,21 @@
     if (interestEl && ticker.openInterestUsd !== undefined) interestEl.textContent = formatCompactUsd(ticker.openInterestUsd);
   }
 
+  function updateTicker(symbol, ticker) {
+    var items = tickerItems[symbol];
+    if (!items) return;
+    var digits = priceDigits(ticker.price);
+    items.forEach(function (el) {
+      var priceEl = el.querySelector('[data-field="price"]');
+      var changeEl = el.querySelector('[data-field="change"]');
+      if (priceEl) priceEl.textContent = format(ticker.price, digits);
+      if (changeEl && ticker.changePercent !== undefined) {
+        changeEl.textContent = (ticker.changePercent >= 0 ? '+' : '') + format(ticker.changePercent) + '%';
+        changeEl.className = 'ticker__change mono ' + (ticker.changePercent >= 0 ? 'up' : 'down');
+      }
+    });
+  }
+
   // ---- Hero mock panel (BTC) ----
   var panel = document.querySelector('.panel');
   var askOffsets = [0.00005, 0.00003, 0.00001]; // top row = farthest from mid, matches the original mock's spacing
@@ -115,6 +144,7 @@
     if (sub) window.RailflowDatafeed.unsubscribeMarkets(sub);
     sub = window.RailflowDatafeed.subscribeMarkets(SYMBOLS, function (symbol, ticker) {
       updateRow(symbol, ticker);
+      updateTicker(symbol, ticker);
       if (symbol === 'BTC') updateHero(ticker);
     });
   }

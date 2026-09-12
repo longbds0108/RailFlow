@@ -262,9 +262,28 @@
 
   function resetAccount() {
     // Starts with no positions or orders — those only appear once you place
-    // a demo trade through the order form. Claim demo USDC via the faucet
-    // dialog before trading.
-    account = { cash: 0, positions: [], orders: [], orderHistory: [], fills: [], fundingHistory: [], realizedPnl: [], claimed: false };
+    // a demo trade through the order form. Demo margin (cash) is funded
+    // from real collateral deposited into the RailflowVault contract on
+    // Arc Testnet (see syncVaultCollateral below), not seeded here.
+    // lastKnownVaultCollateral is reset to 0 so the next vault sync folds
+    // in the full current on-chain balance again, without touching the
+    // real deposit itself.
+    account = { cash: 0, positions: [], orders: [], orderHistory: [], fills: [], fundingHistory: [], realizedPnl: [], lastKnownVaultCollateral: 0 };
+  }
+
+  // Bridges CollateralPanel.jsx's real, on-chain vault balance into the
+  // simulated demo ledger: only the *change* since the last known balance
+  // is applied to account.cash, so simulated P&L/fees you've already
+  // accrued aren't clobbered by re-reading the same on-chain number.
+  function syncVaultCollateral() {
+    var vault = window.RailflowVault;
+    if (!vault || !vault.ready) return;
+    var current = vault.collateral || 0;
+    var delta = current - account.lastKnownVaultCollateral;
+    if (delta === 0) return;
+    account.cash += delta;
+    account.lastKnownVaultCollateral = current;
+    updateSummary();
   }
 
   function pnl(position) { return (markets[position.market].price - position.entry) * position.quantity * (position.side === 'long' ? 1 : -1); }
@@ -363,7 +382,11 @@
     $('maintenanceMargin').textContent = money(account.positions.reduce(function (sum, p) { return sum + maintMargin(p); }, 0));
     $('positionCount').textContent = account.positions.length;
     $('orderCount').textContent = account.orders.length;
-    $('claimBanner').hidden = account.claimed;
+    $('claimBanner').hidden = equity() > 0;
+    // The only channel CollateralPanel.jsx has into the demo ledger — lets
+    // it cap a withdrawal at your unused margin, without the trading engine
+    // knowing anything about wallets or contracts.
+    window.RailflowTradeState = { availableMargin: available() };
   }
 
   function sideLabel(side) { return '<span class="side-badge is-' + side + '">' + side + '</span>'; }
@@ -503,6 +526,7 @@
       if (ticker.volumeUsd !== undefined) markets[symbol].volume = formatCompactUsd(ticker.volumeUsd);
       if (symbol === state.market) { renderMarketStrip(symbol); syncOrderPriceLive(symbol, markets[symbol].price); updateSummary(); }
       drawActivity(); // keeps Positions' Mark/UPNL live for every open market, not just the selected one
+      syncVaultCollateral(); // cheap no-op unless the on-chain balance actually moved; a fallback for the vault-updated event below
     });
   }
 
@@ -671,21 +695,9 @@
     if (event.key === 'Escape' && !$('chartTypeMenu').hidden) { toggleMenu('chartTypeButton', 'chartTypeMenu', false); $('chartTypeButton').focus(); }
   });
   $('portfolioLink').addEventListener('click', function () { setActivity('positions', true); $('portfolio').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'nearest' }); });
-  $('vaultsLink').addEventListener('click', function () { dialog('Vaults', '<p>Vaults are not available in this trading demo. You can explore trading with the simulated funds in your margin account.</p><button type="button" class="place-order" data-dialog-dismiss>Back to trading</button>'); });
-  $('accountDetails').addEventListener('click', function () { dialog('Demo account', '<p>These positions and balances belong to a simulated trading account, separate from your connected wallet. Demo balances reset when you reload the page.</p><dl class="trade-summary"><div><dt>Demo equity</dt><dd class="mono">' + money(equity()) + '</dd></div><div><dt>Demo available margin</dt><dd class="mono">' + money(available()) + '</dd></div><div><dt>Demo open positions</dt><dd class="mono">' + account.positions.length + '</dd></div></dl>'); });
-  $('faucetLink').addEventListener('click', function () { dialog('USDC test funds', '<p>To fund your actual wallet, open Circle Faucet, select Arc Testnet, and enter your wallet address.</p><a class="btn btn--primary wallet-faucet-link" href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer">Open Circle Faucet</a><div class="wallet-menu-divider"></div><p>For the trading demo, add 10,000 simulated USDC once per session. This does not send tokens to your wallet.</p><button type="button" class="place-order" id="claimFunds"' + (account.claimed ? ' disabled' : '') + '>' + (account.claimed ? 'Demo funds already added' : 'Add 10,000 demo USDC') + '</button>'); });
-  function claimDemoFunds() {
-    if (account.claimed) return;
-    account.cash += 10000;
-    account.claimed = true;
-    updateSummary();
-    notify('10,000 simulated USDC added to your margin account.');
-  }
-  $('dialogContent').addEventListener('click', function (event) {
-    if (event.target.closest('[data-dialog-dismiss]')) $('infoDialog').close();
-    if (event.target.id === 'claimFunds' && !account.claimed) { claimDemoFunds(); $('infoDialog').close(); }
-  });
-  $('claimInline').addEventListener('click', claimDemoFunds);
+  $('accountDetails').addEventListener('click', function () { dialog('Demo account', '<p>Positions and P&amp;L in this table are simulated. Your available margin (cash) is real, though — it\'s funded by USDC you\'ve deposited into the Railflow vault contract on Arc Testnet.</p><dl class="trade-summary"><div><dt>Demo equity</dt><dd class="mono">' + money(equity()) + '</dd></div><div><dt>Demo available margin</dt><dd class="mono">' + money(available()) + '</dd></div><div><dt>Demo open positions</dt><dd class="mono">' + account.positions.length + '</dd></div></dl>'); });
+  $('faucetLink').addEventListener('click', function () { dialog('USDC test funds', '<p>Step 1 — get real testnet USDC into your wallet:</p><a class="btn btn--primary wallet-faucet-link" href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer">Open Circle Faucet</a><div class="wallet-menu-divider"></div><p>Step 2 — deposit it into the Railflow vault to fund your demo trading margin:</p><a class="place-order" href="vault.html">Manage collateral</a>'); });
+  $('dialogContent').addEventListener('click', function (event) { if (event.target.closest('[data-dialog-dismiss]')) $('infoDialog').close(); });
   $('closeDialog').addEventListener('click', function () { $('infoDialog').close(); });
   $('infoDialog').addEventListener('click', function (event) { if (event.target === this) { var rect = this.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) this.close(); } });
   $('resetDemo').addEventListener('click', function () {
@@ -697,6 +709,7 @@
     document.querySelectorAll('[data-margin-mode]').forEach(function (option) { var active = option.dataset.marginMode === 'cross'; option.classList.toggle('is-active', active); option.setAttribute('aria-pressed', String(active)); });
     selectMarket('BTC');
     setActivity('positions');
+    syncVaultCollateral(); // resetAccount() zeroed lastKnownVaultCollateral, so this re-applies your real deposit as fresh margin
     notify('Demo account reset.');
   });
 
@@ -705,6 +718,14 @@
   selectMarket('BTC');
   drawActivity();
   startMarketTracking();
+  // CollateralPanel.jsx (a separate React island) fires this whenever the
+  // connected wallet, chain, or on-chain vault balance changes — including
+  // right after a deposit/withdrawal confirms. window.RailflowVault may
+  // already be set by the time this listener is attached (or not; either
+  // way startMarketTracking's tick above also calls syncVaultCollateral as
+  // a fallback), so it's also invoked once here directly.
+  window.addEventListener('railflow:vault-updated', syncVaultCollateral);
+  syncVaultCollateral();
 
   window.addEventListener('pagehide', function () {
     if (chartSub) { window.RailflowDatafeed.unsubscribeBars(chartSub); chartSub = null; }
@@ -722,5 +743,6 @@
     drawChart();
     drawOrderbook();
     startMarketTracking();
+    syncVaultCollateral();
   });
 })();

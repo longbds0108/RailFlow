@@ -176,6 +176,23 @@
 .info-dialog { position: fixed; inset: 0; margin: auto; width: min(440px, calc(100% - 32px)); padding: 24px; color: var(--text); background: #0e171e; border: 1px solid #283942; border-radius: 15px; }
 .info-dialog::backdrop { background: #0009; backdrop-filter: blur(5px); }
 .dialog-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.collateral-note { color: var(--text-muted); font-size: 13px; line-height: 1.6; margin-bottom: 16px; }
+.collateral-summary { display: flex; flex-direction: column; gap: 10px; padding: 14px; margin-bottom: 18px; background: #0d141a; border: 1px solid #1d2c37; border-radius: 10px; }
+.collateral-summary > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.collateral-summary dt { color: var(--text-faint); font-size: 13px; }
+.collateral-summary dd { color: var(--text-3); font-size: 15px; }
+.collateral-form { margin-bottom: 14px; }
+.collateral-form label { display: block; color: #7f8c9b; text-transform: uppercase; font-size: 12px; letter-spacing: .065em; margin-bottom: 8px; }
+.collateral-field { display: flex; gap: 8px; }
+.collateral-field input { flex: 1; min-width: 0; height: 42px; padding: 10px 12px; border: 1px solid #23333f; border-radius: 10px; background: #0d141a; color: var(--text-3); font: 15px var(--font-mono); }
+.collateral-field input:focus { outline: 0; border-color: var(--accent-dim); box-shadow: 0 0 0 2px #5ee3c417; }
+.collateral-field .small-button { flex-shrink: 0; padding: 0 16px; }
+.collateral-error { color: #ff8996; font-size: 13px; line-height: 1.5; margin-top: -2px; }
+.collateral-status { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.collateral-status a { color: var(--accent); }
+.collateral-step { padding: 14px; margin-bottom: 16px; background: #0d141a; border: 1px solid #1d2c37; border-radius: 10px; }
+.collateral-step p { color: var(--text-muted); font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+.collateral-address { font-size: 13px !important; }
 .dialog-heading h2 { font-size: 21px; font-weight: 500; }
 .dialog-heading button { color: var(--text-muted); background: transparent; border: 0; font-size: 25px; padding: 2px 8px; }
 #dialogContent p { line-height: 1.65; color: var(--text-muted-2); margin-bottom: 16px; }

@@ -4,20 +4,28 @@ import { Providers } from './Providers.jsx';
 import { HomeConnectButton } from './HomeConnectButton.jsx';
 import { TradeWalletButton } from './TradeWalletButton.jsx';
 import { ConnectionBar } from './ConnectionBar.jsx';
+import { VaultBridge } from './VaultBridge.jsx';
+import { VaultPage } from './VaultPage.jsx';
 
-// One bundle serves both pages. Each page only has the mount points it
-// needs, so most of these portals are no-ops on any given page. All three
-// share a single Providers tree so wallet state stays in sync between the
-// header button and the connection bar on trade.html.
+// One bundle serves all pages. Each page only has the mount points it
+// needs, so most of these portals are no-ops on any given page. They all
+// share a single Providers tree so wallet state stays in sync everywhere.
+// VaultBridge has no mount point of its own — it renders nothing and just
+// needs to be part of the tree (see VaultBridge.jsx) so js/trade.js's demo
+// margin ledger stays synced with real vault collateral on every page,
+// not only while vault.html itself is open.
 function App() {
   const home = document.getElementById('wallet-home-root');
   const tradeButton = document.getElementById('wallet-trade-root');
   const connectionBar = document.getElementById('wallet-connection-root');
+  const vaultPage = document.getElementById('wallet-vault-root');
   return (
     <Providers>
+      <VaultBridge />
       {home && createPortal(<HomeConnectButton />, home)}
       {tradeButton && createPortal(<TradeWalletButton />, tradeButton)}
       {connectionBar && createPortal(<ConnectionBar />, connectionBar)}
+      {vaultPage && createPortal(<VaultPage />, vaultPage)}
     </Providers>
   );
 }

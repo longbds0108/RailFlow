@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Manage your real Arc Testnet collateral for Railflow's demo trading margin.">
+  <meta name="theme-color" content="#06080b">
+  <title>Vault · Railflow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/trade.css">
+  <link rel="stylesheet" href="css/vault.css">
+  <link rel="stylesheet" href="wallet-widget/main.css">
+</head>
+<body class="trade-page">
+  <header class="trade-header">
+    <a href="index.html" class="header__logo" aria-label="Railflow home"><span class="logo-mark"><span></span><span></span><span></span></span><span class="logo-text">Railflow</span></a>
+    <nav class="trade-nav" aria-label="Main navigation">
+      <a href="trade.html">Trade</a>
+      <a href="trade.html">Portfolio</a>
+      <a class="is-active" href="vault.html" aria-current="page">Vault</a>
+    </nav>
+    <div class="trade-header__right">
+      <div class="network-pill"><span class="network-dot"></span>ARC TESTNET</div>
+      <div class="wallet-wrap" id="wallet-trade-root"></div>
+    </div>
+  </header>
+
+  <div id="wallet-connection-root"></div>
+
+  <main>
+    <div id="wallet-vault-root"></div>
+  </main>
+
+  <noscript><p class="noscript-note">Enable JavaScript to manage your vault collateral.</p></noscript>
+  <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js"></script>
+  <script type="module" src="wallet-widget/main.js"></script>
+</body>
+</html>

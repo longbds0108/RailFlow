@@ -13,11 +13,30 @@
 </head>
 <body>
 
-  <!-- Testnet banner -->
+  <!-- Testnet banner / live price ticker -->
   <div class="banner" id="testnetBanner">
-    <span class="banner__live"><span class="banner__dot"></span>Live</span>
-    <span>Railflow đang chạy trên <strong>Arc testnet</strong> — giao dịch chỉ dùng test fund. Danh sách chờ mainnet đang mở.</span>
-    <a href="#faucet" class="banner__link">Nhận test USDC</a>
+    <div class="ticker" aria-label="Live market prices">
+      <div class="ticker__track" id="tickerTrack">
+        <span class="ticker__set">
+          <span class="ticker__pill" data-market="BTC"><img class="ticker__icon" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCBTC.svg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">BTC</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+          <span class="ticker__pill" data-market="ETH"><img class="ticker__icon" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCETH.svg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">ETH</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+          <span class="ticker__pill" data-market="SOL"><img class="ticker__icon" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCSOL.svg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">SOL</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+          <span class="ticker__pill" data-market="LINK"><img class="ticker__icon" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCLINK.svg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">LINK</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+          <span class="ticker__pill" data-market="HYPE"><img class="ticker__icon" src="img/hype-logo.jpg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">HYPE</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+          <span class="ticker__pill" data-market="SUI"><img class="ticker__icon" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCSUI.svg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">SUI</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+          <span class="ticker__pill" data-market="DOGE"><img class="ticker__icon" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCDOGE.svg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">DOGE</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+        </span>
+        <span class="ticker__set" aria-hidden="true">
+          <span class="ticker__pill" data-market="BTC"><img class="ticker__icon" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCBTC.svg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">BTC</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+          <span class="ticker__pill" data-market="ETH"><img class="ticker__icon" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCETH.svg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">ETH</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+          <span class="ticker__pill" data-market="SOL"><img class="ticker__icon" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCSOL.svg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">SOL</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+          <span class="ticker__pill" data-market="LINK"><img class="ticker__icon" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCLINK.svg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">LINK</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+          <span class="ticker__pill" data-market="HYPE"><img class="ticker__icon" src="img/hype-logo.jpg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">HYPE</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+          <span class="ticker__pill" data-market="SUI"><img class="ticker__icon" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCSUI.svg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">SUI</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+          <span class="ticker__pill" data-market="DOGE"><img class="ticker__icon" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCDOGE.svg" alt="" width="15" height="15" loading="lazy"><span class="ticker__symbol">DOGE</span><span class="ticker__price mono" data-field="price">—</span><span class="ticker__change mono" data-field="change">—</span></span>
+        </span>
+      </div>
+    </div>
   </div>
 
   <!-- Header -->
@@ -313,7 +332,7 @@
           <a href="#markets">Markets</a>
           <a href="trade.html">Trade</a>
           <a href="#">Fees</a>
-          <a href="#">Vaults</a>
+          <a href="vault.html">Vaults</a>
         </div>
         <div class="footer__col">
           <div class="footer__label">Developers</div>
