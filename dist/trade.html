@@ -28,6 +28,7 @@
     <div class="trade-header__right">
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Chuyển sang giao diện sáng" title="Chuyển sang giao diện sáng" aria-pressed="false"><svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.2"></circle><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M3.99 3.99l1.42 1.42M14.59 14.59l1.42 1.42M16.01 3.99l-1.42 1.42M5.41 14.59l-1.42 1.42"></path></svg><svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.8 12.9A6.5 6.5 0 0 1 7.1 4.2 6.5 6.5 0 1 0 15.8 12.9Z"></path></svg></button>
       <div class="network-pill"><span class="network-dot"></span>ARC TESTNET</div>
+      <div id="wallet-collateral-root"></div>
       <div class="wallet-wrap" id="wallet-trade-root"></div>
     </div>
   </header>
@@ -74,7 +75,6 @@
     </section>
 
     <section class="trading-card order-card" aria-label="Place a simulated order">
-      <div id="wallet-collateral-root"></div>
       <form id="orderForm" novalidate>
         <div class="trade-side-toggle" role="group" aria-label="Order side"><button type="button" class="is-active" data-side="long" aria-pressed="true">Long</button><button type="button" data-side="short" aria-pressed="false">Short</button></div>
         <div class="order-types" role="group" aria-label="Order type"><button type="button" data-order-type="limit" class="is-active" aria-pressed="true">Limit</button><button type="button" data-order-type="market" aria-pressed="false">Market</button><button type="button" data-order-type="stop" aria-pressed="false">Stop</button></div>
@@ -86,7 +86,7 @@
         <p class="margin-mode-note" id="marginModeNote">Cross: shared margin backs every cross position, so a position's liquidation price moves with your whole account.</p>
         <div class="leverage-field"><div class="field-heading"><label for="leverage">Leverage</label><output for="leverage" id="leverageValue" class="mono">10x</output></div><input id="leverage" type="range" min="1" max="50" value="10" aria-label="Leverage" style="--range-progress:18.37%"></div>
         <dl class="trade-summary"><div><dt>Demo available</dt><dd class="mono" id="availableBalance">$10,142.60</dd></div><div><dt>Margin required</dt><dd class="mono" id="requiredMargin">$500.00</dd></div><div><dt>Est. liq. price</dt><dd class="mono" id="liquidationPrice">102,458.30</dd></div><div><dt>Est. fee</dt><dd class="mono up" id="estimatedFee">0.000%</dd></div></dl>
-        <div class="claim-banner" id="claimBanner" hidden>No demo margin yet. Deposit USDC into the Collateral Vault above.</div>
+        <div class="claim-banner" id="claimBanner" hidden>No demo margin yet. Use Deposit in the header to fund your Collateral Vault.</div>
         <p class="order-error" id="orderError" role="alert" hidden></p>
         <button class="place-order" id="submitOrder" type="submit">Demo · Buy / Long BTC-PERP</button>
         <p class="order-disclaimer">Demo margin comes from real USDC you deposit into the Railflow vault on Arc Testnet.<br>Trading P&amp;L itself is simulated.</p>

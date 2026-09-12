@@ -25,6 +25,7 @@ function trimAmount(value) {
 export function TradeCollateral() {
   const { address, isConnected, chainId } = useAccount();
   const onArc = isConnected && chainId === arcTestnet.id;
+  const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
   const { data: walletBalance, refetch: refetchWalletBalance } = useBalance({ address, query: { enabled: onArc && !!address } });
@@ -46,7 +47,17 @@ export function TradeCollateral() {
     setError('');
     refetchWalletBalance();
     refetchCollateral();
+    setIsOpen(false);
   }, [isSuccess]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
   async function handleDeposit(event) {
     event.preventDefault();
@@ -66,54 +77,69 @@ export function TradeCollateral() {
   }
 
   return (
-    <section className="trade-collateral" aria-label="Collateral Vault">
-      <div className="trade-collateral__heading">
-        <div className="trade-collateral__title">
-          <span className="trade-collateral__status-dot" aria-hidden="true" />
-          <div>
-            <span className="trade-collateral__eyebrow">Collateral Vault</span>
-            <h2>Fund demo margin</h2>
-          </div>
-        </div>
-        <a className="trade-collateral__vault-link" href="vault.html">Vault ↗</a>
-      </div>
+    <div className="trade-deposit">
+      <button type="button" className="trade-deposit__trigger" onClick={() => setIsOpen(true)} aria-haspopup="dialog" aria-expanded={isOpen}>
+        <span>Deposit</span><small>USDC</small>
+      </button>
 
-      {!isConnected ? (
-        <ConnectButton.Custom>
-          {({ openConnectModal, mounted }) => (
-            <button type="button" className="trade-collateral__connect" onClick={() => mounted && openConnectModal()}>
-              Connect wallet to deposit
-            </button>
-          )}
-        </ConnectButton.Custom>
-      ) : !onArc ? (
-        <ConnectButton.Custom>
-          {({ openChainModal, mounted }) => (
-            <button type="button" className="trade-collateral__connect" onClick={() => mounted && openChainModal()}>
-              Switch to Arc Testnet
-            </button>
-          )}
-        </ConnectButton.Custom>
-      ) : (
-        <>
-          <div className="trade-collateral__stats">
-            <div><span>Wallet</span><strong className="mono">{formatUsdc(walletBalance?.value)} <small>USDC</small></strong></div>
-            <div><span>In vault</span><strong className="mono">{formatUsdc(collateral)} <small>USDC</small></strong></div>
-          </div>
-          <form className="trade-collateral__form" onSubmit={handleDeposit}>
-            <div className="trade-collateral__input-wrap">
-              <input className="trade-collateral__amount mono" type="text" inputMode="decimal" placeholder="0.00" value={amount} disabled={busy} onChange={(event) => setAmount(event.target.value)} aria-label="USDC deposit amount" />
-              <span>USDC</span>
+      {isOpen && (
+        <div className="trade-deposit__overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}>
+          <section className="trade-deposit__modal" role="dialog" aria-modal="true" aria-labelledby="tradeDepositTitle">
+            <div className="trade-deposit__heading">
+              <div className="trade-deposit__title">
+                <span className="trade-deposit__status-dot" aria-hidden="true" />
+                <div>
+                  <span className="trade-deposit__eyebrow">Collateral Vault</span>
+                  <h2 id="tradeDepositTitle">Deposit USDC</h2>
+                </div>
+              </div>
+              <button type="button" className="trade-deposit__close" onClick={() => setIsOpen(false)} aria-label="Close deposit dialog">×</button>
             </div>
-            <button type="button" className="trade-collateral__max" disabled={busy || walletUsdc <= 0} onClick={() => setAmount(trimAmount(walletUsdc))}>Max</button>
-            <button type="submit" className="trade-collateral__deposit" disabled={busy || !VAULT_ADDRESS}>
-              {busy ? 'Confirming…' : 'Deposit'}
-            </button>
-          </form>
-          {error && <p className="trade-collateral__error" role="alert">{error}</p>}
-          <p className="trade-collateral__note"><span aria-hidden="true">●</span> Arc Testnet · wallet signature required</p>
-        </>
+            <p className="trade-deposit__intro">Fund your demo margin with USDC on Arc Testnet.</p>
+
+            {!isConnected ? (
+              <ConnectButton.Custom>
+                {({ openConnectModal, mounted }) => (
+                  <button type="button" className="trade-deposit__connect" onClick={() => mounted && openConnectModal()}>
+                    Connect wallet to deposit
+                  </button>
+                )}
+              </ConnectButton.Custom>
+            ) : !onArc ? (
+              <ConnectButton.Custom>
+                {({ openChainModal, mounted }) => (
+                  <button type="button" className="trade-deposit__connect" onClick={() => mounted && openChainModal()}>
+                    Switch to Arc Testnet
+                  </button>
+                )}
+              </ConnectButton.Custom>
+            ) : (
+              <>
+                <div className="trade-deposit__stats">
+                  <div><span>Wallet balance</span><strong className="mono">{formatUsdc(walletBalance?.value)} <small>USDC</small></strong></div>
+                  <div><span>Vault collateral</span><strong className="mono">{formatUsdc(collateral)} <small>USDC</small></strong></div>
+                </div>
+                <form className="trade-deposit__form" onSubmit={handleDeposit}>
+                  <label className="trade-deposit__field">
+                    <span>Amount</span>
+                    <div className="trade-deposit__input-wrap">
+                      <input className="trade-deposit__amount mono" type="text" inputMode="decimal" placeholder="0.00" value={amount} disabled={busy} onChange={(event) => setAmount(event.target.value)} aria-label="USDC deposit amount" />
+                      <span>USDC</span>
+                    </div>
+                  </label>
+                  <button type="button" className="trade-deposit__max" disabled={busy || walletUsdc <= 0} onClick={() => setAmount(trimAmount(walletUsdc))}>Max</button>
+                  <button type="submit" className="trade-deposit__submit" disabled={busy || !VAULT_ADDRESS}>
+                    {busy ? 'Confirming…' : 'Deposit USDC'}
+                  </button>
+                </form>
+                {error && <p className="trade-deposit__error" role="alert">{error}</p>}
+                <p className="trade-deposit__note"><span aria-hidden="true">●</span> Transaction signed directly by your wallet</p>
+              </>
+            )}
+            <a className="trade-deposit__vault-link" href="vault.html">View Vault dashboard ↗</a>
+          </section>
+        </div>
       )}
-    </section>
+    </div>
   );
 }
