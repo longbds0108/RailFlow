@@ -116,6 +116,80 @@ function ChartMetricMenu({ value, onChange }) {
   );
 }
 
+function formatChartValue(metric, value) {
+  const formatted = Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 });
+  return metric.id === 'daily-apr' ? formatted + '%' : formatted + ' USDC';
+}
+
+function formatChartDate(timestamp) {
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function VaultStatsChart({ metric, points }) {
+  const width = 760;
+  const height = 240;
+  const padding = { top: 16, right: 16, bottom: 30, left: 64 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const hasData = points.length > 0;
+
+  if (!hasData) {
+    return (
+      <div className="vault-stats-chart vault-stats-chart--empty" role="img" aria-label={metric.label + ' chart'}>
+        <strong>{metric.label}</strong>
+        <span>{metric.empty || 'No on-chain vault history is available for this range.'}</span>
+      </div>
+    );
+  }
+
+  const values = points.map((point) => point.value);
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+  if (min === max) {
+    const spread = Math.max(Math.abs(max) * 0.12, 1);
+    min -= spread;
+    max += spread;
+  }
+  const range = max - min;
+  const xFor = (index) => padding.left + (points.length === 1 ? plotWidth / 2 : (index / (points.length - 1)) * plotWidth);
+  const yFor = (value) => padding.top + ((max - value) / range) * plotHeight;
+  const mapped = points.map((point, index) => ({ ...point, x: xFor(index), y: yFor(point.value) }));
+  const linePath = mapped.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
+  const areaPath = `${linePath} L ${mapped[mapped.length - 1].x.toFixed(2)} ${(height - padding.bottom).toFixed(2)} L ${mapped[0].x.toFixed(2)} ${(height - padding.bottom).toFixed(2)} Z`;
+  const yTicks = Array.from({ length: 5 }, (_, index) => max - (range * index) / 4);
+
+  return (
+    <div className="vault-stats-chart" role="img" aria-label={metric.label + ' chart'}>
+      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="vaultStatsFill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#5ee3c4" stopOpacity=".24" />
+            <stop offset="100%" stopColor="#5ee3c4" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {yTicks.map((tick, index) => {
+          const y = padding.top + (index / 4) * plotHeight;
+          return (
+            <g key={index}>
+              <line className="vault-stats-chart__grid" x1={padding.left} x2={width - padding.right} y1={y} y2={y} />
+              <text className="vault-stats-chart__axis" x={padding.left - 10} y={y + 4} textAnchor="end">{formatChartValue(metric, tick)}</text>
+            </g>
+          );
+        })}
+        <path className="vault-stats-chart__area" d={areaPath} fill="url(#vaultStatsFill)" />
+        <path className="vault-stats-chart__line" d={linePath} />
+        {mapped.map((point) => (
+          <circle key={`${point.timestamp}-${point.value}`} className="vault-stats-chart__point" cx={point.x} cy={point.y} r="3">
+            <title>{formatChartDate(point.timestamp)} · {formatChartValue(metric, point.value)}</title>
+          </circle>
+        ))}
+        <text className="vault-stats-chart__date" x={padding.left} y={height - 8}>{formatChartDate(points[0].timestamp)}</text>
+        <text className="vault-stats-chart__date" x={width - padding.right} y={height - 8} textAnchor="end">{formatChartDate(points[points.length - 1].timestamp)}</text>
+      </svg>
+    </div>
+  );
+}
+
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -199,9 +273,6 @@ export function VaultPage() {
   const [chartMetric, setChartMetric] = useState('vault-equity');
   const [transferRange, setTransferRange] = useState('ALL');
 
-  const chartElRef = useRef(null);
-  const chartRef = useRef(null);
-  const seriesRef = useRef(null);
   const panelRef = useRef(null);
   const amountInputRef = useRef(null);
 
@@ -264,43 +335,23 @@ export function VaultPage() {
 
   const activeChartMetric = CHART_METRICS.find((metric) => metric.id === chartMetric) || CHART_METRICS[3];
 
-  // Real protocol-wide TVL history built from every Deposited/Withdrawn
-  // log ever emitted. Return metrics intentionally stay empty until the
-  // liquidation, money-market, and fee data layers are connected.
-  useEffect(() => {
-    if (!chartElRef.current || !window.LightweightCharts) return;
-    if (!chartRef.current) {
-      chartRef.current = window.LightweightCharts.createChart(chartElRef.current, {
-        layout: { background: { color: 'transparent' }, textColor: '#7f8c9b', fontSize: 11 },
-        grid: { vertLines: { color: '#182129' }, horzLines: { color: '#182129' } },
-        rightPriceScale: { borderColor: '#1c2b35' },
-        timeScale: { borderColor: '#1c2b35', timeVisible: true },
-        autoSize: true,
-      });
-      seriesRef.current = chartRef.current.addSeries(window.LightweightCharts.AreaSeries, {
-        lineColor: '#5ee3c4', topColor: 'rgba(94,227,196,.32)', bottomColor: 'rgba(94,227,196,0)',
-      });
-    }
-    if (chartMetric !== 'vault-equity') {
-      seriesRef.current.setData([]);
-      chartRef.current.timeScale().fitContent();
-      return;
-    }
+  const chartPoints = useMemo(() => {
+    if (chartMetric !== 'vault-equity') return [];
     const cutoff = nowSeconds - RANGE_SECONDS[chartRange];
     let running = 0;
-    const seen = new Set();
     const points = [];
+    let baseline;
     for (const event of globalStats.events) {
       running += (event.type === 'Deposit' ? 1 : -1) * Number(formatEther(event.amount));
-      if (event.timestamp < cutoff) continue;
-      let time = event.timestamp;
-      while (seen.has(time)) time += 1;
-      seen.add(time);
-      points.push({ time, value: running });
+      if (event.timestamp < cutoff) {
+        baseline = { timestamp: cutoff, value: running };
+        continue;
+      }
+      if (baseline && points.length === 0) points.push(baseline);
+      points.push({ timestamp: event.timestamp, value: running });
     }
-    seriesRef.current.setData(points);
-    chartRef.current.timeScale().fitContent();
-  }, [globalStats.events, chartRange, chartMetric]);
+    return points;
+  }, [globalStats.events, chartRange, chartMetric, nowSeconds]);
 
   if (!VAULT_ADDRESS) {
     return <p className="collateral-note">The Railflow vault contract hasn't been deployed on Arc Testnet yet.</p>;
@@ -441,7 +492,7 @@ export function VaultPage() {
               <p className="mono vault-address">{shortAddress(VAULT_ADDRESS)}<CopyButton text={VAULT_ADDRESS} /><a className="text-link" href={'https://testnet.arcscan.app/address/' + VAULT_ADDRESS} target="_blank" rel="noopener noreferrer">View on Arcscan ↗</a></p>
             </div>
           </div>
-          <p className="vault-desc">Deposit and withdraw your own testnet USDC through the Vault. The strategy preview above explains the intended return sources; current transactions remain testnet deposits and withdrawals, with no fabricated return figures.</p>
+          <p className="vault-desc">Deposit and withdraw your own testnet USDC through the Vault. Vault Equity is calculated from on-chain deposits and withdrawals; PnL and APR appear only when live strategy data is available.</p>
           <div className="vault-metrics">
             <div><dt>TVL</dt><dd className="mono">{formatNum(tvlUsdc, 2)} USDC</dd></div>
             <div><dt>Returns</dt><dd className="mono">Variable</dd></div>
@@ -456,13 +507,7 @@ export function VaultPage() {
             </div>
           </div>
           <div className="vault-chart-wrap">
-            <div className="vault-chart" ref={chartElRef}></div>
-            {activeChartMetric.empty && (
-              <div className="vault-chart__empty">
-                <strong>{activeChartMetric.label}</strong>
-                <span>{activeChartMetric.empty}</span>
-              </div>
-            )}
+            <VaultStatsChart metric={activeChartMetric} points={chartPoints} />
           </div>
           <div className="vault-perf__legend">
             <span className="vault-perf__dot"></span>

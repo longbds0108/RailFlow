@@ -59,10 +59,16 @@
 .vault-tabs button.is-active { background: #1c2b35; color: var(--text); }
 
 .vault-chart-wrap { position: relative; }
-.vault-chart { height: 220px; }
-.vault-chart__empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; pointer-events: none; text-align: center; }
-.vault-chart__empty strong { color: var(--text-2, var(--text)); font-size: 14px; font-weight: 500; }
-.vault-chart__empty span { max-width: 240px; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+.vault-stats-chart { position: relative; height: 240px; }
+.vault-stats-chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.vault-stats-chart__grid { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 5; }
+.vault-stats-chart__axis, .vault-stats-chart__date { fill: #7f8c9b; font: 11px var(--font-mono); }
+.vault-stats-chart__area { opacity: .9; }
+.vault-stats-chart__line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.vault-stats-chart__point { fill: var(--bg-card); stroke: var(--accent); stroke-width: 2; }
+.vault-stats-chart__empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; }
+.vault-stats-chart__empty strong { color: var(--text-2, var(--text)); font-size: 14px; font-weight: 500; }
+.vault-stats-chart__empty span { max-width: 280px; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
 .vault-perf__legend { display: flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--text-muted); font-size: 12px; }
 .vault-perf__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 
