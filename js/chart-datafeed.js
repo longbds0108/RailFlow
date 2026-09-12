@@ -55,7 +55,7 @@
     var rows = await response.json();
     var candles = rows.map(toCandle);
     var volumes = candles.map(function (c) { return { time: c.time, value: c.volume, color: c.close >= c.open ? UP_VOLUME : DOWN_VOLUME }; });
-    return { candles: candles, volumes: volumes };
+    return { candles: candles, volumes: volumes, source: 'live' };
   }
 
   // ---- Live bars: <symbol>@kline_<resolution> WebSocket stream ----
@@ -363,7 +363,7 @@
       volumes.push({ time: time, value: volume, color: close >= open ? UP_VOLUME : DOWN_VOLUME });
       price = close;
     }
-    return { candles: candles, volumes: volumes };
+    return { candles: candles, volumes: volumes, source: 'simulated' };
   }
 
   var liveSubs = {};
@@ -401,14 +401,17 @@
     }
   }
 
-  function subscribeBars(symbol, resolution, lastCandle, lastVolume, onTick) {
+  function subscribeBars(symbol, resolution, lastCandle, lastVolume, onTick, onSource) {
     var id = 'sub' + liveNextId++;
     liveSubs[id] = { closed: false };
     var wrappedTick = function (candle) {
       if (liveSubs[id] && !liveSubs[id].closed) onTick(candle, { time: candle.time, value: candle.volume || 0, color: candle.close >= candle.open ? UP_VOLUME : DOWN_VOLUME });
     };
     var socket = openKlineStream(symbol, resolution, wrappedTick, function () {
-      if (liveSubs[id] && !liveSubs[id].closed && !liveSubs[id].timer) simulateLive(id, symbol, resolution, lastCandle, lastVolume, onTick);
+      if (liveSubs[id] && !liveSubs[id].closed && !liveSubs[id].timer) {
+        if (onSource) onSource('simulated');
+        simulateLive(id, symbol, resolution, lastCandle, lastVolume, onTick);
+      }
     });
     if (liveSubs[id]) liveSubs[id].socket = socket;
     return id;

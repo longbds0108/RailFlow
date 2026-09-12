@@ -76,6 +76,8 @@
 .chart-ohlc { display: flex; align-items: center; gap: 16px; color: var(--text-faint); font-size: 12px; white-space: nowrap; }
 .chart-ohlc b { font-weight: 400; color: var(--text-muted-2); margin-left: 3px; }
 .chart-ohlc b.up { color: var(--up); }
+.chart-source { color: var(--accent); font: 10px var(--font-mono); letter-spacing: .08em; }
+.chart-source.is-simulated { color: #e7bd6b; }
 .chart-canvas { position: relative; height: clamp(265px, 32.3vh, 400px); background: linear-gradient(180deg, rgba(42,79,68,.10), transparent 75%); }
 #priceChart { width: 100%; height: 100%; display: block; }
 .chart-tooltip { position: absolute; left: 16px; top: 12px; padding: 8px 12px; border: 1px solid #24383c; border-radius: 6px; color: #c4d9d3; background: #0d171ceF; font-size: 12px; pointer-events: none; }

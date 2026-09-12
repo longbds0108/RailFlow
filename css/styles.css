@@ -499,3 +499,8 @@ html[data-theme="light"] .vault-risk,
 html[data-theme="light"] .lending-preview-badge { background: #FFF4D9; border-color: #E7C878; color: #87651A; }
 html[data-theme="light"] .connection-bar[data-state="disconnected"] { background: #EEF3F5; border-bottom-color: var(--border); }
 html[data-theme="light"] .connection-bar[data-state="wrong-network"] { background: #FFF4D9; border-bottom-color: #E7C878; color: #87651A; }
+html[data-theme="light"] .trade-deposit__modal { background: var(--bg-card); border-color: var(--border-strong); box-shadow: 0 25px 80px rgba(20,44,49,.18); }
+html[data-theme="light"] .trade-deposit__overlay { background: rgba(20,44,49,.28); }
+html[data-theme="light"] .trade-deposit__close { background: var(--bg-card-alt); border-color: var(--border-field); color: var(--text-muted); }
+html[data-theme="light"] .trade-deposit__stats > div { background: var(--bg-card-deep); border-color: var(--border-field); }
+html[data-theme="light"] .trade-deposit__input-wrap input.trade-deposit__amount { background: var(--bg-field) !important; border-color: var(--border-field) !important; color: var(--text-2) !important; }

@@ -27,6 +27,8 @@ export function VaultBridge() {
     window.RailflowVault = {
       configured: !!VAULT_ADDRESS,
       ready: onArc && !!VAULT_ADDRESS && !!address,
+      address: address ? address.toLowerCase() : null,
+      chainId: chainId || null,
       collateral: collateral !== undefined ? Number(formatEther(collateral)) : 0,
     };
     window.dispatchEvent(new CustomEvent('railflow:vault-updated'));

@@ -181,6 +181,8 @@
     // was in flight; a stale response must not overwrite the newer one.
     if (requestId !== chartRequest) return;
     lastHistory = history;
+    $('chartDataSource').textContent = history.source === 'simulated' ? 'SIMULATED' : 'LIVE';
+    $('chartDataSource').classList.toggle('is-simulated', history.source === 'simulated');
     applyChartType(state.chartType);
     volumeSeries.setData(history.volumes);
     chart.timeScale().fitContent();
@@ -193,9 +195,15 @@
       volumeSeries.update(volume);
       applyLiveTick(candle);
       updateOhlc(candle);
-      if (market === state.market) { markets[market].price = candle.close; renderMarketStrip(market); syncOrderPriceLive(market, candle.close); updateSummary(); drawActivity(); }
+      if (market === state.market) { renderMarketStrip(market); updateSummary(); drawActivity(); }
+    }, function (source) {
+      if (requestId !== chartRequest) return;
+      history.source = source;
+      $('chartDataSource').textContent = source === 'simulated' ? 'SIMULATED' : 'LIVE';
+      $('chartDataSource').classList.toggle('is-simulated', source === 'simulated');
+      $('priceChart').setAttribute('aria-label', market + ' perpetual ' + timeframe + ' ' + window.RailflowChartTypes.label(state.chartType) + ' chart, simulated fallback data');
     });
-    $('priceChart').setAttribute('aria-label', market + ' perpetual ' + timeframe + ' ' + window.RailflowChartTypes.label(state.chartType) + ' chart, live from Binance Futures');
+    $('priceChart').setAttribute('aria-label', market + ' perpetual ' + timeframe + ' ' + window.RailflowChartTypes.label(state.chartType) + ' chart, ' + (history.source === 'simulated' ? 'simulated fallback data' : 'live from Binance Futures'));
   }
 
   // Real depth from Binance Futures (see js/chart-datafeed.js). Levels are
@@ -225,8 +233,11 @@
     var maxQty = Math.max.apply(null, asks.concat(bids).map(function (l) { return l.qty; }).concat([0.0001]));
     function rows(levels, isAsk) {
       var total = 0;
+      var cumulative = {};
+      if (isAsk) levels.slice().reverse().forEach(function (level) { total += level.qty; cumulative[level.price.toFixed(8)] = total; });
+      total = 0;
       return levels.map(function (level) {
-        total += level.qty;
+        total = isAsk ? cumulative[level.price.toFixed(8)] : total + level.qty;
         var depth = Math.min(100, Math.round(level.qty / maxQty * 100));
         return '<button type="button" class="book-row ' + (isAsk ? 'ask' : 'bid') + '" style="--depth:' + depth + '%" data-book-price="' + level.price.toFixed(8) + '" aria-label="Use price ' + format(level.price, digits) + '"><span>' + format(level.price, digits) + '</span><span>' + format(level.qty, 3) + '</span><span>' + format(total) + '</span></button>';
       }).join('');
@@ -259,6 +270,32 @@
   var account;
   var nextId = 10;
   var toastTimer;
+  var activeAccountKey = 'guest';
+  var ACCOUNT_STORAGE_KEY = 'railflow-trade-accounts-v2';
+
+  function blankAccount() {
+    return { cash: 0, positions: [], orders: [], orderHistory: [], fills: [], fundingHistory: [], realizedPnl: [], lastKnownVaultCollateral: 0 };
+  }
+
+  function accountStorageKey(key) { return ACCOUNT_STORAGE_KEY + ':' + key; }
+
+  function loadAccount(key) {
+    if (key === 'guest') return blankAccount();
+    try {
+      var stored = JSON.parse(localStorage.getItem(accountStorageKey(key)) || 'null');
+      if (!stored || typeof stored !== 'object') return blankAccount();
+      var fresh = blankAccount();
+      Object.keys(fresh).forEach(function (field) { if (stored[field] !== undefined) fresh[field] = stored[field]; });
+      return fresh;
+    } catch (err) {
+      return blankAccount();
+    }
+  }
+
+  function saveAccount() {
+    if (activeAccountKey === 'guest' || !account) return;
+    try { localStorage.setItem(accountStorageKey(activeAccountKey), JSON.stringify(account)); } catch (err) { /* local persistence is best effort */ }
+  }
 
   function resetAccount() {
     // Starts with no positions or orders — those only appear once you place
@@ -268,7 +305,7 @@
     // lastKnownVaultCollateral is reset to 0 so the next vault sync folds
     // in the full current on-chain balance again, without touching the
     // real deposit itself.
-    account = { cash: 0, positions: [], orders: [], orderHistory: [], fills: [], fundingHistory: [], realizedPnl: [], lastKnownVaultCollateral: 0 };
+    account = blankAccount();
   }
 
   // Bridges CollateralPanel.jsx's real, on-chain vault balance into the
@@ -277,17 +314,24 @@
   // accrued aren't clobbered by re-reading the same on-chain number.
   function syncVaultCollateral() {
     var vault = window.RailflowVault;
-    if (!vault || !vault.ready) return;
+    var key = vault && vault.address ? 'wallet:' + vault.address : 'guest';
+    if (key !== activeAccountKey) {
+      activeAccountKey = key;
+      account = loadAccount(key);
+    }
+    if (!vault || !vault.ready) { updateSummary(); return; }
     var current = vault.collateral || 0;
     var delta = current - account.lastKnownVaultCollateral;
     if (delta === 0) return;
     account.cash += delta;
     account.lastKnownVaultCollateral = current;
+    saveAccount();
     updateSummary();
   }
 
   function pnl(position) { return (markets[position.market].price - position.entry) * position.quantity * (position.side === 'long' ? 1 : -1); }
-  function equity() { return account.cash + account.positions.reduce(function (sum, p) { return sum + pnl(p); }, 0); }
+  function positionPnl(position) { return position.marginMode === 'isolated' ? Math.max(pnl(position), -position.margin) : pnl(position); }
+  function equity() { return account.cash + account.positions.reduce(function (sum, p) { return sum + positionPnl(p); }, 0); }
   function usedMargin() { return account.positions.concat(account.orders).reduce(function (sum, p) { return sum + p.margin; }, 0); }
   function available() { return Math.max(0, equity() - usedMargin()); }
   function parseAmount(value) {
@@ -451,6 +495,7 @@
       }).join('');
       $('activityPanel').innerHTML = table(['Instrument', 'Quantity', 'Entry Price', 'Exit Price', 'RPNL', 'Time'], rows, 'No realized PNL yet. Closing a position will log it here.');
     }
+    saveAccount();
   }
 
   function setActivity(name, focus) {
@@ -524,6 +569,8 @@
       if (ticker.fundingRate !== undefined) markets[symbol].funding = ticker.fundingRate;
       if (ticker.openInterestUsd !== undefined) markets[symbol].interest = formatCompactUsd(ticker.openInterestUsd);
       if (ticker.volumeUsd !== undefined) markets[symbol].volume = formatCompactUsd(ticker.volumeUsd);
+      processPendingOrders(symbol, markets[symbol].price);
+      checkLiquidations();
       if (symbol === state.market) { renderMarketStrip(symbol); syncOrderPriceLive(symbol, markets[symbol].price); updateSummary(); }
       drawActivity(); // keeps Positions' Mark/UPNL live for every open market, not just the selected one
       syncVaultCollateral(); // cheap no-op unless the on-chain balance actually moved; a fallback for the vault-updated event below
@@ -565,10 +612,49 @@
   }
   function recordFill(market, side, price, size, fee) {
     account.fills.unshift({ market: market, side: side, price: price, size: size, fee: fee, time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
+    saveAccount();
+  }
+
+  function shouldFill(order, mark) {
+    if (order.type === 'stop') return order.side === 'long' ? mark >= order.price : mark <= order.price;
+    return order.side === 'long' ? mark <= order.price : mark >= order.price;
+  }
+
+  function processPendingOrders(symbol, mark) {
+    var pending = account.orders.filter(function (order) { return order.market === symbol && shouldFill(order, mark); });
+    pending.forEach(function (order) {
+      var executionPrice = order.type === 'limit' ? order.price : mark;
+      var fee = order.size * .00025;
+      account.orders = account.orders.filter(function (candidate) { return candidate.id !== order.id; });
+      account.positions.push({ id: nextId++, market: order.market, side: order.side, leverage: order.leverage, quantity: order.size / executionPrice, entry: executionPrice, liquidation: estimatedLiq(executionPrice, order.side, order.leverage), margin: order.size / order.leverage, marginMode: order.marginMode, fundingPaid: 0, lastFundingEpoch: fundingEpoch(Date.now()) });
+      account.cash -= fee;
+      account.orderHistory.unshift({ market: order.market, side: order.side, type: order.type, price: order.price, size: order.size, status: 'Filled', time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
+      recordFill(order.market, order.side, executionPrice, order.size, fee);
+      notify(order.market + ' ' + order.side + ' order filled at ' + format(executionPrice) + '.');
+    });
+    if (pending.length) { saveAccount(); drawActivity(); updateSummary(); }
+  }
+
+  function checkLiquidations() {
+    var liquidated = account.positions.filter(function (position) {
+      var mark = markets[position.market].price;
+      var liq = position.marginMode === 'isolated' ? position.liquidation : crossLiquidationPrice(position.entry, position.side, position.quantity, position.margin, position.id);
+      return position.side === 'long' ? mark <= liq : mark >= liq;
+    });
+    liquidated.forEach(function (position) {
+      var mark = markets[position.market].price;
+      var profit = positionPnl(position);
+      account.cash += profit;
+      account.realizedPnl.unshift({ market: position.market, side: position.side, quantity: position.quantity, entry: position.entry, exit: mark, pnl: profit, time: new Date().toLocaleTimeString('en-GB', { hour12: false }) + ' · liquidated' });
+      account.positions = account.positions.filter(function (candidate) { return candidate.id !== position.id; });
+      notify(position.market + ' ' + position.side + ' position liquidated at ' + format(mark) + '.');
+    });
+    if (liquidated.length) { saveAccount(); drawActivity(); updateSummary(); }
   }
 
   $('orderForm').addEventListener('submit', function (event) {
     event.preventDefault();
+    if (!window.RailflowVault || !window.RailflowVault.ready) return error('Connect your wallet on Arc Testnet before trading.');
     var size = parseAmount($('orderSize').value);
     var price = state.type === 'market' ? markets[state.market].price : parseAmount($('orderPrice').value);
     if (!Number.isFinite(size) || size < 10) return error('Enter a size of at least 10 USDC.', 'orderSize');
@@ -576,7 +662,7 @@
     var mark = markets[state.market].price;
     if (state.type === 'stop' && (state.side === 'long' ? price <= mark : price >= mark)) return error('Set the trigger ' + (state.side === 'long' ? 'above' : 'below') + ' the current market price.', 'orderPrice');
     var marketable = state.type === 'market' || (state.type === 'limit' && (state.side === 'long' ? price >= mark + markets[state.market].step : price <= mark - markets[state.market].step));
-    var fee = marketable || state.type === 'stop' ? size * .00025 : 0;
+    var fee = marketable ? size * .00025 : 0;
     var margin = size / state.leverage;
     if (margin + fee > available() + .000001) return error('Insufficient available margin. Reduce size or adjust leverage.', 'orderSize');
     error('');
@@ -591,6 +677,7 @@
       setActivity('orders');
       notify(state.type === 'stop' ? 'Demo stop order placed. Cancel it in Open orders.' : 'Demo limit order placed. Margin reserved.');
     }
+    saveAccount();
     updateSummary();
   });
 
@@ -617,6 +704,7 @@
       notify('Demo order cancelled. Reserved margin released.');
     } else return;
     drawActivity();
+    saveAccount();
     updateSummary();
   });
 
@@ -673,7 +761,7 @@
   $('useMid').addEventListener('click', function () { $('orderPrice').value = format(markets[state.market].price); state.priceDirty = false; error(''); updateSummary(); });
   $('bookPrecision').addEventListener('change', function () { if (lastBook) renderOrderBook(lastBook); });
   ['bookAsks', 'bookBids'].forEach(function (id) {
-    $(id).addEventListener('click', function (event) { var button = event.target.closest('[data-book-price]'); if (button) { setOrderType('limit'); $('orderPrice').value = format(Number(button.dataset.bookPrice)); updateSummary(); } });
+    $(id).addEventListener('click', function (event) { var button = event.target.closest('[data-book-price]'); if (button) { setOrderType('limit'); $('orderPrice').value = format(Number(button.dataset.bookPrice)); state.priceDirty = true; updateSummary(); } });
   });
   $('marketPicker').addEventListener('click', function () { toggleMenu('marketPicker', 'marketMenu'); toggleMenu('chartTypeButton', 'chartTypeMenu', false); });
   $('marketMenu').addEventListener('click', function (event) { var button = event.target.closest('[data-market]'); if (button) { selectMarket(button.dataset.market); toggleMenu('marketPicker', 'marketMenu', false); $('marketPicker').focus(); } });
@@ -710,6 +798,7 @@
     selectMarket('BTC');
     setActivity('positions');
     syncVaultCollateral(); // resetAccount() zeroed lastKnownVaultCollateral, so this re-applies your real deposit as fresh margin
+    saveAccount();
     notify('Demo account reset.');
   });
 

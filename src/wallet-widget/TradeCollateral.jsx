@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useBalance, useReadContract, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { encodeFunctionData, formatEther, parseEther } from 'viem';
@@ -36,10 +36,12 @@ export function TradeCollateral() {
     args: address ? [address] : undefined,
     query: { enabled: onArc && !!VAULT_ADDRESS && !!address },
   });
-  const { sendTransaction, data: hash, isPending } = useSendTransaction();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { sendTransactionAsync, data: hash, isPending } = useSendTransaction();
+  const { isLoading: isConfirming, isSuccess, isError: isReceiptError, error: receiptError } = useWaitForTransactionReceipt({ hash });
   const walletUsdc = walletBalance ? Number(formatEther(walletBalance.value)) : 0;
   const busy = isPending || isConfirming;
+  const maxDeposit = Math.max(0, walletUsdc - 0.01);
+  const closeButtonRef = useRef(null);
 
   useEffect(() => {
     if (!isSuccess) return;
@@ -51,7 +53,12 @@ export function TradeCollateral() {
   }, [isSuccess]);
 
   useEffect(() => {
+    if (isReceiptError) setError(receiptError?.shortMessage || receiptError?.message || 'Deposit transaction failed.');
+  }, [isReceiptError, receiptError]);
+
+  useEffect(() => {
     if (!isOpen) return undefined;
+    closeButtonRef.current?.focus();
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') setIsOpen(false);
     };
@@ -66,7 +73,7 @@ export function TradeCollateral() {
     if (Number.isNaN(value)) return setError('Enter a valid amount greater than zero.');
     if (value > walletUsdc) return setError('Amount exceeds your wallet balance.');
     try {
-      await sendTransaction({
+      await sendTransactionAsync({
         to: VAULT_ADDRESS,
         data: encodeFunctionData({ abi: vaultAbi, functionName: 'deposit' }),
         value: parseEther(amount),
@@ -93,7 +100,7 @@ export function TradeCollateral() {
                   <h2 id="tradeDepositTitle">Deposit USDC</h2>
                 </div>
               </div>
-              <button type="button" className="trade-deposit__close" onClick={() => setIsOpen(false)} aria-label="Close deposit dialog">×</button>
+              <button ref={closeButtonRef} type="button" className="trade-deposit__close" onClick={() => setIsOpen(false)} aria-label="Close deposit dialog">×</button>
             </div>
             <p className="trade-deposit__intro">Fund your demo margin with USDC on Arc Testnet.</p>
 
@@ -127,7 +134,7 @@ export function TradeCollateral() {
                       <span>USDC</span>
                     </div>
                   </label>
-                  <button type="button" className="trade-deposit__max" disabled={busy || walletUsdc <= 0} onClick={() => setAmount(trimAmount(walletUsdc))}>Max</button>
+                  <button type="button" className="trade-deposit__max" disabled={busy || maxDeposit <= 0} onClick={() => setAmount(trimAmount(maxDeposit))}>Max</button>
                   <button type="submit" className="trade-deposit__submit" disabled={busy || !VAULT_ADDRESS}>
                     {busy ? 'Confirming…' : 'Deposit USDC'}
                   </button>
