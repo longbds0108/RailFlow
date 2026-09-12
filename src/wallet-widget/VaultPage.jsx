@@ -46,12 +46,72 @@ function formatDate(timestampSeconds) {
 
 const RANGE_SECONDS = { '1D': 86400, '1W': 7 * 86400, '1M': 30 * 86400, '1Y': 365 * 86400, ALL: Infinity };
 
+const CHART_METRICS = [
+  { id: 'cumulative-pnl', label: 'Cumulative PnL', empty: 'Strategy return data is not live yet.' },
+  { id: 'daily-pnl', label: 'Daily PnL', empty: 'Daily return data is not live yet.' },
+  { id: 'daily-apr', label: 'Daily APR %', empty: 'Daily APR data is not live yet.' },
+  { id: 'vault-equity', label: 'TVL: Vault Equity' },
+];
+
 function RangeTabs({ options, value, onChange }) {
   return (
     <div className="vault-tabs" role="tablist">
       {options.map((option) => (
         <button key={option} type="button" role="tab" aria-selected={value === option} className={value === option ? 'is-active' : ''} onClick={() => onChange(option)}>{option}</button>
       ))}
+    </div>
+  );
+}
+
+function ChartMetricMenu({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+  const selected = CHART_METRICS.find((metric) => metric.id === value) || CHART_METRICS[3];
+
+  useEffect(() => {
+    function handlePointerDown(event) {
+      if (!menuRef.current?.contains(event.target)) setOpen(false);
+    }
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  return (
+    <div className="vault-chart-selector" ref={menuRef}>
+      <button
+        type="button"
+        className="vault-chart-selector__trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>{selected.label}</span>
+        <span className="vault-chart-selector__chevron" aria-hidden="true">⌄</span>
+      </button>
+      {open && (
+        <div className="vault-chart-selector__menu" role="listbox" aria-label="Vault chart metric">
+          {CHART_METRICS.map((metric) => (
+            <button
+              key={metric.id}
+              type="button"
+              role="option"
+              aria-selected={metric.id === value}
+              className={metric.id === value ? 'is-active' : ''}
+              onClick={() => { onChange(metric.id); setOpen(false); }}
+            >
+              <span>{metric.label}</span>
+              {metric.id === value && <span className="vault-chart-selector__check" aria-hidden="true">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -136,6 +196,7 @@ export function VaultPage() {
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [chartRange, setChartRange] = useState('ALL');
+  const [chartMetric, setChartMetric] = useState('vault-equity');
   const [transferRange, setTransferRange] = useState('ALL');
 
   const chartElRef = useRef(null);
@@ -201,9 +262,11 @@ export function VaultPage() {
     return events.filter((e) => e.timestamp >= cutoff);
   }, [events, transferRange]);
 
+  const activeChartMetric = CHART_METRICS.find((metric) => metric.id === chartMetric) || CHART_METRICS[3];
+
   // Real protocol-wide TVL history built from every Deposited/Withdrawn
-  // log ever emitted — never a fabricated returns curve, since this vault
-  // has nothing generating a return.
+  // log ever emitted. Return metrics intentionally stay empty until the
+  // liquidation, money-market, and fee data layers are connected.
   useEffect(() => {
     if (!chartElRef.current || !window.LightweightCharts) return;
     if (!chartRef.current) {
@@ -217,6 +280,11 @@ export function VaultPage() {
       seriesRef.current = chartRef.current.addSeries(window.LightweightCharts.AreaSeries, {
         lineColor: '#5ee3c4', topColor: 'rgba(94,227,196,.32)', bottomColor: 'rgba(94,227,196,0)',
       });
+    }
+    if (chartMetric !== 'vault-equity') {
+      seriesRef.current.setData([]);
+      chartRef.current.timeScale().fitContent();
+      return;
     }
     const cutoff = nowSeconds - RANGE_SECONDS[chartRange];
     let running = 0;
@@ -232,7 +300,7 @@ export function VaultPage() {
     }
     seriesRef.current.setData(points);
     chartRef.current.timeScale().fitContent();
-  }, [globalStats.events, chartRange]);
+  }, [globalStats.events, chartRange, chartMetric]);
 
   if (!VAULT_ADDRESS) {
     return <p className="collateral-note">The Railflow vault contract hasn't been deployed on Arc Testnet yet.</p>;
@@ -394,11 +462,25 @@ export function VaultPage() {
             <div><dt>Deposit fee</dt><dd className="mono">0.000%</dd></div>
           </div>
           <div className="vault-card__chart-head">
-            <span>Total value locked</span>
-            <RangeTabs options={['1D', '1W', '1M', '1Y', 'ALL']} value={chartRange} onChange={setChartRange} />
+            <span>{activeChartMetric.label}</span>
+            <div className="vault-chart-controls">
+              <ChartMetricMenu value={chartMetric} onChange={setChartMetric} />
+              <RangeTabs options={['1D', '1W', '1M', '1Y', 'ALL']} value={chartRange} onChange={setChartRange} />
+            </div>
           </div>
-          <div className="vault-chart" ref={chartElRef}></div>
-          <div className="vault-perf__legend"><span className="vault-perf__dot"></span>Total value locked, across all depositors</div>
+          <div className="vault-chart-wrap">
+            <div className="vault-chart" ref={chartElRef}></div>
+            {activeChartMetric.empty && (
+              <div className="vault-chart__empty">
+                <strong>{activeChartMetric.label}</strong>
+                <span>{activeChartMetric.empty}</span>
+              </div>
+            )}
+          </div>
+          <div className="vault-perf__legend">
+            <span className="vault-perf__dot"></span>
+            {chartMetric === 'vault-equity' ? 'Vault equity from on-chain deposits and withdrawals' : 'Preview only — no return estimate is shown'}
+          </div>
         </section>
 
         <aside className="vault-panel" ref={panelRef}>
