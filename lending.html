@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Railflow lending markets on Arc Testnet.">
+  <meta name="theme-color" content="#06080b">
+  <title>Lending · Railflow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/trade.css">
+  <link rel="stylesheet" href="css/lending.css">
+  <link rel="stylesheet" href="wallet-widget/main.css">
+</head>
+<body class="trade-page lending-page-shell">
+  <a class="skip-link" href="#lendingWorkspace">Skip to lending markets</a>
+  <header class="trade-header">
+    <a href="index.html" class="header__logo" aria-label="Railflow home"><span class="logo-mark"><span></span><span></span><span></span></span><span class="logo-text">Railflow</span></a>
+    <nav class="trade-nav" aria-label="Main navigation">
+      <a href="trade.html">Trade</a>
+      <a href="trade.html#portfolio">Portfolio</a>
+      <a class="is-active" href="lending.html" aria-current="page">Lending</a>
+      <a href="vault.html">Vaults</a>
+      <button type="button" id="faucetLink">Faucet</button>
+    </nav>
+    <div class="trade-header__right">
+      <div class="network-pill"><span class="network-dot"></span>ARC TESTNET</div>
+      <div class="wallet-wrap" id="wallet-trade-root"></div>
+    </div>
+  </header>
+
+  <div class="lending-ticker" aria-label="Live token prices">
+    <div class="lending-ticker__inner">
+      <span class="lending-ticker__status"><span class="lending-live-dot"></span><span id="lendingFeedStatus">LIVE MARKETS</span></span>
+      <span class="lending-ticker__item"><strong>BTC</strong><span class="mono" data-live-price="BTC">—</span><span class="mono" data-live-change="BTC">—</span></span>
+      <span class="lending-ticker__item"><strong>ETH</strong><span class="mono" data-live-price="ETH">—</span><span class="mono" data-live-change="ETH">—</span></span>
+      <span class="lending-ticker__item"><strong>SOL</strong><span class="mono" data-live-price="SOL">—</span><span class="mono" data-live-change="SOL">—</span></span>
+      <span class="lending-ticker__item"><strong>LINK</strong><span class="mono" data-live-price="LINK">—</span><span class="mono" data-live-change="LINK">—</span></span>
+      <span class="lending-ticker__item"><strong>HYPE</strong><span class="mono" data-live-price="HYPE">—</span><span class="mono" data-live-change="HYPE">—</span></span>
+      <span class="lending-ticker__item"><strong>SUI</strong><span class="mono" data-live-price="SUI">—</span><span class="mono" data-live-change="SUI">—</span></span>
+      <span class="lending-ticker__item"><strong>DOGE</strong><span class="mono" data-live-price="DOGE">—</span><span class="mono" data-live-change="DOGE">—</span></span>
+    </div>
+  </div>
+
+  <main class="lending-main" id="lendingWorkspace">
+    <section class="lending-hero">
+      <div class="lending-hero__copy">
+        <div class="lending-eyebrow"><span class="lending-eyebrow__mark">L</span> Lending · Arc Testnet</div>
+        <h1>Supply capital.<br><span class="accent-text">Borrow with clarity.</span></h1>
+        <p>A focused lending surface for Railflow markets. Track live token prices now; pool rates, utilization, and positions are ready for the next data layer.</p>
+        <div class="lending-hero__actions">
+          <a class="btn btn--primary" href="#markets">Explore markets</a>
+          <a class="btn btn--ghost" href="vault.html">Manage collateral</a>
+        </div>
+      </div>
+      <div class="lending-signal-card" aria-label="Live market signal">
+        <div class="lending-signal-card__head"><span>MARKET SIGNAL</span><span class="mono accent-text">LIVE</span></div>
+        <div class="lending-signal-card__value mono" data-live-price="BTC">—</div>
+        <div class="lending-signal-card__meta"><span>BTC / USDC</span><span class="mono" data-live-change="BTC">—</span></div>
+        <div class="lending-signal-card__rail"><span></span></div>
+        <div class="lending-signal-card__foot"><span>Prices from Binance Futures</span><span class="mono">1s feed</span></div>
+      </div>
+    </section>
+
+    <section class="lending-stat-grid" aria-label="Lending protocol overview">
+      <article class="lending-stat-card"><span class="micro-label">Total supplied</span><strong class="mono">—</strong><small>Indicator coming soon</small></article>
+      <article class="lending-stat-card"><span class="micro-label">Total borrowed</span><strong class="mono">—</strong><small>Indicator coming soon</small></article>
+      <article class="lending-stat-card"><span class="micro-label">Utilization</span><strong class="mono">—</strong><small>Indicator coming soon</small></article>
+      <article class="lending-stat-card lending-stat-card--live"><span class="micro-label">Markets with live price</span><strong class="mono">7</strong><small><span class="lending-live-dot"></span> Streaming now</small></article>
+    </section>
+
+    <section class="lending-grid" id="markets">
+      <article class="lending-panel lending-markets-panel">
+        <div class="lending-panel__head">
+          <div><span class="micro-label">Markets</span><h2>Choose an asset to lend</h2></div>
+          <span class="panel-status"><span class="lending-live-dot"></span> Live price</span>
+        </div>
+        <div class="lending-table-wrap">
+          <table class="lending-table">
+            <thead><tr><th>Asset</th><th class="ta-r">Price</th><th class="ta-r">24h</th><th class="ta-r">Supply APY</th><th class="ta-r">Borrow APY</th><th></th></tr></thead>
+            <tbody>
+              <tr data-live-row="BTC"><td><span class="asset-cell"><img src="https://s3-symbol-logo.tradingview.com/crypto/XTVCBTC.svg" alt="" width="26" height="26"><span><strong>BTC</strong><small>Bitcoin</small></span></span></td><td class="ta-r mono" data-live-price="BTC">—</td><td class="ta-r mono" data-live-change="BTC">—</td><td class="ta-r mono lending-pending">—</td><td class="ta-r mono lending-pending">—</td><td><button class="lending-row-action" type="button" data-asset="BTC">View</button></td></tr>
+              <tr data-live-row="ETH"><td><span class="asset-cell"><img src="https://s3-symbol-logo.tradingview.com/crypto/XTVCETH.svg" alt="" width="26" height="26"><span><strong>ETH</strong><small>Ethereum</small></span></span></td><td class="ta-r mono" data-live-price="ETH">—</td><td class="ta-r mono" data-live-change="ETH">—</td><td class="ta-r mono lending-pending">—</td><td class="ta-r mono lending-pending">—</td><td><button class="lending-row-action" type="button" data-asset="ETH">View</button></td></tr>
+              <tr data-live-row="SOL"><td><span class="asset-cell"><img src="https://s3-symbol-logo.tradingview.com/crypto/XTVCSOL.svg" alt="" width="26" height="26"><span><strong>SOL</strong><small>Solana</small></span></span></td><td class="ta-r mono" data-live-price="SOL">—</td><td class="ta-r mono" data-live-change="SOL">—</td><td class="ta-r mono lending-pending">—</td><td class="ta-r mono lending-pending">—</td><td><button class="lending-row-action" type="button" data-asset="SOL">View</button></td></tr>
+              <tr data-live-row="LINK"><td><span class="asset-cell"><img src="https://s3-symbol-logo.tradingview.com/crypto/XTVCLINK.svg" alt="" width="26" height="26"><span><strong>LINK</strong><small>Chainlink</small></span></span></td><td class="ta-r mono" data-live-price="LINK">—</td><td class="ta-r mono" data-live-change="LINK">—</td><td class="ta-r mono lending-pending">—</td><td class="ta-r mono lending-pending">—</td><td><button class="lending-row-action" type="button" data-asset="LINK">View</button></td></tr>
+              <tr data-live-row="HYPE"><td><span class="asset-cell"><img src="img/hype-logo.jpg" alt="" width="26" height="26"><span><strong>HYPE</strong><small>Hyperliquid</small></span></span></td><td class="ta-r mono" data-live-price="HYPE">—</td><td class="ta-r mono" data-live-change="HYPE">—</td><td class="ta-r mono lending-pending">—</td><td class="ta-r mono lending-pending">—</td><td><button class="lending-row-action" type="button" data-asset="HYPE">View</button></td></tr>
+              <tr data-live-row="SUI"><td><span class="asset-cell"><img src="https://s3-symbol-logo.tradingview.com/crypto/XTVCSUI.svg" alt="" width="26" height="26"><span><strong>SUI</strong><small>Sui</small></span></span></td><td class="ta-r mono" data-live-price="SUI">—</td><td class="ta-r mono" data-live-change="SUI">—</td><td class="ta-r mono lending-pending">—</td><td class="ta-r mono lending-pending">—</td><td><button class="lending-row-action" type="button" data-asset="SUI">View</button></td></tr>
+              <tr data-live-row="DOGE"><td><span class="asset-cell"><img src="https://s3-symbol-logo.tradingview.com/crypto/XTVCDOGE.svg" alt="" width="26" height="26"><span><strong>DOGE</strong><small>Dogecoin</small></span></span></td><td class="ta-r mono" data-live-price="DOGE">—</td><td class="ta-r mono" data-live-change="DOGE">—</td><td class="ta-r mono lending-pending">—</td><td class="ta-r mono lending-pending">—</td><td><button class="lending-row-action" type="button" data-asset="DOGE">View</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="lending-panel__note">Live prices are market reference data. Lending rates and pool balances will be connected separately.</p>
+      </article>
+
+      <aside class="lending-panel lending-action-panel" aria-label="Supply or borrow">
+        <div class="lending-panel__head"><div><span class="micro-label">Position</span><h2>Supply or borrow</h2></div><span class="lending-preview-badge">Preview</span></div>
+        <div class="lending-tabs" role="tablist" aria-label="Lending action"><button class="is-active" type="button" role="tab" aria-selected="true">Supply</button><button type="button" role="tab" aria-selected="false">Borrow</button></div>
+        <div class="lending-selected-asset"><span class="asset-cell"><span class="asset-placeholder">US</span><span><strong>USDC</strong><small>Arc native USDC</small></span></span><span class="mono lending-selected-price">—</span></div>
+        <label class="lending-amount-label" for="lendingAmount">Amount <span>Balance —</span></label>
+        <div class="lending-amount-field"><input id="lendingAmount" type="text" inputmode="decimal" placeholder="0.00" disabled><span class="mono">USDC</span></div>
+        <div class="lending-action-summary"><div><span>Supply APY</span><strong class="mono">—</strong></div><div><span>Collateral factor</span><strong class="mono">—</strong></div><div><span>Wallet</span><strong>Not connected</strong></div></div>
+        <button class="lending-action-button" type="button" disabled>Coming soon</button>
+        <p class="lending-panel__note">Connect your wallet to prepare for the lending launch. No transaction is available in this preview.</p>
+      </aside>
+    </section>
+
+    <section class="lending-bottom-grid">
+      <article class="lending-panel lending-curve-panel">
+        <div class="lending-panel__head"><div><span class="micro-label">Rate surface</span><h2>Designed for transparent markets</h2></div><span class="mono lending-muted-label">DATA LAYER NEXT</span></div>
+        <div class="lending-curve">
+          <div class="lending-curve__rail"><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="lending-curve__labels"><span>Low utilization</span><span>Optimal zone</span><span>High utilization</span></div>
+        </div>
+        <div class="lending-legend"><span><i class="lending-legend__dot lending-legend__dot--mint"></i>Supply rate</span><span><i class="lending-legend__dot lending-legend__dot--coral"></i>Borrow rate</span><span class="lending-legend__pending">Rates appear when pools go live</span></div>
+      </article>
+      <article class="lending-panel lending-steps-panel">
+        <span class="micro-label">Launch path</span><h2>Built in three clear steps</h2>
+        <div class="lending-step"><b>01</b><span><strong>Pick a market</strong><small>Use live prices to compare assets.</small></span></div>
+        <div class="lending-step"><b>02</b><span><strong>Supply or borrow</strong><small>Rates and limits will follow the pool data.</small></span></div>
+        <div class="lending-step"><b>03</b><span><strong>Track your position</strong><small>See health, utilization, and history in one place.</small></span></div>
+      </article>
+    </section>
+  </main>
+
+  <noscript><p class="noscript-note">Enable JavaScript to load live token prices.</p></noscript>
+  <script src="js/chart-datafeed.js"></script>
+  <script src="js/token-icons.js"></script>
+  <script src="js/lending.js"></script>
+  <script type="module" src="wallet-widget/main.js"></script>
+</body>
+</html>

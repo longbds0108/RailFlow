@@ -21,10 +21,10 @@ try {
 // href/src in the HTML below; the rest of wallet-widget/ (RainbowKit's
 // lazily-imported, per-wallet connector chunks) is copied wholesale further
 // down since those filenames are content-hashed and unpredictable.
-const files = ['index.html', 'trade.html', 'vault.html', 'css/styles.css', 'css/trade.css', 'css/vault.css', 'js/main.js', 'js/trade.js', 'js/chart-datafeed.js', 'js/home-prices.js', 'js/token-icons.js', 'js/chart-types.js', 'img/hype-logo.jpg', 'wallet-widget/main.js', 'wallet-widget/main.css'];
+const files = ['index.html', 'trade.html', 'vault.html', 'lending.html', 'css/styles.css', 'css/trade.css', 'css/vault.css', 'css/lending.css', 'js/main.js', 'js/trade.js', 'js/chart-datafeed.js', 'js/home-prices.js', 'js/token-icons.js', 'js/chart-types.js', 'js/lending.js', 'img/hype-logo.jpg', 'wallet-widget/main.js', 'wallet-widget/main.css'];
 // Classic (non-module) hand-authored scripts are parsed here as a syntax
 // check; wallet-widget/main.js is an ES module Vite already validated.
-const classicScripts = ['js/main.js', 'js/trade.js', 'js/chart-datafeed.js', 'js/home-prices.js', 'js/token-icons.js', 'js/chart-types.js'];
+const classicScripts = ['js/main.js', 'js/trade.js', 'js/chart-datafeed.js', 'js/home-prices.js', 'js/token-icons.js', 'js/chart-types.js', 'js/lending.js'];
 for (const file of files) {
   const source = await readFile(resolve(root, file), 'utf8');
   if (classicScripts.includes(file)) new Script(source, { filename: file });
@@ -42,4 +42,4 @@ for (const file of files) {
 
 await cp(resolve(root, 'wallet-widget'), resolve(root, 'dist/wallet-widget'), { recursive: true });
 
-console.log(`Validated and prepared 3 pages, ${files.length - 3} hand-authored CSS/JS assets, and wallet-widget/ in dist/.`);
+console.log(`Validated and prepared 4 pages, ${files.length - 4} hand-authored CSS/JS assets, and wallet-widget/ in dist/.`);
