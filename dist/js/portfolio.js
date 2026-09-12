@@ -86,10 +86,10 @@
     if (!value || !meta) return;
     if (vault && vault.ready) {
       value.textContent = Number(vault.collateral || 0).toLocaleString('en-US', { maximumFractionDigits: 4 }) + ' USDC';
-      meta.textContent = 'Linked Circle wallet collateral';
+      meta.textContent = 'Connected wallet collateral';
     } else if (vault && vault.configured) {
       value.textContent = '—';
-      meta.textContent = 'Set up a Circle wallet to view collateral';
+      meta.textContent = 'Connect an Arc Testnet wallet to view collateral';
     } else {
       value.textContent = '—';
       meta.textContent = 'Vault not configured';

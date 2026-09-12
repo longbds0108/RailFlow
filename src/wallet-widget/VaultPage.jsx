@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useBalance, usePublicClient, useReadContract, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
-import { formatEther, parseEther } from 'viem';
+import { useAccount, useBalance, usePublicClient, useReadContract, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
+import { encodeFunctionData, formatEther, parseEther } from 'viem';
 import { vaultAbi } from './vaultAbi.js';
 import { VAULT_ADDRESS } from './vault.js';
 import { arcTestnet } from './chain.js';
-import { CIRCLE_APP_ID, CIRCLE_BACKEND_IS_LOCAL, CIRCLE_BACKEND_URL } from './circleConfig.js';
-import { requestContractExecution } from './circleApi.js';
-import { useCircleWallet } from './useCircleWallet.js';
 import { shortAddress } from './address.js';
 import { getVaultLogs } from './vaultLogs.js';
 
@@ -253,23 +250,18 @@ function useGlobalVaultStats(publicClient) {
 
 // Mounted into #wallet-vault-root on vault.html. The public hero/vault-card
 // section (TVL, depositor count, protocol chart) reads straight from the
-// chain and needs no connected wallet; the deposit/withdraw panel on the
-// right and the personal Transfers table need a connected wallet with a
-// Circle wallet. Strategy returns are described as a preview until the
-// liquidation, money-market, and fee data layers are connected.
+// chain and needs no connected wallet; the deposit/withdraw panel and the
+// personal Transfers table use the connected external wallet directly.
+// Strategy returns are described as a preview until the liquidation,
+// money-market, and fee data layers are connected.
 export function VaultPage() {
-  const { address, isConnected, onArc, circleWallet, checking, status, autoError, setUpWallet, ensureSession, ensureSdk } = useCircleWallet({ autoCreate: false });
+  const { address, isConnected, chainId } = useAccount();
+  const onArc = isConnected && chainId === arcTestnet.id;
   const publicClient = usePublicClient();
-  const hostedBackendUnavailable = typeof window !== 'undefined'
-    && window.location.hostname !== ''
-    && window.location.hostname !== 'localhost'
-    && window.location.hostname !== '127.0.0.1'
-    && CIRCLE_BACKEND_IS_LOCAL;
 
   const [mode, setMode] = useState('deposit');
   const [busyStep, setBusyStep] = useState('');
   const [error, setError] = useState('');
-  const [topUpAmount, setTopUpAmount] = useState('');
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [events, setEvents] = useState([]);
@@ -284,31 +276,34 @@ export function VaultPage() {
   const { data: vaultTvl } = useBalance({ address: VAULT_ADDRESS || undefined, query: { enabled: !!VAULT_ADDRESS } });
   const globalStats = useGlobalVaultStats(publicClient);
 
-  const { data: externalBalance } = useBalance({ address, query: { enabled: onArc } });
-  const { data: circleBalance, refetch: refetchCircleBalance } = useBalance({ address: circleWallet?.address, query: { enabled: onArc && !!circleWallet } });
+  const { data: externalBalance, refetch: refetchExternalBalance } = useBalance({ address, query: { enabled: onArc && !!address } });
   const { data: collateral, refetch: refetchCollateral } = useReadContract({
     address: VAULT_ADDRESS || undefined,
     abi: vaultAbi,
     functionName: 'collateralOf',
-    args: circleWallet ? [circleWallet.address] : undefined,
-    query: { enabled: onArc && !!VAULT_ADDRESS && !!circleWallet },
+    args: address ? [address] : undefined,
+    query: { enabled: onArc && !!VAULT_ADDRESS && !!address },
   });
 
-  const { sendTransaction, data: topUpHash, isPending: topUpSubmitting } = useSendTransaction();
-  const { isLoading: topUpConfirming, isSuccess: topUpConfirmed } = useWaitForTransactionReceipt({ hash: topUpHash });
+  const { sendTransaction, data: transactionHash, isPending: transactionSubmitting } = useSendTransaction();
+  const { isLoading: transactionConfirming, isSuccess: transactionConfirmed } = useWaitForTransactionReceipt({ hash: transactionHash });
   useEffect(() => {
-    if (!topUpConfirmed) return;
-    refetchCircleBalance();
-    setTopUpAmount('');
-  }, [topUpConfirmed]);
+    if (!transactionConfirmed) return;
+    refetchCollateral();
+    refetchExternalBalance();
+    loadEvents();
+    setDepositAmount('');
+    setWithdrawAmount('');
+    setBusyStep('');
+  }, [transactionConfirmed]);
 
   async function loadEvents() {
-    if (!publicClient || !circleWallet || !VAULT_ADDRESS) { setEvents([]); return; }
+    if (!publicClient || !address || !VAULT_ADDRESS) { setEvents([]); return; }
     setLoadingEvents(true);
     try {
       const [deposits, withdrawals] = await Promise.all([
-        getVaultLogs(publicClient, 'Deposited', { account: circleWallet.address }),
-        getVaultLogs(publicClient, 'Withdrawn', { account: circleWallet.address }),
+        getVaultLogs(publicClient, 'Deposited', { account: address }),
+        getVaultLogs(publicClient, 'Withdrawn', { account: address }),
       ]);
       const blockTimes = new Map();
       async function timeOf(blockNumber) {
@@ -330,7 +325,7 @@ export function VaultPage() {
     }
   }
 
-  useEffect(() => { loadEvents(); }, [circleWallet, publicClient]);
+  useEffect(() => { loadEvents(); }, [address, publicClient]);
 
   const nowSeconds = Math.floor(Date.now() / 1000);
   const transferEvents = useMemo(() => {
@@ -366,14 +361,14 @@ export function VaultPage() {
   const deposits = events.filter((e) => e.type === 'Deposit');
   const totalDeposited = deposits.reduce((sum, e) => sum + Number(formatEther(e.amount)), 0);
   const busy = busyStep !== '';
+  const transactionBusy = transactionSubmitting || transactionConfirming;
   const tvlUsdc = vaultTvl ? Number(formatEther(vaultTvl.value)) : 0;
   const vaultAgeDays = globalStats.firstDeposit ? Math.max(0, Math.floor((nowSeconds - globalStats.firstDeposit) / 86400)) : null;
   const vaultShare = tvlUsdc > 0 ? (collateralUsdc / tvlUsdc) * 100 : 0;
-  const hasPosition = !!circleWallet && collateralUsdc > 0;
+  const hasPosition = !!address && collateralUsdc > 0;
 
   const externalBalanceUsdc = externalBalance ? Number(formatEther(externalBalance.value)) : 0;
-  const circleBalanceUsdc = circleBalance ? Number(formatEther(circleBalance.value)) : 0;
-  const maxForMode = mode === 'deposit' ? circleBalanceUsdc : collateralUsdc;
+  const maxForMode = mode === 'deposit' ? externalBalanceUsdc : collateralUsdc;
   const amountForMode = mode === 'deposit' ? depositAmount : withdrawAmount;
   const setAmountForMode = mode === 'deposit' ? setDepositAmount : setWithdrawAmount;
 
@@ -383,61 +378,17 @@ export function VaultPage() {
     amountInputRef.current?.focus();
   }
 
-  function handleTopUp(event) {
-    event.preventDefault();
+  async function sendVaultTransaction({ functionName, args = [], value, stepName }) {
     setError('');
-    const value = parsePositiveDecimal(topUpAmount);
-    if (Number.isNaN(value)) return setError('Enter a valid top-up amount greater than zero.');
-    if (externalBalance && value > externalBalanceUsdc) return setError('Amount exceeds your external wallet balance.');
-    sendTransaction({ to: circleWallet.address, value: parseEther(topUpAmount) });
-  }
-
-  async function handleSetUp() {
-    setError('');
-    if (hostedBackendUnavailable) return setError('The hosted Vault is still connected to localhost:8787. Configure a public HTTPS Circle backend before setting up a wallet.');
-    setBusyStep('wallet');
-    try {
-      await setUpWallet();
-    } catch (err) {
-      setError(err.message || 'Could not start Circle wallet setup.');
-    } finally {
-      setBusyStep('');
-    }
-  }
-
-  async function runContractExecution({ abiFunctionSignature, abiParameters, amount, stepName, onDone }) {
-    setError('');
-    if (hostedBackendUnavailable) {
-      setError('Deposit service is unavailable on this hosted page because the Circle backend is configured as localhost:8787.');
-      return;
-    }
     setBusyStep(stepName);
     try {
-      const data = await ensureSession();
-      const sdk = ensureSdk();
-      const { challengeId } = await requestContractExecution({
-        userToken: data.userToken,
-        walletId: circleWallet.id,
-        contractAddress: VAULT_ADDRESS,
-        abiFunctionSignature,
-        abiParameters,
-        amount,
-      });
-      const previousCollateral = collateral;
-      sdk.execute(challengeId, async (err, result) => {
-        if (err || !result || result.status !== 'COMPLETE') {
-          setError((err && err.message) || 'Transaction was not completed.');
-          setBusyStep('');
-          return;
-        }
-        onDone();
-        await waitForChange(refetchCollateral, previousCollateral);
-        refetchCircleBalance();
-        loadEvents();
-        setBusyStep('');
+      await sendTransaction({
+        to: VAULT_ADDRESS,
+        data: encodeFunctionData({ abi: vaultAbi, functionName, args }),
+        value,
       });
     } catch (err) {
-      setError(err.message || 'Something went wrong starting the transaction.');
+      setError(err.shortMessage || err.message || 'Transaction could not be submitted.');
       setBusyStep('');
     }
   }
@@ -446,8 +397,8 @@ export function VaultPage() {
     event.preventDefault();
     const value = parsePositiveDecimal(depositAmount);
     if (Number.isNaN(value)) return setError('Enter a valid deposit amount greater than zero.');
-    if (value > circleBalanceUsdc) return setError('Amount exceeds your Circle wallet balance — top up first.');
-    runContractExecution({ stepName: 'deposit', abiFunctionSignature: 'deposit()', abiParameters: [], amount: depositAmount, onDone: () => setDepositAmount('') });
+    if (value > externalBalanceUsdc) return setError('Amount exceeds your connected wallet balance.');
+    sendVaultTransaction({ functionName: 'deposit', value: parseEther(depositAmount), stepName: 'deposit' });
   }
 
   function handleWithdraw(event) {
@@ -457,7 +408,7 @@ export function VaultPage() {
     if (value > collateralUsdc) return setError('Amount exceeds your deposited collateral.');
     const tradeState = window.RailflowTradeState;
     if (tradeState && value > tradeState.availableMargin) return setError('Amount exceeds your available (unused) demo margin — close positions or cancel orders first.');
-    runContractExecution({ stepName: 'withdraw', abiFunctionSignature: 'withdraw(uint256)', abiParameters: [parseEther(withdrawAmount).toString()], amount: undefined, onDone: () => setWithdrawAmount('') });
+    sendVaultTransaction({ functionName: 'withdraw', args: [parseEther(withdrawAmount)], stepName: 'withdraw' });
   }
 
   function handleModeSubmit(event) {
@@ -470,7 +421,7 @@ export function VaultPage() {
         <div className="vault-hero__copy">
           <div className="vault-hero__eyebrow"><span className="vault-live-dot"></span>Arc Testnet · Vault</div>
           <h1>One place to manage your Railflow Vault.</h1>
-          <p>Deposit USDC from your Circle wallet, follow on-chain Vault Equity, and withdraw when you need it. Strategy returns are shown only after their data source is live.</p>
+          <p>Connect your wallet, deposit USDC directly into the Vault, and follow your on-chain Vault Equity. Strategy returns are shown only after their data source is live.</p>
         </div>
         <div className="vault-hero__pills">
           <div className="vault-pill"><span className="vault-pill__value mono">{formatNum(tvlUsdc, 2)}</span><span className="vault-pill__label">Total value locked</span></div>
@@ -488,11 +439,11 @@ export function VaultPage() {
         <div className="vault-overview__item">
           <span className="vault-overview__label">Your position</span>
           <strong className="mono">{formatNum(collateralUsdc, 4)} USDC</strong>
-          <small>{circleWallet ? 'Circle wallet position' : 'Connect to view position'}</small>
+          <small>{address ? 'Connected wallet position' : 'Connect to view position'}</small>
         </div>
         <div className="vault-overview__item">
           <span className="vault-overview__label">Vault share</span>
-          <strong className="mono">{circleWallet ? formatNum(vaultShare, 3) + '%' : '—'}</strong>
+          <strong className="mono">{address ? formatNum(vaultShare, 3) + '%' : '—'}</strong>
           <small>Pro-rata UI calculation</small>
         </div>
         <div className="vault-overview__item">
@@ -550,46 +501,10 @@ export function VaultPage() {
         </section>
 
         <aside className="vault-panel" ref={panelRef}>
-          {hostedBackendUnavailable && (
-            <div className="vault-backend-warning">
-              <strong>Deposit service is not connected</strong>
-              <span>This hosted page is still pointing to <span className="mono">{CIRCLE_BACKEND_URL}</span>. Circle wallet setup, deposit, and withdrawal need a public HTTPS backend; top up the Circle wallet only after that connection is configured.</span>
-            </div>
-          )}
-          {!CIRCLE_APP_ID ? (
-            <p className="collateral-note">Circle Wallets isn't configured yet (missing app ID), so the vault can't be managed from here right now.</p>
-          ) : !isConnected ? (
-            <p className="collateral-note">Connect your external wallet first — it's used to fund your Circle wallet, which then deposits into the vault.</p>
+          {!isConnected ? (
+            <p className="collateral-note">Connect your wallet to deposit or withdraw directly from your own address.</p>
           ) : !onArc ? (
             <p className="collateral-note">Switch your wallet to Arc Testnet to manage your vault position.</p>
-          ) : !circleWallet ? (
-            <>
-              <h2>Set up your Circle wallet</h2>
-              <p className="vault-desc">Vault deposits use a separate, PIN-secured Circle wallet. First connect your external wallet, then create the Circle wallet, fund it, and deposit from its balance.</p>
-              {checking && !autoError && (
-                <p className="collateral-note">
-                  {status === 'session' && 'Starting a Circle session…'}
-                  {status === 'device' && 'Connecting to Circle…'}
-                  {status === 'wallets' && 'Checking for an existing wallet…'}
-                  {status === 'creating' && 'Requesting wallet creation…'}
-                  {status === 'awaiting-pin' && 'Set a PIN in the panel that should now be showing on this page — if nothing appeared, an ad-blocker or content blocker may be preventing Circle\'s embedded frame from loading.'}
-                  {!['session', 'device', 'wallets', 'creating', 'awaiting-pin'].includes(status) && 'Setting up your Circle wallet…'}
-                </p>
-              )}
-              {autoError && (
-                <>
-                  <p className="collateral-error">{autoError}</p>
-                  <button type="button" className="place-order" disabled={busy} onClick={handleSetUp}>
-                    {busyStep === 'wallet' ? 'Setting up…' : 'Try again'}
-                  </button>
-                </>
-              )}
-              {!checking && !autoError && status === 'idle' && !hostedBackendUnavailable && (
-                <button type="button" className="place-order" disabled={busy} onClick={handleSetUp}>
-                  Set up Circle wallet
-                </button>
-              )}
-            </>
           ) : (
             <>
               <div className="vault-panel__title-row">
@@ -598,19 +513,11 @@ export function VaultPage() {
               </div>
               <div className="vault-flow-guide">
                 <div className="vault-flow-guide__title">Deposit flow</div>
-                <div className="vault-flow-guide__step"><span>1</span><p>Top up the Circle wallet from your connected external wallet.</p></div>
-                <div className="vault-flow-guide__step"><span>2</span><p>Enter an amount up to the Circle wallet balance.</p></div>
-                <div className="vault-flow-guide__step"><span>3</span><p>Click Deposit and confirm the Circle PIN transaction.</p></div>
+                <div className="vault-flow-guide__step"><span>1</span><p>Choose Deposit or Withdraw.</p></div>
+                <div className="vault-flow-guide__step"><span>2</span><p>Enter an amount from your connected wallet balance.</p></div>
+                <div className="vault-flow-guide__step"><span>3</span><p>Confirm the Arc Testnet transaction in your wallet.</p></div>
               </div>
-              <p className="mono vault-address">Circle wallet {shortAddress(circleWallet.address)}<CopyButton text={circleWallet.address} /></p>
-
-              <form onSubmit={handleTopUp} className="collateral-form vault-topup">
-                <label htmlFor="vaultTopUp">Top up Circle wallet (from external wallet) — bal {formatNum(externalBalanceUsdc)}</label>
-                <div className="collateral-field">
-                  <input id="vaultTopUp" className="mono" type="text" inputMode="decimal" placeholder="0.00" value={topUpAmount} disabled={busy || topUpSubmitting || topUpConfirming} onChange={(e) => setTopUpAmount(e.target.value)} />
-                  <button type="submit" className="small-button" disabled={busy || topUpSubmitting || topUpConfirming}>{topUpSubmitting || topUpConfirming ? 'Sending…' : 'Send'}</button>
-                </div>
-              </form>
+              <p className="mono vault-address">Connected wallet {shortAddress(address)}<CopyButton text={address} /><a className="text-link" href={'https://testnet.arcscan.app/address/' + address} target="_blank" rel="noopener noreferrer">View on Arcscan ↗</a></p>
 
               <div className="vault-panel__tabs">
                 <button type="button" className={mode === 'deposit' ? 'is-active' : ''} onClick={() => setMode('deposit')}>Deposit</button>
@@ -623,11 +530,11 @@ export function VaultPage() {
                   <span className="mono">Bal {formatNum(maxForMode)} USDC</span>
                 </div>
                 <div className="collateral-field">
-                  <input ref={amountInputRef} id="vaultAmount" className="mono" type="text" inputMode="decimal" placeholder="0.00" value={amountForMode} disabled={busy} onChange={(e) => setAmountForMode(e.target.value)} />
+                  <input ref={amountInputRef} id="vaultAmount" className="mono" type="text" inputMode="decimal" placeholder="0.00" value={amountForMode} disabled={busy || transactionBusy} onChange={(e) => setAmountForMode(e.target.value)} />
                 </div>
                 <div className="quick-pct">
                   {[25, 50, 75, 100].map((pct) => (
-                    <button key={pct} type="button" disabled={busy || maxForMode <= 0} onClick={() => setAmountForMode(trimAmount((maxForMode * pct) / 100))}>{pct === 100 ? 'Max' : pct + '%'}</button>
+                    <button key={pct} type="button" disabled={busy || transactionBusy || maxForMode <= 0} onClick={() => setAmountForMode(trimAmount((maxForMode * pct) / 100))}>{pct === 100 ? 'Max' : pct + '%'}</button>
                   ))}
                 </div>
 
@@ -639,12 +546,12 @@ export function VaultPage() {
                 </dl>
 
                 <a className="vault-risk-link" href="#riskDisclosure">Read Risk Disclosure before depositing</a>
-                <button type="submit" className="place-order" disabled={busy || hostedBackendUnavailable}>
-                  {busyStep === mode
+                <button type="submit" className="place-order" disabled={busy || transactionBusy}>
+                  {transactionBusy
                     ? (mode === 'deposit' ? 'Depositing…' : 'Withdrawing…')
                     : (amountForMode ? `${mode === 'deposit' ? 'Deposit' : 'Withdraw'} ${amountForMode} USDC` : (mode === 'deposit' ? 'Deposit' : 'Withdraw'))}
                 </button>
-                <p className="vault-disclaimer">Real Arc Testnet transaction, signed by your Circle wallet. This contract currently tracks collateral only; return accounting will appear after the strategy data layer is connected.</p>
+                <p className="vault-disclaimer">Real Arc Testnet transaction, signed directly by your connected wallet. This contract currently tracks collateral only; return accounting will appear after the strategy data layer is connected.</p>
               </form>
 
               {error && <p className="collateral-error">{error}</p>}
@@ -653,16 +560,16 @@ export function VaultPage() {
 
           <div className="how-it-works">
             <div className="how-it-works__head">How the vault works</div>
-            <div className="how-it-works__step"><span>1</span><p>Your USDC moves from your Circle wallet into the RailflowVault contract on Arc Testnet.</p></div>
+            <div className="how-it-works__step"><span>1</span><p>Your USDC moves directly from your connected wallet into the RailflowVault contract on Arc Testnet.</p></div>
             <div className="how-it-works__step"><span>2</span><p>When the strategy is live, Vault capital may support liquidation activity, native money-market lending, and a share of trading fees.</p></div>
-            <div className="how-it-works__step"><span>3</span><p>Withdraw through the Vault flow; transaction availability and any future return depend on the live protocol configuration.</p></div>
+            <div className="how-it-works__step"><span>3</span><p>Withdraw through the same wallet; transaction availability and any future return depend on the live protocol configuration.</p></div>
           </div>
 
           <div className="vault-risk vault-risk--expanded" id="riskDisclosure">⚠ The RailFlow Vault seeks to generate returns through liquidation activity, lending within RailFlow’s native money market, and a share of trading fees. By depositing assets into the Vault, you acknowledge that your funds will be used in these activities and accept the associated risks. The value of your Vault holdings may increase or decrease over time. Returns are variable and not guaranteed, and you may lose some or all of your deposited assets. Please review RailFlow’s Risk Disclosure before depositing.</div>
         </aside>
       </div>
 
-      {circleWallet && (
+      {address && (
         <section className="vault-transfers">
           <div className="vault-main__head">
             <h2>Transfers</h2>
