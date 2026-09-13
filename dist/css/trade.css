@@ -12,6 +12,7 @@
 .trade-header { min-height: 80px; padding: 16px 22px; display: flex; align-items: center; gap: 28px; border-bottom: 1px solid var(--border); background: #070a0d; }
 .trade-header .header__logo { color: var(--text); flex-shrink: 0; }
 .trade-header .logo-mark { width: 34px; height: 34px; border-radius: 10px; }
+.trade-header .logo-image { width: 34px; height: 34px; border-radius: 10px; }
 .trade-header .logo-text { font-size: var(--font-size-logo); }
 .trade-nav { display: flex; align-items: center; gap: 4px; }
 .trade-nav a, .trade-nav button { color: var(--text-muted); font-size: var(--font-size-nav); font-weight: 400; padding: 9px 14px; border: 0; background: transparent; border-radius: 10px; white-space: nowrap; }

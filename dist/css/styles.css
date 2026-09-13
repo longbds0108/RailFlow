@@ -190,6 +190,8 @@ a:hover { color: var(--accent-link-hover); }
 .logo-mark span { height: 2px; border-radius: 2px; background: var(--accent); }
 .logo-mark span:nth-child(2) { background: var(--accent-dim); }
 .logo-mark span:nth-child(3) { width: 62%; }
+.logo-image { width: 30px; height: 30px; display: block; object-fit: contain; border-radius: 9px; }
+.logo-image--sm { width: 26px; height: 26px; border-radius: 7px; }
 .logo-text { font-size: var(--font-size-logo); font-weight: 600; letter-spacing: -0.02em; }
 .logo-text--sm { font-size: 15px; }
 
