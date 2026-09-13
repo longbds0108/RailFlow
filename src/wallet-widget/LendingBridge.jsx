@@ -78,7 +78,7 @@ export function LendingBridge() {
         } : null,
       },
     }));
-  }, [enabled, isArc, isSending, isConfirming, isConfirmed, transactionHash, sendError, receiptError, market, position, onArc]);
+  }, [enabled, onArc, isSending, isConfirming, isConfirmed, transactionHash, sendError, receiptError, market, position]);
 
   return null;
 }
