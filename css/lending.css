@@ -49,6 +49,7 @@
 .lending-table tbody tr:hover { background: #0d151b; }
 .asset-cell { display: inline-flex; align-items: center; gap: 10px; min-width: 118px; }
 .asset-cell img, .asset-placeholder { width: 26px; height: 26px; border-radius: 50%; object-fit: contain; background: #121a21; }
+.lending-usdc-icon { width: 26px; height: 26px; }
 .asset-placeholder { display: inline-flex; align-items: center; justify-content: center; color: var(--accent); font: 10px var(--font-mono); border: 1px solid var(--accent-border); }
 .asset-cell span:not(.asset-placeholder) { display: flex; flex-direction: column; gap: 3px; }
 .asset-cell strong { color: var(--text-2); font: 13px var(--font-mono); }

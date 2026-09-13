@@ -1,6 +1,8 @@
 /* ============ Reset & base ============ */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+.usdc-logo { display: inline-block; flex: none; background-color: #2775ca; background-image: url('../img/usdc-logo.jpg'); background-position: center; background-repeat: no-repeat; background-size: 168%; border-radius: 50%; overflow: hidden; }
+
 :root {
   --font-ui: 'Archivo', system-ui, -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
