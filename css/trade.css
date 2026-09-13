@@ -191,7 +191,6 @@
 .risk-targets .order-field:first-child .field-heading label { color: var(--up); }
 .risk-targets .order-field:last-child .field-heading label { color: var(--down); }
 .risk-targets input { height: 40px; padding: 9px 10px; font-size: 13px; }
-.risk-targets-note { margin: 2px 0 14px; color: var(--text-faint); font-size: 11px; line-height: 1.45; }
 .size-presets { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-top: -6px; }
 .size-presets button { padding: 7px 4px; color: var(--text-dim); border: 1px solid #1d2c37; border-radius: 7px; background: #0d141a; font: 12px var(--font-mono); }
 .size-presets button:hover, .size-presets .is-active { background: #123b33; color: var(--accent); border-color: #20564b; }
