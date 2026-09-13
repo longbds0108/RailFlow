@@ -111,9 +111,9 @@
 
     <section class="lending-bottom-grid">
       <article class="lending-panel lending-curve-panel">
-        <div class="lending-panel__head"><div><span class="micro-label">Live price chart</span><h2 id="lendingChartTitle">BTC / USDC reference</h2></div><span class="mono lending-muted-label" id="lendingChartStatus">LOADING</span></div>
-        <div class="lending-price-chart"><svg id="lendingPriceChart" viewBox="0 0 720 220" role="img" aria-label="Live BTC price chart"><g class="lending-price-chart__grid"><line x1="0" y1="25" x2="720" y2="25"/><line x1="0" y1="80" x2="720" y2="80"/><line x1="0" y1="135" x2="720" y2="135"/><line x1="0" y1="190" x2="720" y2="190"/></g><path id="lendingPriceArea" class="lending-price-chart__area" d=""/><path id="lendingPriceLine" class="lending-price-chart__line" d=""/><text id="lendingPriceHigh" x="8" y="18" class="lending-price-chart__label"></text><text id="lendingPriceLow" x="8" y="213" class="lending-price-chart__label"></text></svg></div>
-        <div class="lending-legend"><span><i class="lending-legend__dot lending-legend__dot--mint"></i>Live Binance Futures mark reference</span><span class="lending-legend__pending">Supply and borrow rates appear when pool data is live</span></div>
+        <div class="lending-panel__head"><div><span class="micro-label">Lending market chart</span><h2 id="lendingChartTitle">BTC lending rates</h2></div><span class="mono lending-muted-label" id="lendingChartStatus">POOL DATA PENDING</span></div>
+        <div class="lending-price-chart lending-rate-chart"><svg id="lendingRateChart" viewBox="0 0 720 220" role="img" aria-label="Lending supply and borrow rate candlestick chart"><g class="lending-price-chart__grid"><line x1="0" y1="25" x2="720" y2="25"/><line x1="0" y1="80" x2="720" y2="80"/><line x1="0" y1="135" x2="720" y2="135"/><line x1="0" y1="190" x2="720" y2="190"/></g><g id="lendingCandles" class="lending-candles"></g><text id="lendingChartEmpty" x="360" y="112" text-anchor="middle" class="lending-price-chart__empty">Lending candle history unavailable</text></svg></div>
+        <div class="lending-legend"><span><i class="lending-legend__dot lending-legend__dot--mint"></i>Supply APY candles</span><span><i class="lending-legend__dot lending-legend__dot--coral"></i>Borrow APY candles</span><span class="lending-legend__pending">Waiting for money-market history</span></div>
       </article>
       <article class="lending-panel lending-steps-panel">
         <span class="micro-label">Launch path</span><h2>Built in three clear steps</h2>

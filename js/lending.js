@@ -41,42 +41,15 @@
     if (input) input.max = selectedAction === 'supply' && Number.isFinite(balance) ? String(balance) : '';
   }
 
-  function drawPriceChart(symbol, bars) {
-    var line = document.getElementById('lendingPriceLine');
-    var area = document.getElementById('lendingPriceArea');
-    var highEl = document.getElementById('lendingPriceHigh');
-    var lowEl = document.getElementById('lendingPriceLow');
+  function renderLendingChart(symbol) {
+    var candles = document.getElementById('lendingCandles');
+    var emptyEl = document.getElementById('lendingChartEmpty');
     var titleEl = document.getElementById('lendingChartTitle');
     var statusEl = document.getElementById('lendingChartStatus');
-    if (!line || !area || !bars || bars.length < 2) return;
-    var values = bars.map(function (bar) { return Number(bar.close); }).filter(Number.isFinite);
-    if (values.length < 2) return;
-    var high = Math.max.apply(Math, values);
-    var low = Math.min.apply(Math, values);
-    var range = high - low || Math.max(high * 0.01, 1);
-    var points = values.map(function (value, index) {
-      var x = (index / (values.length - 1)) * 720;
-      var y = 190 - ((value - low) / range) * 165;
-      return [x, y];
-    });
-    var path = points.map(function (point, index) { return (index ? 'L' : 'M') + point[0].toFixed(2) + ' ' + point[1].toFixed(2); }).join(' ');
-    line.setAttribute('d', path);
-    area.setAttribute('d', path + ' L 720 190 L 0 190 Z');
-    if (highEl) highEl.textContent = 'High ' + format(high, priceDigits(high));
-    if (lowEl) lowEl.textContent = 'Low ' + format(low, priceDigits(low));
-    if (titleEl) titleEl.textContent = symbol + ' / USDC reference';
-    if (statusEl) statusEl.textContent = 'LIVE';
-  }
-
-  async function loadPriceChart(symbol) {
-    var statusEl = document.getElementById('lendingChartStatus');
-    if (statusEl) statusEl.textContent = 'LOADING';
-    try {
-      var result = await window.RailflowDatafeed.getBars(symbol, '1h', 0, 72);
-      drawPriceChart(symbol, result && result.candles);
-    } catch (error) {
-      if (statusEl) statusEl.textContent = 'UNAVAILABLE';
-    }
+    if (candles) candles.replaceChildren();
+    if (emptyEl) emptyEl.textContent = 'Lending candle history unavailable';
+    if (titleEl) titleEl.textContent = symbol + ' lending rates';
+    if (statusEl) statusEl.textContent = 'POOL DATA PENDING';
   }
 
   function updateLiveValue(symbol, ticker) {
@@ -104,7 +77,7 @@
         if (status) status.textContent = 'LIVE MARKETS';
       }
     });
-    loadPriceChart(selectedAsset);
+    renderLendingChart(selectedAsset);
   }
 
   document.querySelectorAll('.lending-row-action').forEach(function (button) {
@@ -113,7 +86,7 @@
       selectedAsset = asset;
       var row = document.querySelector('[data-live-row="' + asset + '"]');
       if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      loadPriceChart(asset);
+      renderLendingChart(asset);
     });
   });
 
