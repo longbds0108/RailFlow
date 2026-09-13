@@ -12,10 +12,10 @@ export function ConnectionBar() {
         const connected = mounted && account && chain;
         const state = !mounted || !connected ? 'disconnected' : chain.unsupported ? 'wrong-network' : 'connected';
         const message = state === 'connected'
-          ? 'Wallet connected to Arc Testnet. Deposit USDC into the Railflow vault (Manage collateral, below) to fund demo trading margin.'
+          ? 'Wallet connected to Arc Testnet. Deposit USDC into the Railflow vault (Manage collateral, below) to fund trading margin.'
           : state === 'wrong-network'
-          ? 'Wallet connected. Switch to Arc Testnet to deposit real USDC as demo trading collateral.'
-          : 'Connect your wallet to deposit real Arc Testnet USDC as demo trading collateral.';
+          ? 'Wallet connected. Switch to Arc Testnet to deposit real USDC as trading collateral.'
+          : 'Connect your wallet to deposit real Arc Testnet USDC as trading collateral.';
         return (
           <div className="connection-bar" data-state={state}>
             <span className="connected-badge">{LABEL[state]}</span>

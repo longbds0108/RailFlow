@@ -299,7 +299,7 @@
 
   function resetAccount() {
     // Starts with no positions or orders — those only appear once you place
-    // a demo trade through the order form. Demo margin (cash) is funded
+    // a trade through the order form. Margin (cash) is funded
     // from real collateral deposited into the RailflowVault contract on
     // Arc Testnet (see syncVaultCollateral below), not seeded here.
     // lastKnownVaultCollateral is reset to 0 so the next vault sync folds
@@ -309,7 +309,7 @@
   }
 
   // Bridges CollateralPanel.jsx's real, on-chain vault balance into the
-  // simulated demo ledger: only the *change* since the last known balance
+    // simulated trading ledger: only the *change* since the last known balance
   // is applied to account.cash, so simulated P&L/fees you've already
   // accrued aren't clobbered by re-reading the same on-chain number.
   function syncVaultCollateral() {
@@ -364,7 +364,7 @@
   // Rather than fabricate a running funding number, a position only accrues
   // funding when a real settlement boundary is actually crossed while it's
   // open, using whatever the live funding rate is at that moment — so most
-  // demo sessions (shorter than 8h) genuinely show $0.00, which is correct,
+    // short sessions (shorter than 8h) genuinely show $0.00, which is correct,
   // not a placeholder.
   function fundingEpoch(ts) { return Math.floor(ts / (8 * 60 * 60 * 1000)); }
   function applyFundingIfDue(position) {
@@ -420,14 +420,14 @@
     $('leverageValue').textContent = state.leverage + 'x';
     $('leverage').style.setProperty('--range-progress', ((state.leverage - 1) / (markets[state.market].maxLev - 1) * 100) + '%');
     $('leverage').setAttribute('aria-valuetext', state.leverage + ' times');
-    $('submitOrder').textContent = 'Demo · ' + (state.side === 'long' ? 'Buy / Long ' : 'Sell / Short ') + state.market + '-PERP';
+    $('submitOrder').textContent = (state.side === 'long' ? 'Buy / Long ' : 'Sell / Short ') + state.market + '-PERP';
     $('submitOrder').classList.toggle('is-short', state.side === 'short');
     $('marginUsage').textContent = format(equity() > 0 ? usedMargin() / equity() * 100 : 0, 1) + '%';
     $('maintenanceMargin').textContent = money(account.positions.reduce(function (sum, p) { return sum + maintMargin(p); }, 0));
     $('positionCount').textContent = account.positions.length;
     $('orderCount').textContent = account.orders.length;
     $('claimBanner').hidden = equity() > 0;
-    // The only channel CollateralPanel.jsx has into the demo ledger — lets
+    // The only channel CollateralPanel.jsx has into the trading ledger — lets
     // it cap a withdrawal at your unused margin, without the trading engine
     // knowing anything about wallets or contracts.
     window.RailflowTradeState = { availableMargin: available() };
@@ -731,7 +731,7 @@
     } else {
       account.orders.push({ id: nextId++, market: state.market, side: state.side, type: state.type, price: price, size: size, leverage: state.leverage, margin: margin + fee, marginMode: state.marginMode, takeProfit: targets.takeProfit, stopLoss: targets.stopLoss });
       setActivity('orders');
-      notify(state.type === 'stop' ? 'Demo stop order placed. Cancel it in Open orders.' : 'Demo limit order placed. Margin reserved.');
+      notify(state.type === 'stop' ? 'Stop order placed. Cancel it in Open orders.' : 'Limit order placed. Margin reserved.');
     }
     saveAccount();
     updateSummary();
@@ -753,12 +753,12 @@
       recordFill(position.market, position.side === 'long' ? 'short' : 'long', exitPrice, size, fee);
       account.realizedPnl.unshift({ market: position.market, side: position.side, quantity: position.quantity, entry: position.entry, exit: exitPrice, pnl: profit, time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
       account.positions = account.positions.filter(function (p) { return p.id !== position.id; });
-      notify(position.market + ' demo position closed. Margin released.');
+      notify(position.market + ' position closed. Margin released.');
     } else if (cancel) {
       var order = account.orders.find(function (o) { return o.id === Number(cancel.dataset.cancel); });
       if (order) account.orderHistory.unshift({ market: order.market, side: order.side, type: order.type, price: order.price, size: order.size, status: 'Cancelled', time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
       account.orders = account.orders.filter(function (o) { return o.id !== Number(cancel.dataset.cancel); });
-      notify('Demo order cancelled. Reserved margin released.');
+      notify('Order cancelled. Reserved margin released.');
     } else return;
     drawActivity();
     saveAccount();
@@ -840,12 +840,12 @@
     if (event.key === 'Escape' && !$('chartTypeMenu').hidden) { toggleMenu('chartTypeButton', 'chartTypeMenu', false); $('chartTypeButton').focus(); }
   });
   $('portfolioLink').addEventListener('click', function () { setActivity('positions', true); $('portfolio').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'nearest' }); });
-  $('accountDetails').addEventListener('click', function () { dialog('Demo account', '<p>Positions and P&amp;L in this table are simulated. Your available margin (cash) is real, though — it\'s funded by USDC you\'ve deposited into the Railflow vault contract on Arc Testnet.</p><dl class="trade-summary"><div><dt>Demo equity</dt><dd class="mono">' + money(equity()) + '</dd></div><div><dt>Demo available margin</dt><dd class="mono">' + money(available()) + '</dd></div><div><dt>Demo open positions</dt><dd class="mono">' + account.positions.length + '</dd></div></dl>'); });
+  $('accountDetails').addEventListener('click', function () { dialog('Account details', '<p>Your available margin is funded by USDC deposited into the Railflow vault contract on Arc Testnet.</p><dl class="trade-summary"><div><dt>Equity</dt><dd class="mono">' + money(equity()) + '</dd></div><div><dt>Available margin</dt><dd class="mono">' + money(available()) + '</dd></div><div><dt>Open positions</dt><dd class="mono">' + account.positions.length + '</dd></div></dl>'); });
   $('faucetLink').addEventListener('click', function () { dialog('USDC test funds', '<p>Step 1 — get real testnet USDC into your wallet:</p><a class="btn btn--primary wallet-faucet-link" href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer">Open Circle Faucet</a>'); });
   $('dialogContent').addEventListener('click', function (event) { if (event.target.closest('[data-dialog-dismiss]')) $('infoDialog').close(); });
   $('closeDialog').addEventListener('click', function () { $('infoDialog').close(); });
   $('infoDialog').addEventListener('click', function (event) { if (event.target === this) { var rect = this.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) this.close(); } });
-  $('resetDemo').addEventListener('click', function () {
+  $('resetAccount').addEventListener('click', function () {
     resetAccount();
     state.leverage = 10;
     state.marginMode = 'cross';
@@ -856,7 +856,7 @@
     setActivity('positions');
     syncVaultCollateral(); // resetAccount() zeroed lastKnownVaultCollateral, so this re-applies your real deposit as fresh margin
     saveAccount();
-    notify('Demo account reset.');
+    notify('Account reset.');
   });
 
   initChartTypeMenu();

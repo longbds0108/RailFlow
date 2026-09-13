@@ -407,7 +407,7 @@ export function VaultPage() {
     if (Number.isNaN(value)) return setError('Enter a valid withdraw amount greater than zero.');
     if (value > collateralUsdc) return setError('Amount exceeds your deposited collateral.');
     const tradeState = window.RailflowTradeState;
-    if (tradeState && value > tradeState.availableMargin) return setError('Amount exceeds your available (unused) demo margin — close positions or cancel orders first.');
+    if (tradeState && value > tradeState.availableMargin) return setError('Amount exceeds your available (unused) margin — close positions or cancel orders first.');
     sendVaultTransaction({ functionName: 'withdraw', args: [parseEther(withdrawAmount)], stepName: 'withdraw' });
   }
 

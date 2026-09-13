@@ -13,7 +13,7 @@ import { PortfolioBridge } from './PortfolioBridge.jsx';
 // needs, so most of these portals are no-ops on any given page. They all
 // share a single Providers tree so wallet state stays in sync everywhere.
 // VaultBridge has no mount point of its own — it renders nothing and just
-// needs to be part of the tree (see VaultBridge.jsx) so js/trade.js's demo
+// needs to be part of the tree (see VaultBridge.jsx) so js/trade.js's trading
 // margin ledger stays synced with real vault collateral on every page,
 // not only while vault.html itself is open.
 function App() {

@@ -4,7 +4,7 @@
   // Real market data for BTC/ETH/SOL/LINK/HYPE/SUI/DOGE from Binance's
   // public USDⓈ-M Futures API — no key required, CORS-open (verified with
   // curl), and it's a perpetuals API (mark price, funding rate, open
-  // interest), the right shape for a perp DEX demo rather than a spot feed.
+  // interest), the right shape for a perp trading workspace rather than a spot feed.
   // Live prices/funding/24h stats come from the combined WebSocket market
   // streams documented at developers.binance.com/en/docs/catalog/
   // core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market
@@ -29,7 +29,7 @@
   //
   // Every network call falls back to a deterministic simulated generator,
   // or to REST polling, on failure (offline, rate-limited, blocked) so the
-  // demo never breaks.
+  // workspace never breaks.
 
   var FUTURES_SYMBOL = { BTC: 'BTCUSDT', ETH: 'ETHUSDT', SOL: 'SOLUSDT', LINK: 'LINKUSDT', HYPE: 'HYPEUSDT', SUI: 'SUIUSDT', DOGE: 'DOGEUSDT' };
   var REST_BASE = 'https://fapi.binance.com/fapi/v1';

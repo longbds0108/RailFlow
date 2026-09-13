@@ -7,7 +7,7 @@ import { arcTestnet } from './chain.js';
 
 // Renders nothing — mounted unconditionally (every page, not behind a
 // portal check) purely to keep window.RailflowVault in sync with the
-// connected wallet's real on-chain collateral, so js/trade.js's demo
+// connected wallet's real on-chain collateral, so js/trade.js's trading
 // margin ledger tracks it correctly even when the Vault page itself isn't
 // open. VaultPage.jsx does the same read for its own display, but wagmi's
 // query cache dedupes identical collateralOf(address) reads, so this

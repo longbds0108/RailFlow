@@ -108,7 +108,7 @@ export function TradeCollateral() {
               </div>
               <button ref={closeButtonRef} type="button" className="trade-deposit__close" onClick={closeModal} aria-label="Close deposit dialog">×</button>
             </div>
-            <p className="trade-deposit__intro">Fund your demo margin with USDC on Arc Testnet.</p>
+            <p className="trade-deposit__intro">Fund your trading margin with USDC on Arc Testnet.</p>
 
             {!isConnected ? (
               <ConnectButton.Custom>
