@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { Providers } from './Providers.jsx';
 import { HomeConnectButton } from './HomeConnectButton.jsx';
 import { TradeWalletButton } from './TradeWalletButton.jsx';
-import { ConnectionBar } from './ConnectionBar.jsx';
 import { VaultBridge } from './VaultBridge.jsx';
 import { VaultPage } from './VaultPage.jsx';
 import { TradeCollateral } from './TradeCollateral.jsx';
@@ -20,7 +19,6 @@ import { LendingBridge } from './LendingBridge.jsx';
 function App() {
   const home = document.getElementById('wallet-home-root');
   const tradeButton = document.getElementById('wallet-trade-root');
-  const connectionBar = document.getElementById('wallet-connection-root');
   const vaultPage = document.getElementById('wallet-vault-root');
   const portfolioPage = document.getElementById('wallet-portfolio-root');
   const lendingPage = document.getElementById('wallet-lending-root');
@@ -32,7 +30,6 @@ function App() {
       {lendingPage && <LendingBridge />}
       {home && createPortal(<HomeConnectButton />, home)}
       {tradeButton && createPortal(<TradeWalletButton />, tradeButton)}
-      {connectionBar && createPortal(<ConnectionBar />, connectionBar)}
       {vaultPage && createPortal(<VaultPage />, vaultPage)}
       {tradeCollateral && createPortal(<TradeCollateral />, tradeCollateral)}
     </Providers>
