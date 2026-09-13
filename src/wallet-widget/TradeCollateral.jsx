@@ -92,7 +92,7 @@ export function TradeCollateral() {
   return (
     <div className="trade-deposit">
       <button ref={triggerRef} type="button" className="trade-deposit__trigger" onClick={() => setIsOpen(true)} aria-haspopup="dialog" aria-expanded={isOpen}>
-        <span className="trade-deposit__usdc-icon usdc-image-crop" aria-hidden="true"><img src="img/usdc-logo.jpg" alt="" /></span><span>Deposit</span><small>USDC</small>
+        <span className="trade-deposit__usdc-icon usdc-image-crop" aria-hidden="true"><img src="img/usdc-logo-cropped.jpg" alt="" /></span><span>Deposit</span><small>USDC</small>
       </button>
 
       {isOpen && (
@@ -103,7 +103,7 @@ export function TradeCollateral() {
                 <span className="trade-deposit__status-dot" aria-hidden="true" />
                 <div>
                   <span className="trade-deposit__eyebrow">Collateral Vault</span>
-                  <h2 id="tradeDepositTitle"><span className="trade-deposit__usdc-icon trade-deposit__usdc-icon--large usdc-image-crop" aria-hidden="true"><img src="img/usdc-logo.jpg" alt="" /></span>Deposit USDC</h2>
+                  <h2 id="tradeDepositTitle"><span className="trade-deposit__usdc-icon trade-deposit__usdc-icon--large usdc-image-crop" aria-hidden="true"><img src="img/usdc-logo-cropped.jpg" alt="" /></span>Deposit USDC</h2>
                 </div>
               </div>
               <button ref={closeButtonRef} type="button" className="trade-deposit__close" onClick={closeModal} aria-label="Close deposit dialog">×</button>
