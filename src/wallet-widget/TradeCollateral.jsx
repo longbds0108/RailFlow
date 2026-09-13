@@ -92,7 +92,7 @@ export function TradeCollateral() {
   return (
     <div className="trade-deposit">
       <button ref={triggerRef} type="button" className="trade-deposit__trigger" onClick={() => setIsOpen(true)} aria-haspopup="dialog" aria-expanded={isOpen}>
-        <span className="trade-deposit__usdc-icon usdc-image-crop" aria-hidden="true" /><span>Deposit</span><small>USDC</small>
+        <span>Deposit</span><small>USDC</small>
       </button>
 
       {isOpen && (
