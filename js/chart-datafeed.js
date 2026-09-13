@@ -40,6 +40,43 @@
   var DOWN_VOLUME = 'rgba(255,92,108,.45)';
   var TICKER_POLL_MS = 10000;
   var OPEN_INTEREST_POLL_MS = 20000;
+  var GATEWAY_URL = window.RAILFLOW_GATEWAY_URL || '';
+  var gatewaySocket;
+  var gatewayListeners = [];
+
+  function announceGatewayStatus(status) {
+    window.dispatchEvent(new CustomEvent('railflow:market-status', { detail: { status: status, transport: 'gateway' } }));
+  }
+
+  function ensureGateway() {
+    if (!GATEWAY_URL || gatewaySocket) return;
+    try { gatewaySocket = new WebSocket(GATEWAY_URL); } catch (err) { announceGatewayStatus('reconnecting'); return; }
+    gatewaySocket.onopen = function () { announceGatewayStatus('live'); };
+    gatewaySocket.onmessage = function (event) {
+      var payload;
+      try { payload = JSON.parse(event.data); } catch (err) { return; }
+      if (payload.status) announceGatewayStatus(payload.status);
+      gatewayListeners.slice().forEach(function (entry) { entry.listener(payload); });
+    };
+    gatewaySocket.onerror = function () { announceGatewayStatus('reconnecting'); };
+    gatewaySocket.onclose = function () {
+      gatewaySocket = null;
+      announceGatewayStatus('reconnecting');
+      if (gatewayListeners.length) setTimeout(ensureGateway, 1000);
+    };
+  }
+
+  function subscribeGateway(listener) {
+    if (!GATEWAY_URL) return null;
+    var entry = { listener: listener };
+    gatewayListeners.push(entry);
+    ensureGateway();
+    return entry;
+  }
+
+  function unsubscribeGateway(entry) {
+    gatewayListeners = gatewayListeners.filter(function (candidate) { return candidate !== entry; });
+  }
 
   // ---- History: GET /fapi/v1/klines ----
   function toCandle(row) {
@@ -272,6 +309,23 @@
       record.oiTimer = setInterval(tick, OPEN_INTEREST_POLL_MS);
     }
 
+    if (GATEWAY_URL) {
+      announceGatewayStatus('reconnecting');
+      record.gateway = subscribeGateway(function (payload) {
+        if (record.closed || payload.type !== 'market' || !symbols.includes(payload.symbol)) return;
+        var market = payload.market || {};
+        safeUpdate(payload.symbol, {
+          price: market.mark,
+          oraclePrice: market.oracle,
+          fundingRate: market.funding,
+          changePercent: market.change,
+          volumeUsd: market.volume,
+        });
+      });
+      startOpenInterestPolling();
+      return id;
+    }
+
     if (!pairs.length || typeof WebSocket === 'undefined') { pollMarkets(record, symbols, safeUpdate); return id; }
 
     var url = STREAM_BASE + pairs.map(function (p) { return p.toLowerCase() + '@markPrice@1s'; }).concat(pairs.map(function (p) { return p.toLowerCase() + '@ticker'; })).join('/');
@@ -325,6 +379,7 @@
     if (record.timer) clearInterval(record.timer);
     if (record.oiTimer) clearInterval(record.oiTimer);
     if (record.socket) { try { record.socket.close(); } catch (err) {} }
+    if (record.gateway) unsubscribeGateway(record.gateway);
     delete marketSubs[id];
   }
 

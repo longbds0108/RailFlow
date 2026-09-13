@@ -18,6 +18,10 @@
 .trade-nav .is-active, .trade-nav a:hover, .trade-nav button:hover { color: var(--text); background: #0f171f; }
 .trade-header__right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 .trade-header .network-pill { padding: 11px 14px; font-size: 11.5px; background: #0d1319; }
+.market-status { display: inline-flex; align-items: center; gap: 6px; color: var(--text-faint); font: 10px var(--font-mono); letter-spacing: .06em; white-space: nowrap; }
+.market-status strong { color: var(--accent); font-weight: 500; }
+.market-status strong[data-state="reconnecting"] { color: #e7bd6b; }
+.market-status strong[data-state="delayed"] { color: #ff8996; }
 .wallet-wrap { position: relative; }
 .wallet-button { display: flex; align-items: center; gap: 11px; padding: 8px 12px 8px 15px; color: var(--text-muted-2); background: #0d141a; border: 1px solid #1b2732; border-radius: 10px; }
 .wallet-equity { display: flex; flex-direction: column; gap: 2px; text-align: left; border-right: 1px solid var(--border-card); padding-right: 16px; margin-right: 3px; }

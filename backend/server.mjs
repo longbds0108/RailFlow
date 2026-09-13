@@ -1,5 +1,7 @@
+import { createServer } from 'node:http';
 import express from 'express';
 import { circleClient } from './circleClient.mjs';
+import { MarketDataGateway } from './marketGateway.mjs';
 
 // Minimal proxy between the browser and Circle's User-Controlled Wallets
 // API. The browser never sees CIRCLE_API_KEY — it only ever receives a
@@ -11,6 +13,7 @@ import { circleClient } from './circleClient.mjs';
 // CircleWalletPanel talks to this over NEXT_PUBLIC_CIRCLE_BACKEND_URL.
 const app = express();
 app.use(express.json());
+app.use(express.static('dist'));
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -40,6 +43,9 @@ app.post('/api/circle/session', asyncRoute(async (req, res) => {
   const { data } = await circleClient.createUserToken({ userId });
   res.json({ userId, userToken: data.userToken, encryptionKey: data.encryptionKey });
 }));
+
+const marketGateway = new MarketDataGateway();
+app.get('/api/markets/status', (req, res) => res.json(marketGateway.snapshot()));
 
 app.get('/api/circle/wallets', asyncRoute(async (req, res) => {
   const userToken = req.get('x-user-token');
@@ -97,4 +103,6 @@ app.use((err, req, res, next) => {
 });
 
 const port = Number(process.env.PORT) || 8787;
-app.listen(port, () => console.log('Circle Wallets backend listening on http://localhost:' + port));
+const server = createServer(app);
+marketGateway.attach(server);
+server.listen(port, () => console.log('RailFlow backend and market gateway listening on http://localhost:' + port));

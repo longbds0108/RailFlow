@@ -578,6 +578,13 @@
     });
   }
 
+  window.addEventListener('railflow:market-status', function (event) {
+    var status = event.detail && event.detail.status;
+    if (!$('marketStatus') || !status) return;
+    $('marketStatus').textContent = status.toUpperCase();
+    $('marketStatus').dataset.state = status;
+  });
+
   function selectMarket(symbol) {
     state.market = symbol;
     var market = markets[symbol];
