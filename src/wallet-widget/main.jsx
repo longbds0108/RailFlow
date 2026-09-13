@@ -22,11 +22,12 @@ function App() {
   const connectionBar = document.getElementById('wallet-connection-root');
   const vaultPage = document.getElementById('wallet-vault-root');
   const portfolioPage = document.getElementById('wallet-portfolio-root');
+  const lendingPage = document.getElementById('wallet-lending-root');
   const tradeCollateral = document.getElementById('wallet-collateral-root');
   return (
     <Providers>
       <VaultBridge />
-      {portfolioPage && <PortfolioBridge />}
+      {(portfolioPage || lendingPage) && <PortfolioBridge />}
       {home && createPortal(<HomeConnectButton />, home)}
       {tradeButton && createPortal(<TradeWalletButton />, tradeButton)}
       {connectionBar && createPortal(<ConnectionBar />, connectionBar)}

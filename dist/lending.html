@@ -30,6 +30,7 @@
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Chuyển sang giao diện sáng" title="Chuyển sang giao diện sáng" aria-pressed="false"><svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.2"></circle><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M3.99 3.99l1.42 1.42M14.59 14.59l1.42 1.42M16.01 3.99l-1.42 1.42M5.41 14.59l-1.42 1.42"></path></svg><svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.8 12.9A6.5 6.5 0 1 1 7.1 4.2 6.5 6.5 0 0 0 15.8 12.9Z"></path></svg></button>
       <div class="network-pill"><span class="network-dot"></span>ARC TESTNET</div>
       <div class="wallet-wrap" id="wallet-trade-root"></div>
+      <div id="wallet-lending-root"></div>
     </div>
   </header>
 
@@ -67,9 +68,9 @@
     </section>
 
     <section class="lending-stat-grid" aria-label="Lending protocol overview">
-      <article class="lending-stat-card"><span class="micro-label">Total supplied</span><strong class="mono">—</strong><small>Indicator coming soon</small></article>
-      <article class="lending-stat-card"><span class="micro-label">Total borrowed</span><strong class="mono">—</strong><small>Indicator coming soon</small></article>
-      <article class="lending-stat-card"><span class="micro-label">Utilization</span><strong class="mono">—</strong><small>Indicator coming soon</small></article>
+      <article class="lending-stat-card"><span class="micro-label">Total supplied</span><strong class="mono">—</strong><small>Pool contract not connected</small></article>
+      <article class="lending-stat-card"><span class="micro-label">Total borrowed</span><strong class="mono">—</strong><small>Pool contract not connected</small></article>
+      <article class="lending-stat-card"><span class="micro-label">Utilization</span><strong class="mono">—</strong><small>Pool contract not connected</small></article>
       <article class="lending-stat-card lending-stat-card--live"><span class="micro-label">Markets with live price</span><strong class="mono">7</strong><small><span class="lending-live-dot"></span> Streaming now</small></article>
     </section>
 
@@ -97,25 +98,22 @@
       </article>
 
       <aside class="lending-panel lending-action-panel" aria-label="Supply or borrow">
-        <div class="lending-panel__head"><div><span class="micro-label">Position</span><h2>Supply or borrow</h2></div><span class="lending-preview-badge">Preview</span></div>
-        <div class="lending-tabs" role="tablist" aria-label="Lending action"><button class="is-active" type="button" role="tab" aria-selected="true">Supply</button><button type="button" role="tab" aria-selected="false">Borrow</button></div>
-        <div class="lending-selected-asset"><span class="asset-cell"><span class="asset-placeholder">US</span><span><strong>USDC</strong><small>Arc native USDC</small></span></span><span class="mono lending-selected-price">—</span></div>
-        <label class="lending-amount-label" for="lendingAmount">Amount <span>Balance —</span></label>
-        <div class="lending-amount-field"><input id="lendingAmount" type="text" inputmode="decimal" placeholder="0.00" disabled><span class="mono">USDC</span></div>
-        <div class="lending-action-summary"><div><span>Supply APY</span><strong class="mono">—</strong></div><div><span>Collateral factor</span><strong class="mono">—</strong></div><div><span>Wallet</span><strong>Not connected</strong></div></div>
-        <button class="lending-action-button" type="button" disabled>Coming soon</button>
-        <p class="lending-panel__note">Connect your wallet to prepare for the lending launch. No transaction is available in this preview.</p>
+        <div class="lending-panel__head"><div><span class="micro-label">Position</span><h2>Supply or borrow</h2></div><span class="lending-preview-badge">Pool pending</span></div>
+        <div class="lending-tabs" role="tablist" aria-label="Lending action"><button class="is-active" type="button" role="tab" aria-selected="true" data-lending-action="supply">Supply</button><button type="button" role="tab" aria-selected="false" data-lending-action="borrow">Borrow</button></div>
+        <div class="lending-selected-asset"><span class="asset-cell"><img src="img/usdc-logo.svg" alt="USDC" width="26" height="26"><span><strong>USDC</strong><small>Arc native USDC</small></span></span><span class="mono lending-selected-price">$1.00</span></div>
+        <label class="lending-amount-label" for="lendingAmount">Amount <span id="lendingBalance">Wallet balance —</span></label>
+        <div class="lending-amount-field"><input id="lendingAmount" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off"><span class="mono">USDC</span></div>
+        <div class="lending-action-summary"><div><span>Supply APY</span><strong class="mono">—</strong></div><div><span>Collateral factor</span><strong class="mono">—</strong></div><div><span>Wallet</span><strong id="lendingWalletState">Not connected</strong></div></div>
+        <button class="lending-action-button" id="lendingActionButton" type="button" disabled>Pool contract pending</button>
+        <p class="lending-panel__note" id="lendingActionNote">Amount entry is ready and wallet balance is read from Arc Testnet. Supply and borrow transactions will activate when a money-market contract is connected.</p>
       </aside>
     </section>
 
     <section class="lending-bottom-grid">
       <article class="lending-panel lending-curve-panel">
-        <div class="lending-panel__head"><div><span class="micro-label">Rate surface</span><h2>Designed for transparent markets</h2></div><span class="mono lending-muted-label">DATA LAYER NEXT</span></div>
-        <div class="lending-curve">
-          <div class="lending-curve__rail"><span></span><span></span><span></span><span></span><span></span></div>
-          <div class="lending-curve__labels"><span>Low utilization</span><span>Optimal zone</span><span>High utilization</span></div>
-        </div>
-        <div class="lending-legend"><span><i class="lending-legend__dot lending-legend__dot--mint"></i>Supply rate</span><span><i class="lending-legend__dot lending-legend__dot--coral"></i>Borrow rate</span><span class="lending-legend__pending">Rates appear when pools go live</span></div>
+        <div class="lending-panel__head"><div><span class="micro-label">Live price chart</span><h2 id="lendingChartTitle">BTC / USDC reference</h2></div><span class="mono lending-muted-label" id="lendingChartStatus">LOADING</span></div>
+        <div class="lending-price-chart"><svg id="lendingPriceChart" viewBox="0 0 720 220" role="img" aria-label="Live BTC price chart"><g class="lending-price-chart__grid"><line x1="0" y1="25" x2="720" y2="25"/><line x1="0" y1="80" x2="720" y2="80"/><line x1="0" y1="135" x2="720" y2="135"/><line x1="0" y1="190" x2="720" y2="190"/></g><path id="lendingPriceArea" class="lending-price-chart__area" d=""/><path id="lendingPriceLine" class="lending-price-chart__line" d=""/><text id="lendingPriceHigh" x="8" y="18" class="lending-price-chart__label"></text><text id="lendingPriceLow" x="8" y="213" class="lending-price-chart__label"></text></svg></div>
+        <div class="lending-legend"><span><i class="lending-legend__dot lending-legend__dot--mint"></i>Live Binance Futures mark reference</span><span class="lending-legend__pending">Supply and borrow rates appear when pool data is live</span></div>
       </article>
       <article class="lending-panel lending-steps-panel">
         <span class="micro-label">Launch path</span><h2>Built in three clear steps</h2>
@@ -127,6 +125,7 @@
   </main>
 
   <noscript><p class="noscript-note">Enable JavaScript to load live token prices.</p></noscript>
+  <script>window.RAILFLOW_GATEWAY_URL = location.port === '8787' ? ((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/markets') : '';</script>
   <script src="js/chart-datafeed.js"></script>
   <script src="js/token-icons.js"></script>
   <script src="js/lending.js"></script>

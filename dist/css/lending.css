@@ -78,13 +78,12 @@
 .lending-action-button { width: calc(100% - 40px); margin: 0 20px; padding: 12px; border: 0; border-radius: 8px; background: #20372f; color: #6e9b8d; font-weight: 600; cursor: not-allowed; }
 .lending-action-panel > .lending-panel__note { padding: 13px 20px 0; border-top: 0; }
 .lending-curve-panel, .lending-steps-panel { padding-bottom: 20px; }
-.lending-curve { margin: 2px 20px 0; height: 165px; position: relative; border-left: 1px solid var(--border-field); border-bottom: 1px solid var(--border-field); background: repeating-linear-gradient(to top, transparent 0, transparent 40px, rgba(30,42,53,.6) 41px); }
-.lending-curve::before, .lending-curve::after { content: ""; position: absolute; left: 4%; right: 4%; height: 2px; transform-origin: left center; }
-.lending-curve::before { bottom: 28%; background: var(--accent); transform: rotate(-8deg); box-shadow: 150px -10px 0 -0.25px var(--accent), 310px -38px 0 -0.25px var(--accent); }
-.lending-curve::after { bottom: 17%; background: var(--down); transform: rotate(-21deg); opacity: .85; box-shadow: 150px -35px 0 -0.25px var(--down), 310px -100px 0 -0.25px var(--down); }
-.lending-curve__rail { position: absolute; inset: 0; display: flex; justify-content: space-around; align-items: flex-end; padding-bottom: 8px; }
-.lending-curve__rail span { width: 1px; height: 8px; background: var(--border-strong); }
-.lending-curve__labels { display: flex; justify-content: space-between; position: absolute; left: 8px; right: 8px; bottom: -24px; color: var(--text-faint); font-size: 10px; }
+.lending-price-chart { margin: 2px 20px 0; height: 220px; border: 1px solid var(--border-field); border-radius: 10px; background: linear-gradient(180deg, rgba(94,227,196,.06), transparent 75%); overflow: hidden; }
+.lending-price-chart svg { display: block; width: 100%; height: 100%; }
+.lending-price-chart__grid line { stroke: var(--border-field); stroke-width: 1; stroke-dasharray: 3 5; }
+.lending-price-chart__area { fill: rgba(94,227,196,.11); }
+.lending-price-chart__line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.lending-price-chart__label { fill: var(--text-faint); font: 11px var(--font-mono); }
 .lending-legend { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 35px 20px 0; color: var(--text-muted); font-size: 11px; }
 .lending-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .lending-legend__dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
