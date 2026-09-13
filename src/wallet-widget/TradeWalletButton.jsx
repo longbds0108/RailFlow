@@ -1,23 +1,17 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useBalance } from 'wagmi';
-import { shortAddress } from './address.js';
 
 function BalanceChip({ address }) {
   const { data, isLoading } = useBalance({ address });
   const text = isLoading
-    ? 'Loading…'
+    ? '—'
     : data
-    ? Number(data.formatted).toLocaleString('en-US', { maximumFractionDigits: 4 })
+    ? Number(data.formatted).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : '—';
   return (
     <span className="wallet-equity">
-      <span className="wallet-token-badge usdc-image-crop" aria-hidden="true">
-        <img src="img/usdc-logo-cropped.jpg" alt="" />
-      </span>
-      <span className="wallet-equity__copy">
-        <span className="micro-label">Wallet balance</span>
-        <span className="mono wallet-balance-value">{text} <small>USDC</small></span>
-      </span>
+      <span className="wallet-equity__label">Portfolio</span>
+      <strong className="mono wallet-balance-value">${text}</strong>
     </span>
   );
 }
@@ -48,11 +42,8 @@ export function TradeWalletButton() {
             }}
           >
             {state === 'connected' && <BalanceChip address={account.address} />}
-            {state === 'connected' && <span className="wallet-avatar" aria-hidden="true"></span>}
-            <span className="mono wallet-address">
-              {state === 'disconnected' ? 'Connect wallet' : state === 'wrong-network' ? 'Wrong network' : shortAddress(account.address)}
-            </span>
-            <span className="chevron" aria-hidden="true">▾</span>
+            {state !== 'connected' && <span className="mono wallet-address">{state === 'disconnected' ? 'Connect wallet' : 'Wrong network'}</span>}
+            {state !== 'connected' && <span className="chevron" aria-hidden="true">▾</span>}
           </button>
         );
       }}

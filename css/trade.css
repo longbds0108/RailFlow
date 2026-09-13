@@ -25,7 +25,9 @@
 .wallet-wrap { position: relative; }
 .wallet-button { display: flex; align-items: center; gap: 10px; min-width: 190px; padding: 7px 10px 7px 11px; color: var(--text-muted-2); background: linear-gradient(135deg, #101a21, #0c1319); border: 1px solid #263642; border-radius: 12px; box-shadow: 0 6px 18px rgba(0, 0, 0, .12); transition: border-color .2s ease, background .2s ease, transform .2s ease; }
 .wallet-button:hover { border-color: var(--accent-border); background: linear-gradient(135deg, #14231f, #0d171c); transform: translateY(-1px); }
-.wallet-equity { display: flex; align-items: center; gap: 8px; min-width: 0; text-align: left; }
+.wallet-equity { display: flex; align-items: center; gap: 8px; min-width: 0; text-align: left; white-space: nowrap; }
+.wallet-equity__label { color: #a7b5c9; font-size: 15px; font-weight: 500; }
+.wallet-equity > .wallet-balance-value { color: #f1f4f8; font-size: 17px; line-height: 1.1; }
 .wallet-equity__copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .wallet-equity > .wallet-equity__copy > .mono { color: #d3e2de; font-size: 14px; line-height: 1.1; }
 .wallet-equity small { color: var(--text-muted); font-size: 9px; letter-spacing: .04em; }
