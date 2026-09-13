@@ -19,7 +19,7 @@
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme === 'light' ? '#F4F7F8' : '#06080b');
     document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {
-      var nextLabel = theme === 'light' ? 'Chuyển sang giao diện tối' : 'Chuyển sang giao diện sáng';
+      var nextLabel = theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
       button.setAttribute('aria-label', nextLabel);
       button.setAttribute('title', nextLabel);
       button.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');

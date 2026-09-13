@@ -2,9 +2,9 @@
   'use strict';
 
   var markets = {
-    BTC: { name: 'Bitcoin', price: 112480.50, oracle: 112479.80, change: 2.14, funding: 0.0041, interest: '$38.2M', volume: '$214.6M', maxLev: 50, step: 0.5 },
-    ETH: { name: 'Ethereum', price: 4182.30, oracle: 4182.12, change: 1.08, funding: 0.0026, interest: '$21.7M', volume: '$98.2M', maxLev: 50, step: 0.05 },
-    SOL: { name: 'Solana', price: 214.86, oracle: 214.84, change: -0.92, funding: -0.0013, interest: '$12.4M', volume: '$46.8M', maxLev: 25, step: 0.01 }
+    BTC: { name: 'Bitcoin', price: null, oracle: null, change: null, funding: null, interest: '—', volume: '—', maxLev: 50, step: 0.5 },
+    ETH: { name: 'Ethereum', price: null, oracle: null, change: null, funding: null, interest: '—', volume: '—', maxLev: 50, step: 0.05 },
+    SOL: { name: 'Solana', price: null, oracle: null, change: null, funding: null, interest: '—', volume: '—', maxLev: 25, step: 0.01 }
   };
   var state = { market: 'BTC', timeframe: '15m', chartType: 'candles', side: 'long', type: 'limit', activity: 'positions', leverage: 10, marginMode: 'cross', priceDirty: false };
   // Fraction of a position's initial margin held back as maintenance margin
@@ -12,7 +12,10 @@
   // by the isolated liquidation-price estimate below: 1 - 0.891 = 0.109).
   var MAINT_MARGIN_RATIO = 0.109;
   var $ = function (id) { return document.getElementById(id); };
-  var format = function (value, digits) { return Number(value).toLocaleString('en-US', { minimumFractionDigits: digits === undefined ? 2 : digits, maximumFractionDigits: digits === undefined ? 2 : digits }); };
+  var format = function (value, digits) {
+    var number = Number(value);
+    return Number.isFinite(number) ? number.toLocaleString('en-US', { minimumFractionDigits: digits === undefined ? 2 : digits, maximumFractionDigits: digits === undefined ? 2 : digits }) : '—';
+  };
   var money = function (value) { return '$' + format(value); };
 
   function formatCompactUsd(value) {
@@ -181,10 +184,16 @@
     // was in flight; a stale response must not overwrite the newer one.
     if (requestId !== chartRequest) return;
     lastHistory = history;
-    $('chartDataSource').textContent = history.source === 'simulated' ? 'SIMULATED' : 'LIVE';
-    $('chartDataSource').classList.toggle('is-simulated', history.source === 'simulated');
+    $('chartDataSource').textContent = history.source === 'live' ? 'LIVE' : 'UNAVAILABLE';
+    $('chartDataSource').classList.toggle('is-unavailable', history.source !== 'live');
     applyChartType(state.chartType);
     volumeSeries.setData(history.volumes);
+    if (!history.candles.length) {
+      $('chartOhlc').innerHTML = '<span>O <b>—</b></span><span>H <b>—</b></span><span>L <b>—</b></span><span>C <b>—</b></span><span class="chart-source is-unavailable" id="chartDataSource">UNAVAILABLE</span>';
+      $('priceChart').setAttribute('aria-label', market + ' perpetual ' + timeframe + ' chart unavailable: Binance Futures history could not be loaded');
+      setTimeout(function () { if (requestId === chartRequest) drawChart(); }, 5000);
+      return;
+    }
     chart.timeScale().fitContent();
     var lastCandle = history.candles[history.candles.length - 1];
     var lastVolume = history.volumes[history.volumes.length - 1];
@@ -199,11 +208,11 @@
     }, function (source) {
       if (requestId !== chartRequest) return;
       history.source = source;
-      $('chartDataSource').textContent = source === 'simulated' ? 'SIMULATED' : 'LIVE';
-      $('chartDataSource').classList.toggle('is-simulated', source === 'simulated');
-      $('priceChart').setAttribute('aria-label', market + ' perpetual ' + timeframe + ' ' + window.RailflowChartTypes.label(state.chartType) + ' chart, simulated fallback data');
+      $('chartDataSource').textContent = source === 'live' ? 'LIVE' : 'UNAVAILABLE';
+      $('chartDataSource').classList.toggle('is-unavailable', source !== 'live');
+      $('priceChart').setAttribute('aria-label', market + ' perpetual ' + timeframe + ' ' + window.RailflowChartTypes.label(state.chartType) + ' chart, live data unavailable');
     });
-    $('priceChart').setAttribute('aria-label', market + ' perpetual ' + timeframe + ' ' + window.RailflowChartTypes.label(state.chartType) + ' chart, ' + (history.source === 'simulated' ? 'simulated fallback data' : 'live from Binance Futures'));
+    $('priceChart').setAttribute('aria-label', market + ' perpetual ' + timeframe + ' ' + window.RailflowChartTypes.label(state.chartType) + ' chart, live from Binance Futures');
   }
 
   // Real depth from Binance Futures (see js/chart-datafeed.js). Levels are
@@ -560,13 +569,13 @@
   function renderMarketStrip(symbol) {
     var market = markets[symbol];
     $('markPrice').textContent = format(market.price);
-    $('marketChange').textContent = (market.change >= 0 ? '+' : '') + format(market.change) + '%';
+    $('marketChange').textContent = Number.isFinite(market.change) ? (market.change >= 0 ? '+' : '') + format(market.change) + '%' : '—';
     $('marketChange').className = 'mono ' + (market.change >= 0 ? 'up' : 'down');
     $('oraclePrice').textContent = format(market.oracle);
-    $('marketFunding').textContent = (market.funding >= 0 ? '+' : '') + format(market.funding, 4) + '%';
+    $('marketFunding').textContent = Number.isFinite(market.funding) ? (market.funding >= 0 ? '+' : '') + format(market.funding, 4) + '%' : '—';
     $('marketFunding').className = 'mono ' + (market.funding >= 0 ? 'up' : 'down');
-    $('marketInterest').textContent = market.interest;
-    $('marketVolume').textContent = market.volume;
+    $('marketInterest').textContent = market.interest || '—';
+    $('marketVolume').textContent = market.volume || '—';
     $('bookMark').textContent = format(market.price);
     document.querySelectorAll('#marketMenu [data-market]').forEach(function (button) {
       var priceEl = button.querySelector('.mono');

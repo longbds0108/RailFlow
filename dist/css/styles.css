@@ -281,7 +281,7 @@ html[data-theme="light"] .theme-toggle__icon--moon { display: block; }
 .stat-cell__value { font-family: var(--font-mono); font-size: 21px; font-weight: 500; color: var(--text); }
 .stat-cell__label { font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-faint-2); margin-top: 5px; }
 
-/* --- Trading panel mock --- */
+/* --- Live reference panel --- */
 .panel {
   min-width: 0; border: 1px solid var(--border-card); border-radius: 16px;
   background: var(--bg-card); box-shadow: 0 30px 80px -40px rgba(0,0,0,0.9); overflow: hidden;
@@ -433,6 +433,7 @@ html[data-theme="light"] .theme-toggle__icon--moon { display: block; }
 .footer__about { margin: 0; font-size: 13px; line-height: 1.6; color: var(--text-ghost); max-width: 250px; }
 .footer__col { display: flex; flex-direction: column; gap: 9px; }
 .footer__col a { font-size: 13.5px; color: var(--text-dim-2); }
+.footer__unavailable { font-size: 13.5px; color: var(--text-ghost); }
 .footer__label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-ghost); margin-bottom: 4px; }
 .footer__bottom {
   display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;

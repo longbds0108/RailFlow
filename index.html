@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Railflow — Perps that clear at rail speed</title>
-<meta name="description" content="Railflow là sàn giao dịch perpetual on-chain trên Arc. Khớp lệnh dưới 1 giây, đòn bẩy tới 50x, phí maker bằng 0, không cần mở tài khoản.">
+<meta name="description" content="Railflow is an on-chain perpetual exchange on Arc with live market references and Arc Testnet collateral.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -54,14 +54,14 @@
       <a href="#edge">Why Railflow</a>
       <a href="lending.html">Lending</a>
       <a href="#faucet">Testnet guide</a>
-      <a href="#">Docs</a>
+      <a href="https://github.com/longbds0108/RailFlow" target="_blank" rel="noreferrer">Source</a>
     </nav>
 
     <div class="header__actions">
       <div class="network-pill"><span class="network-dot"></span>ARC TESTNET</div>
       <div id="wallet-home-root"></div>
-      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Chuyển sang giao diện sáng" title="Chuyển sang giao diện sáng" aria-pressed="false"><svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.2"></circle><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M3.99 3.99l1.42 1.42M14.59 14.59l1.42 1.42M16.01 3.99l-1.42 1.42M5.41 14.59l-1.42 1.42"></path></svg><svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.8 12.9A6.5 6.5 0 0 1 7.1 4.2 6.5 6.5 0 1 0 15.8 12.9Z"></path></svg></button>
-      <button class="nav-toggle" id="navToggle" aria-label="Mở menu" aria-expanded="false">
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" title="Switch to light theme" aria-pressed="false"><svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.2"></circle><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M3.99 3.99l1.42 1.42M14.59 14.59l1.42 1.42M16.01 3.99l-1.42 1.42M5.41 14.59l-1.42 1.42"></path></svg><svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.8 12.9A6.5 6.5 0 0 1 7.1 4.2 6.5 6.5 0 1 0 15.8 12.9Z"></path></svg></button>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -71,44 +71,44 @@
   <section class="hero">
     <div class="hero__inner">
       <div class="hero__copy">
-        <div class="eyebrow"><span class="eyebrow__pill">v0.9</span>Perpetual exchange · on-chain orderbook</div>
+        <div class="eyebrow"><span class="eyebrow__pill">v0.9</span>Arc Testnet trading workspace · live market references</div>
         <h1 class="h1">Perps that clear<br><span class="accent">at rail speed.</span></h1>
-        <p class="lead">Một sàn giao dịch perpetual hoàn toàn on-chain xây trên Arc. Khớp lệnh dưới 1 giây, đòn bẩy tới <strong>50x</strong>, phí maker bằng 0 và không cần mở tài khoản — ví của bạn chính là tài khoản.</p>
+        <p class="lead">An on-chain perpetual trading workspace built for Arc Testnet. Connect your wallet, fund your collateral vault, and use live Binance Futures market references in one place.</p>
         <div class="hero__cta">
-          <a href="trade.html" class="btn btn--primary btn--lg">Mở app giao dịch</a>
-          <a href="#faucet" class="btn btn--ghost btn--lg">Nạp ví testnet</a>
+          <a href="trade.html" class="btn btn--primary btn--lg">Open trading app</a>
+          <a href="#faucet" class="btn btn--ghost btn--lg">Fund a testnet wallet</a>
         </div>
         <div class="stat-grid">
-          <div class="stat-cell"><div class="stat-cell__value">$1.84B</div><div class="stat-cell__label">Khối lượng 30 ngày</div></div>
-          <div class="stat-cell"><div class="stat-cell__value">$96.4M</div><div class="stat-cell__label">Open interest</div></div>
-          <div class="stat-cell"><div class="stat-cell__value">182ms</div><div class="stat-cell__label">Thời gian khớp lệnh</div></div>
-          <div class="stat-cell"><div class="stat-cell__value">31,402</div><div class="stat-cell__label">Ví testnet</div></div>
+          <div class="stat-cell"><div class="stat-cell__value">LIVE</div><div class="stat-cell__label">Binance Futures references</div></div>
+          <div class="stat-cell"><div class="stat-cell__value">ARC</div><div class="stat-cell__label">Testnet collateral</div></div>
+          <div class="stat-cell"><div class="stat-cell__value">USDC</div><div class="stat-cell__label">Native settlement asset</div></div>
+          <div class="stat-cell"><div class="stat-cell__value">—</div><div class="stat-cell__label">Protocol execution metrics</div></div>
         </div>
       </div>
 
-      <!-- Trading panel mock -->
+      <!-- Live reference panel; execution is handled in the trading workspace. -->
       <div class="panel">
         <div class="panel__head">
           <div class="panel__pair">
             <img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCBTC.svg" alt="BTC" width="22" height="22" loading="lazy">
             <span class="mono">BTC-PERP</span>
-            <span class="pill-lev">50x</span>
+            <span class="pill-lev">Live reference</span>
           </div>
           <div class="panel__price">
-            <span class="mono price">112,480.50</span>
-            <span class="mono price-chg up">+2.14%</span>
+            <span class="mono price">—</span>
+            <span class="mono price-chg">—</span>
           </div>
         </div>
         <div class="panel__body">
           <div class="orderbook">
             <div class="orderbook__hd"><span>Price</span><span>Size</span></div>
-            <div class="ob-row ask" style="--depth:42%"><span>112,486.0</span><span>4.812</span></div>
-            <div class="ob-row ask" style="--depth:60%"><span>112,484.5</span><span>2.140</span></div>
-            <div class="ob-row ask" style="--depth:72%"><span>112,482.0</span><span>1.026</span></div>
-            <div class="ob-mid"><span>112,480.50</span><span>spread 0.4</span></div>
-            <div class="ob-row bid" style="--depth:66%"><span>112,478.5</span><span>3.407</span></div>
-            <div class="ob-row bid" style="--depth:50%"><span>112,476.0</span><span>1.884</span></div>
-            <div class="ob-row bid" style="--depth:38%"><span>112,473.5</span><span>0.960</span></div>
+            <div class="ob-row ask" style="--depth:42%"><span>—</span><span>—</span></div>
+            <div class="ob-row ask" style="--depth:60%"><span>—</span><span>—</span></div>
+            <div class="ob-row ask" style="--depth:72%"><span>—</span><span>—</span></div>
+            <div class="ob-mid"><span>—</span><span>live depth in Trade</span></div>
+            <div class="ob-row bid" style="--depth:66%"><span>—</span><span>—</span></div>
+            <div class="ob-row bid" style="--depth:50%"><span>—</span><span>—</span></div>
+            <div class="ob-row bid" style="--depth:38%"><span>—</span><span>—</span></div>
           </div>
           <div class="order-form">
             <div class="side-toggle">
@@ -117,18 +117,18 @@
             </div>
             <div class="field">
               <label>Size (USDC)</label>
-              <div class="field__value mono">25,000</div>
+              <div class="field__value mono">—</div>
             </div>
             <div class="field">
-              <div class="field__row"><label>Leverage</label><span class="mono accent-text">20x</span></div>
+              <div class="field__row"><label>Leverage</label><span class="mono accent-text">—</span></div>
               <div class="lev-track"><div class="lev-fill"></div><div class="lev-thumb"></div></div>
             </div>
             <div class="order-summary">
-              <div><span>Entry</span><span class="mono">112,480.50</span></div>
-              <div><span>Liq. price</span><span class="mono">107,246.10</span></div>
-              <div><span>Fee</span><span class="mono up">0.000%</span></div>
+              <div><span>Entry</span><span class="mono">—</span></div>
+              <div><span>Liq. price</span><span class="mono">—</span></div>
+              <div><span>Fee</span><span class="mono">—</span></div>
             </div>
-            <a href="trade.html" class="btn-submit">Mở lệnh Long</a>
+            <a href="trade.html" class="btn-submit">Open trading app</a>
           </div>
         </div>
         <div class="pulse-track"><div class="pulse-bar"></div></div>
@@ -142,9 +142,9 @@
       <div class="section__head">
         <div>
           <div class="eyebrow-sm">Live markets</div>
-          <h2 class="h2">Funding, độ sâu thị trường và lệnh khớp — tất cả một chỗ</h2>
+          <h2 class="h2">Live funding, market data, and trade references in one place</h2>
         </div>
-        <a href="trade.html" class="link-arrow">Khám phá thị trường →</a>
+        <a href="trade.html" class="link-arrow">Explore markets →</a>
       </div>
 
       <div class="table-card">
@@ -159,64 +159,64 @@
 
         <div class="table-row mono" data-market="BTC">
           <div class="market-cell"><img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCBTC.svg" alt="BTC" width="22" height="22" loading="lazy">BTC-PERP</div>
-          <div class="ta-r" data-field="price">112,480.50</div>
-          <div class="ta-r up" data-field="change">+2.14%</div>
-          <div class="ta-r up" data-field="funding">+0.0041%</div>
-          <div class="ta-r dim" data-field="interest">$38.2M</div>
+          <div class="ta-r" data-field="price">—</div>
+          <div class="ta-r" data-field="change">—</div>
+          <div class="ta-r" data-field="funding">—</div>
+          <div class="ta-r dim" data-field="interest">—</div>
           <div class="ta-r muted">50x</div>
         </div>
         <div class="table-row mono" data-market="ETH">
           <div class="market-cell"><img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCETH.svg" alt="ETH" width="22" height="22" loading="lazy">ETH-PERP</div>
-          <div class="ta-r" data-field="price">4,182.30</div>
-          <div class="ta-r up" data-field="change">+1.08%</div>
-          <div class="ta-r up" data-field="funding">+0.0026%</div>
-          <div class="ta-r dim" data-field="interest">$21.7M</div>
+          <div class="ta-r" data-field="price">—</div>
+          <div class="ta-r" data-field="change">—</div>
+          <div class="ta-r" data-field="funding">—</div>
+          <div class="ta-r dim" data-field="interest">—</div>
           <div class="ta-r muted">50x</div>
         </div>
         <div class="table-row mono" data-market="SOL">
           <div class="market-cell"><img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCSOL.svg" alt="SOL" width="22" height="22" loading="lazy">SOL-PERP</div>
-          <div class="ta-r" data-field="price">214.86</div>
-          <div class="ta-r down" data-field="change">-0.92%</div>
-          <div class="ta-r down" data-field="funding">-0.0013%</div>
-          <div class="ta-r dim" data-field="interest">$12.4M</div>
+          <div class="ta-r" data-field="price">—</div>
+          <div class="ta-r" data-field="change">—</div>
+          <div class="ta-r" data-field="funding">—</div>
+          <div class="ta-r dim" data-field="interest">—</div>
           <div class="ta-r muted">25x</div>
         </div>
         <div class="table-row mono" data-market="LINK">
           <div class="market-cell"><img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCLINK.svg" alt="LINK" width="22" height="22" loading="lazy">LINK-PERP</div>
-          <div class="ta-r" data-field="price">11.828</div>
-          <div class="ta-r down" data-field="change">-0.42%</div>
-          <div class="ta-r down" data-field="funding">-0.0022%</div>
-          <div class="ta-r dim" data-field="interest">$6.4M</div>
+          <div class="ta-r" data-field="price">—</div>
+          <div class="ta-r" data-field="change">—</div>
+          <div class="ta-r" data-field="funding">—</div>
+          <div class="ta-r dim" data-field="interest">—</div>
           <div class="ta-r muted">20x</div>
         </div>
         <div class="table-row mono" data-market="HYPE">
           <div class="market-cell"><img class="tick" src="img/hype-logo.jpg" alt="HYPE" width="22" height="22" loading="lazy">HYPE-PERP</div>
-          <div class="ta-r" data-field="price">41.270</div>
-          <div class="ta-r up" data-field="change">+3.62%</div>
-          <div class="ta-r up" data-field="funding">+0.0074%</div>
-          <div class="ta-r dim" data-field="interest">$5.6M</div>
+          <div class="ta-r" data-field="price">—</div>
+          <div class="ta-r" data-field="change">—</div>
+          <div class="ta-r" data-field="funding">—</div>
+          <div class="ta-r dim" data-field="interest">—</div>
           <div class="ta-r muted">20x</div>
         </div>
         <div class="table-row mono" data-market="SUI">
           <div class="market-cell"><img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCSUI.svg" alt="SUI" width="22" height="22" loading="lazy">SUI-PERP</div>
-          <div class="ta-r" data-field="price">3.8420</div>
-          <div class="ta-r down" data-field="change">-1.47%</div>
-          <div class="ta-r down" data-field="funding">-0.0008%</div>
-          <div class="ta-r dim" data-field="interest">$3.1M</div>
+          <div class="ta-r" data-field="price">—</div>
+          <div class="ta-r" data-field="change">—</div>
+          <div class="ta-r" data-field="funding">—</div>
+          <div class="ta-r dim" data-field="interest">—</div>
           <div class="ta-r muted">20x</div>
         </div>
         <div class="table-row mono" data-market="DOGE">
           <div class="market-cell"><img class="tick" src="https://s3-symbol-logo.tradingview.com/crypto/XTVCDOGE.svg" alt="DOGE" width="22" height="22" loading="lazy">DOGE-PERP</div>
-          <div class="ta-r" data-field="price">0.29140</div>
-          <div class="ta-r up" data-field="change">+0.41%</div>
-          <div class="ta-r up" data-field="funding">+0.0019%</div>
-          <div class="ta-r dim" data-field="interest">$2.4M</div>
+          <div class="ta-r" data-field="price">—</div>
+          <div class="ta-r" data-field="change">—</div>
+          <div class="ta-r" data-field="funding">—</div>
+          <div class="ta-r dim" data-field="interest">—</div>
           <div class="ta-r muted">10x</div>
         </div>
 
         <div class="table-foot">
-          <span>Funding tất toán mỗi 8 giờ. Funding âm trả cho vị thế Long.</span>
-          <span class="mono">Oracle: Arc median · 12 feeds</span>
+          <span>Funding is the Binance Futures 8-hour rate. Negative funding pays Long positions.</span>
+          <span class="mono">Oracle: not connected</span>
         </div>
       </div>
     </div>
@@ -226,31 +226,31 @@
   <section id="edge" class="section">
     <div class="section__inner">
       <div class="eyebrow-sm">Why Railflow</div>
-      <h2 class="h2 h2--wide">Xây cho giao dịch quy mô lớn, không phải cho phễu onboarding</h2>
+      <h2 class="h2 h2--wide">Built for transparent testnet trading workflows</h2>
 
       <div class="feature-grid">
         <div class="feature-card">
-          <div class="feature-card__num accent-text">0.000%</div>
-          <h3>Maker rebate, taker thấp</h3>
-          <p>Phí maker bằng 0 ở mọi cấp độ, taker chỉ 0.025%. Phí tính trên notional chứ không phải collateral, nên khi giao dịch lớn hơn, spread bạn trả không hề rộng ra.</p>
+          <div class="feature-card__num accent-text">LIVE</div>
+          <h3>Reference data first</h3>
+          <p>Market prices, funding, open interest, and volume are sourced from Binance Futures. Values are shown as reference data until Railflow execution is connected.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-card__num accent-text">50x</div>
-          <h3>Cross hoặc isolated, tới 50x</h3>
-          <p>Margin theo từng vị thế với maintenance theo bậc và cơ chế thanh lý một phần, cắt giảm exposure trước khi đóng toàn bộ vị thế của bạn.</p>
+          <div class="feature-card__num accent-text">USDC</div>
+          <h3>Clear margin workflow</h3>
+          <p>Deposit native USDC into the Arc Testnet vault, then review available collateral before using the trading workspace.</p>
         </div>
         <div class="feature-card">
           <div class="feature-card__num accent-text">No KYC</div>
-          <h3>Có ví là giao dịch được</h3>
-          <p>Không email, không custody, không hàng đợi rút tiền. Vị thế và tài sản thế chấp nằm trong smart contract bạn có thể đọc trực tiếp, thoát lệnh không cần xin phép.</p>
+          <h3>Wallet-native access</h3>
+          <p>No email account is required. Wallet balances, vault collateral, and indexed transactions are read from your connected Arc Testnet address.</p>
         </div>
       </div>
 
       <div class="mini-strip">
-        <div class="mini-cell"><h4>Sổ lệnh on-chain</h4><p>Mọi lệnh đặt, huỷ và khớp đều là một giao dịch trên Arc. Không có gì khớp lệnh ngầm ngoài sổ sách.</p></div>
-        <div class="mini-cell"><h4>Khớp lệnh 182ms</h4><p>Khớp lệnh dưới 1 giây với huỷ lệnh trong một block, khả thi cho market maker báo giá liên tục.</p></div>
-        <div class="mini-cell"><h4>Tất toán bằng USDC</h4><p>Một tài sản thế chấp duy nhất, một tài khoản margin duy nhất, không vòng qua tài sản wrapped.</p></div>
-        <div class="mini-cell"><h4>API công khai</h4><p>REST và WebSocket song song với giao diện, cùng SDK ký lệnh cho các bàn giao dịch tự động.</p></div>
+        <div class="mini-cell"><h4>Live market data</h4><p>Binance Futures WebSocket and REST data power live prices, funding, depth, and reference metrics.</p></div>
+        <div class="mini-cell"><h4>On-chain collateral</h4><p>Vault deposits and withdrawals are signed by your wallet on Arc Testnet.</p></div>
+        <div class="mini-cell"><h4>USDC settlement</h4><p>Arc native USDC is the collateral and gas asset used by this testnet environment.</p></div>
+        <div class="mini-cell"><h4>Transparent status</h4><p>Unavailable protocol data is shown as pending or unavailable instead of being estimated.</p></div>
       </div>
     </div>
   </section>
@@ -260,47 +260,47 @@
     <div class="section__inner faucet-grid">
       <div>
         <div class="eyebrow-sm">Arc testnet</div>
-        <h2 class="h2">Ba bước để có ví testnet đầy tài sản</h2>
-        <p class="section-lead">Kết nối ví thật trên Arc Testnet để xem số dư USDC thử nghiệm và sử dụng tài khoản giao dịch Railflow.</p>
+        <h2 class="h2">Three steps to fund an Arc Testnet wallet</h2>
+        <p class="section-lead">Connect a wallet on Arc Testnet to view native USDC and manage your Railflow collateral.</p>
 
         <div class="steps">
           <div class="step">
             <div class="step__num">1</div>
             <div>
-              <h4>Thêm mạng Arc testnet</h4>
-              <p>Kết nối ví và chấp nhận prompt thêm mạng, hoặc nhập thông tin RPC thủ công ở bên phải.</p>
+              <h4>Add Arc Testnet</h4>
+              <p>Connect your wallet and approve the network prompt, or add the RPC details shown on the right.</p>
             </div>
           </div>
           <div class="step">
             <div class="step__num">2</div>
             <div>
-              <h4>Nhận USDC test từ Circle</h4>
-              <p>Chọn Arc Testnet trên Circle Faucet và nhập địa chỉ ví của bạn. USDC test cũng là tài sản dùng trả phí mạng trên Arc.</p>
+              <h4>Get testnet USDC</h4>
+              <p>Choose Arc Testnet on the Circle Faucet and enter your wallet address. Testnet USDC is also the Arc gas asset.</p>
             </div>
           </div>
           <div class="step">
             <div class="step__num">3</div>
             <div>
-              <h4>Mở trang giao dịch</h4>
-              <p>Kiểm tra số dư ví trên mạng Arc Testnet và đặt lệnh trong tài khoản giao dịch. Số dư giao dịch được hiển thị riêng với số dư trong ví.</p>
+              <h4>Open the trading app</h4>
+              <p>Check your Arc Testnet balance and deposit USDC into the Railflow Vault before using the trading workspace.</p>
             </div>
           </div>
         </div>
 
         <div class="hero__cta" style="margin-top:28px">
-          <a href="https://faucet.circle.com/" class="btn btn--primary" target="_blank" rel="noopener noreferrer">Mở Circle Faucet</a>
+          <a href="https://faucet.circle.com/" class="btn btn--primary" target="_blank" rel="noopener noreferrer">Open Circle Faucet</a>
         </div>
       </div>
 
       <div class="network-card">
-        <div class="network-card__head mono">Chi tiết mạng</div>
-        <div class="network-row"><span>Tên mạng</span><span class="mono">Arc Testnet</span></div>
+        <div class="network-card__head mono">Network details</div>
+        <div class="network-row"><span>Network name</span><span class="mono">Arc Testnet</span></div>
         <div class="network-row"><span>Chain ID</span><span class="mono">5042002</span></div>
         <div class="network-row"><span>RPC URL</span><span class="mono trunc">rpc.testnet.arc.io</span></div>
         <div class="network-row"><span>Explorer</span><span class="mono">testnet.arcscan.app</span></div>
-        <div class="network-row"><span>Tiền tệ / Gas</span><span class="mono">USDC (test)</span></div>
-        <div class="network-row network-row--last"><span>Giới hạn faucet</span><span class="accent-text">Theo Circle Faucet</span></div>
-        <div class="network-card__foot">Railflow không bao giờ hỏi seed phrase. Kiểm tra kỹ URL trước khi ký bất kỳ giao dịch nào.</div>
+        <div class="network-row"><span>Currency / gas</span><span class="mono">USDC (test)</span></div>
+        <div class="network-row network-row--last"><span>Faucet limit</span><span class="accent-text">Set by Circle Faucet</span></div>
+        <div class="network-card__foot">Railflow never asks for your seed phrase. Verify the URL before signing any transaction.</div>
       </div>
     </div>
   </section>
@@ -310,10 +310,10 @@
     <div class="section__inner">
       <div class="cta-banner">
         <div>
-          <h2 class="h2 h2--sm">Giao dịch trên testnet. Giữ nguyên hạng của bạn.</h2>
-          <p>Khối lượng giao dịch trước mainnet được cộng dồn vào hạng phí khi ra mắt. Không dashboard điểm thưởng, không mê cung referral — chỉ có sổ lệnh.</p>
+          <h2 class="h2 h2--sm">Trade on testnet with transparent data</h2>
+          <p>Explore live market references, Arc Testnet collateral, and wallet activity while protocol execution data is being connected.</p>
         </div>
-        <a href="trade.html" class="btn btn--primary btn--lg">Mở app giao dịch</a>
+        <a href="trade.html" class="btn btn--primary btn--lg">Open trading app</a>
       </div>
     </div>
   </section>
@@ -327,34 +327,34 @@
             <div class="logo-mark logo-mark--sm"><span></span><span></span><span></span></div>
             <span class="logo-text logo-text--sm">Railflow</span>
           </div>
-          <p class="footer__about">Sàn giao dịch perpetual on-chain trên Arc. Hiện đang trong giai đoạn testnet công khai.</p>
+          <p class="footer__about">An Arc Testnet perpetual trading workspace with live market references and on-chain collateral.</p>
         </div>
         <div class="footer__col">
           <div class="footer__label">Product</div>
           <a href="#markets">Markets</a>
           <a href="trade.html">Trade</a>
           <a href="lending.html">Lending</a>
-          <a href="#">Fees</a>
+          <span class="footer__unavailable">Fees · pending</span>
           <a href="vault.html">Vaults</a>
         </div>
         <div class="footer__col">
           <div class="footer__label">Developers</div>
-          <a href="#">Documentation</a>
-          <a href="#">API reference</a>
-          <a href="#">Contracts</a>
-          <a href="#">Audits</a>
+          <a href="https://github.com/longbds0108/RailFlow" target="_blank" rel="noreferrer">Source code</a>
+          <span class="footer__unavailable">API reference · pending</span>
+          <span class="footer__unavailable">Contracts · testnet</span>
+          <span class="footer__unavailable">Audits · pending</span>
         </div>
         <div class="footer__col">
           <div class="footer__label">Community</div>
-          <a href="#">X / Twitter</a>
-          <a href="#">Discord</a>
-          <a href="#">Telegram</a>
-          <a href="#">GitHub</a>
+          <span class="footer__unavailable">X / Twitter · pending</span>
+          <span class="footer__unavailable">Discord · pending</span>
+          <span class="footer__unavailable">Telegram · pending</span>
+          <a href="https://github.com/longbds0108/RailFlow" target="_blank" rel="noreferrer">GitHub</a>
         </div>
       </div>
       <div class="footer__bottom">
         <span>© 2026 Railflow Labs</span>
-        <span class="mono">Testnet · không phải tiền thật · phái sinh có rủi ro mất toàn bộ vốn</span>
+        <span class="mono">Testnet · not real funds · derivatives carry a risk of total loss</span>
       </div>
     </div>
   </footer>

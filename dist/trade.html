@@ -26,7 +26,7 @@
       <button type="button" id="faucetLink">Faucet</button>
     </nav>
     <div class="trade-header__right">
-      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Chuyển sang giao diện sáng" title="Chuyển sang giao diện sáng" aria-pressed="false"><svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.2"></circle><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M3.99 3.99l1.42 1.42M14.59 14.59l1.42 1.42M16.01 3.99l-1.42 1.42M5.41 14.59l-1.42 1.42"></path></svg><svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.8 12.9A6.5 6.5 0 0 1 7.1 4.2 6.5 6.5 0 1 0 15.8 12.9Z"></path></svg></button>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" title="Switch to light theme" aria-pressed="false"><svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.2"></circle><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M3.99 3.99l1.42 1.42M14.59 14.59l1.42 1.42M16.01 3.99l-1.42 1.42M5.41 14.59l-1.42 1.42"></path></svg><svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.8 12.9A6.5 6.5 0 0 1 7.1 4.2 6.5 6.5 0 1 0 15.8 12.9Z"></path></svg></button>
       <div class="network-pill"><span class="network-dot"></span>ARC TESTNET</div>
       <div class="market-status" aria-live="polite">MARKET <strong id="marketStatus">DIRECT</strong></div>
       <div id="wallet-collateral-root"></div>
@@ -40,19 +40,19 @@
       <div class="market-menu" id="marketMenu" hidden></div>
     </div>
     <div class="market-metrics">
-      <div class="market-metric market-metric--mark"><span class="mono up" id="markPrice">112,480.50</span><span class="micro-label">Mark</span></div>
-      <div class="market-metric"><span class="mono up" id="marketChange">+2.14%</span><span class="micro-label">24h change</span></div>
-      <div class="market-metric"><span class="mono" id="oraclePrice">112,479.80</span><span class="micro-label">Oracle</span></div>
-      <div class="market-metric"><span class="mono up" id="marketFunding">+0.0041%</span><span class="micro-label">Funding 8h</span></div>
-      <div class="market-metric"><span class="mono" id="marketInterest">$38.2M</span><span class="micro-label">Open interest</span></div>
-      <div class="market-metric"><span class="mono" id="marketVolume">$214.6M</span><span class="micro-label">24h volume</span></div>
+      <div class="market-metric market-metric--mark"><span class="mono" id="markPrice">—</span><span class="micro-label">Mark</span></div>
+      <div class="market-metric"><span class="mono" id="marketChange">—</span><span class="micro-label">24h change</span></div>
+      <div class="market-metric"><span class="mono" id="oraclePrice">—</span><span class="micro-label">Oracle</span></div>
+      <div class="market-metric"><span class="mono" id="marketFunding">—</span><span class="micro-label">Funding 8h</span></div>
+      <div class="market-metric"><span class="mono" id="marketInterest">—</span><span class="micro-label">Open interest</span></div>
+      <div class="market-metric"><span class="mono" id="marketVolume">—</span><span class="micro-label">24h volume</span></div>
     </div>
   </section>
 
   <main class="trading-layout" id="workspace">
     <div class="trading-left">
       <section class="trading-card chart-card" aria-label="Candlestick chart">
-        <div class="chart-toolbar"><div class="chart-toolbar__left"><div class="chart-type-picker"><button type="button" class="chart-type-button" id="chartTypeButton" aria-haspopup="true" aria-expanded="false" aria-controls="chartTypeMenu" aria-label="Chart type: Candles" title="Chart type"><span id="chartTypeIcon"></span><span class="chevron" aria-hidden="true">▾</span></button><div class="chart-type-menu" id="chartTypeMenu" role="menu" hidden></div></div><div class="timeframes" role="group" aria-label="Chart timeframe"><button data-timeframe="1m" aria-pressed="false">1m</button><button data-timeframe="5m" aria-pressed="false">5m</button><button data-timeframe="15m" class="is-active" aria-pressed="true">15m</button><button data-timeframe="1h" aria-pressed="false">1h</button><button data-timeframe="4h" aria-pressed="false">4h</button><button data-timeframe="1d" aria-pressed="false">1d</button></div></div><div class="chart-ohlc mono" id="chartOhlc"><span>O <b>112,204.0</b></span><span>H <b>112,690.5</b></span><span>L <b>111,982.0</b></span><span>C <b class="up">112,480.5</b></span><span class="chart-source" id="chartDataSource">LIVE</span></div></div>
+        <div class="chart-toolbar"><div class="chart-toolbar__left"><div class="chart-type-picker"><button type="button" class="chart-type-button" id="chartTypeButton" aria-haspopup="true" aria-expanded="false" aria-controls="chartTypeMenu" aria-label="Chart type: Candles" title="Chart type"><span id="chartTypeIcon"></span><span class="chevron" aria-hidden="true">▾</span></button><div class="chart-type-menu" id="chartTypeMenu" role="menu" hidden></div></div><div class="timeframes" role="group" aria-label="Chart timeframe"><button data-timeframe="1m" aria-pressed="false">1m</button><button data-timeframe="5m" aria-pressed="false">5m</button><button data-timeframe="15m" class="is-active" aria-pressed="true">15m</button><button data-timeframe="1h" aria-pressed="false">1h</button><button data-timeframe="4h" aria-pressed="false">4h</button><button data-timeframe="1d" aria-pressed="false">1d</button></div></div><div class="chart-ohlc mono" id="chartOhlc"><span>O <b>—</b></span><span>H <b>—</b></span><span>L <b>—</b></span><span>C <b>—</b></span><span class="chart-source" id="chartDataSource">UNAVAILABLE</span></div></div>
         <div class="chart-canvas" id="chartCanvas"><div id="priceChart" role="img" aria-label="Simulated BTC perpetual candlestick chart"></div><div class="chart-tooltip mono" id="chartTooltip" hidden></div></div>
       </section>
 
@@ -68,7 +68,7 @@
       <div class="card-heading"><h2 id="orderbookTitle">Order book</h2><label class="sr-only" for="bookPrecision">Price grouping</label><select class="precision-select mono" id="bookPrecision"><option value="0.5">0.5</option><option value="1">1</option><option value="5">5</option></select></div>
       <div class="book-columns micro-label mono"><span>Price</span><span>Size</span><span>Total</span></div>
       <div class="book-levels" id="bookAsks"></div>
-      <div class="book-spread"><strong class="mono up" id="bookMark">112,480.50</strong><span class="mono" id="bookSpread">spread 0.4</span></div>
+      <div class="book-spread"><strong class="mono" id="bookMark">—</strong><span class="mono" id="bookSpread">spread —</span></div>
       <div class="book-levels" id="bookBids"></div>
       <div class="book-balance"><div class="balance-track" id="bookBalanceTrack" aria-label="Buy and sell depth"><span id="bookBalanceFill"></span></div><span class="mono" id="bookBalanceText">— / —</span></div>
     </section>
@@ -77,7 +77,7 @@
       <form id="orderForm" novalidate>
         <div class="trade-side-toggle" role="group" aria-label="Order side"><button type="button" class="is-active" data-side="long" aria-pressed="true">Long</button><button type="button" data-side="short" aria-pressed="false">Short</button></div>
         <div class="order-types" role="group" aria-label="Order type"><button type="button" data-order-type="limit" class="is-active" aria-pressed="true">Limit</button><button type="button" data-order-type="market" aria-pressed="false">Market</button><button type="button" data-order-type="stop" aria-pressed="false">Stop</button></div>
-        <div class="order-field" id="priceField"><div class="field-heading"><label for="orderPrice" id="priceLabel">Price</label><button type="button" class="mid-button" id="useMid">Mid</button></div><input id="orderPrice" class="mono" type="text" inputmode="decimal" value="112,480.50" autocomplete="off" aria-describedby="orderError"></div>
+        <div class="order-field" id="priceField"><div class="field-heading"><label for="orderPrice" id="priceLabel">Price</label><button type="button" class="mid-button" id="useMid">Mid</button></div><input id="orderPrice" class="mono" type="text" inputmode="decimal" value="—" autocomplete="off" aria-describedby="orderError"></div>
         <div class="market-price-note" id="marketPriceNote" hidden>Executes at the simulated market price.</div>
         <div class="order-field"><div class="field-heading"><label for="orderSize">Size</label><span>USDC</span></div><input id="orderSize" class="mono" type="text" inputmode="decimal" value="5,000" autocomplete="off" aria-describedby="orderError"></div>
         <div class="risk-targets" aria-label="Take profit and stop loss">
@@ -88,7 +88,7 @@
         <div class="margin-mode-toggle" role="group" aria-label="Margin mode"><button type="button" class="is-active" data-margin-mode="cross" aria-pressed="true">Cross</button><button type="button" data-margin-mode="isolated" aria-pressed="false">Isolated</button></div>
         <p class="margin-mode-note" id="marginModeNote">Cross: shared margin backs every cross position, so a position's liquidation price moves with your whole account.</p>
         <div class="leverage-field"><div class="field-heading"><label for="leverage">Leverage</label><output for="leverage" id="leverageValue" class="mono">10x</output></div><input id="leverage" type="range" min="1" max="50" value="10" aria-label="Leverage" style="--range-progress:18.37%"></div>
-        <dl class="trade-summary"><div><dt>Available</dt><dd class="mono" id="availableBalance">$10,142.60</dd></div><div><dt>Margin required</dt><dd class="mono" id="requiredMargin">$500.00</dd></div><div><dt>Est. liq. price</dt><dd class="mono" id="liquidationPrice">102,458.30</dd></div><div><dt>Est. fee</dt><dd class="mono up" id="estimatedFee">0.000%</dd></div></dl>
+        <dl class="trade-summary"><div><dt>Available</dt><dd class="mono" id="availableBalance">$0.00</dd></div><div><dt>Margin required</dt><dd class="mono" id="requiredMargin">—</dd></div><div><dt>Est. liq. price</dt><dd class="mono" id="liquidationPrice">—</dd></div><div><dt>Est. fee</dt><dd class="mono up" id="estimatedFee">—</dd></div></dl>
         <div class="claim-banner" id="claimBanner" hidden>No margin yet. Use Deposit in the header to fund your Collateral Vault.</div>
         <p class="order-error" id="orderError" role="alert" hidden></p>
         <button class="place-order" id="submitOrder" type="submit">Buy / Long BTC-PERP</button>

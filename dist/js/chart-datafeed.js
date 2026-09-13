@@ -27,9 +27,8 @@
   // file needs replacing; js/trade.js and js/home-prices.js only call the
   // methods exported at the bottom.
   //
-  // Every network call falls back to a deterministic simulated generator,
-  // or to REST polling, on failure (offline, rate-limited, blocked) so the
-  // workspace never breaks.
+  // Network failures remain visible as unavailable data. The client never
+  // fabricates candles, prices, depth, or protocol metrics.
 
   var FUTURES_SYMBOL = { BTC: 'BTCUSDT', ETH: 'ETHUSDT', SOL: 'SOLUSDT', LINK: 'LINKUSDT', HYPE: 'HYPEUSDT', SUI: 'SUIUSDT', DOGE: 'DOGEUSDT' };
   var REST_BASE = 'https://fapi.binance.com/fapi/v1';
@@ -383,66 +382,24 @@
     delete marketSubs[id];
   }
 
-  // ---- Deterministic simulated fallback (used only if Binance is unreachable) ----
-  function seededRandom(seed) {
-    var value = seed % 2147483647;
-    if (value <= 0) value += 2147483646;
-    return function () {
-      value = value * 16807 % 2147483647;
-      return (value - 1) / 2147483646;
-    };
-  }
-  function hashSeed(text) {
-    var hash = 0;
-    for (var i = 0; i < text.length; i++) hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
-    return hash || 1;
-  }
-  function simulateHistory(symbol, resolution, lastPrice, barCount) {
-    var stepSeconds = RESOLUTION_SECONDS[resolution] || 900;
-    var random = seededRandom(hashSeed(symbol + '|' + resolution));
-    var now = Math.floor(Date.now() / 1000);
-    var alignedNow = now - (now % stepSeconds);
-    var candles = [];
-    var volumes = [];
-    var price = lastPrice * (1 - (random() - 0.3) * 0.12);
-    for (var i = 0; i < barCount; i++) {
-      var time = alignedNow - (barCount - 1 - i) * stepSeconds;
-      var drift = Math.sin(i * 0.28) * lastPrice * 0.0035;
-      var noise = (random() - 0.5) * lastPrice * 0.006;
-      var open = price;
-      var close = i === barCount - 1 ? lastPrice : open + drift + noise;
-      var high = Math.max(open, close) + random() * lastPrice * 0.0025;
-      var low = Math.min(open, close) - random() * lastPrice * 0.0025;
-      var volume = lastPrice * (0.4 + random() * 1.6);
-      candles.push({ time: time, open: open, high: high, low: low, close: close });
-      volumes.push({ time: time, value: volume, color: close >= open ? UP_VOLUME : DOWN_VOLUME });
-      price = close;
-    }
-    return { candles: candles, volumes: volumes, source: 'simulated' };
-  }
-
   var liveSubs = {};
   var liveNextId = 1;
 
-  function simulateLive(id, symbol, resolution, lastCandle, lastVolume, onTick) {
-    var stepSeconds = RESOLUTION_SECONDS[resolution] || 900;
-    var random = seededRandom(hashSeed(symbol + '|' + resolution + '|' + id));
-    var candle = Object.assign({}, lastCandle);
-    var volume = lastVolume ? lastVolume.value : candle.close * 0.6;
-    liveSubs[id].timer = setInterval(function () {
-      var now = Math.floor(Date.now() / 1000);
-      var barTime = now - (now % stepSeconds);
-      var move = candle.close * (random() - 0.5) * 0.0018;
-      var close = candle.close + move;
-      if (barTime > candle.time) {
-        candle = { time: barTime, open: candle.close, high: Math.max(candle.close, close), low: Math.min(candle.close, close), close: close };
-        volume = candle.close * (0.4 + random() * 1.6);
-      } else {
-        candle = { time: candle.time, open: candle.open, high: Math.max(candle.high, close), low: Math.min(candle.low, close), close: close };
-        volume += candle.close * random() * 0.15;
+  function pollBars(record, symbol, resolution, onTick, onSource) {
+    async function tick() {
+      try {
+        var history = await fetchKlines(symbol, resolution, 2);
+        var candle = history.candles[history.candles.length - 1];
+        if (!record.closed && candle) {
+          if (onSource) onSource('live');
+          onTick(candle);
+        }
+      } catch (err) {
+        if (!record.closed && onSource) onSource('unavailable');
       }
-      onTick(candle, { time: candle.time, value: volume, color: candle.close >= candle.open ? UP_VOLUME : DOWN_VOLUME });
-    }, 1800);
+    }
+    tick();
+    record.timer = setInterval(tick, 5000);
   }
 
   // ---- Public API used by js/trade.js ----
@@ -451,8 +408,8 @@
     try {
       return await fetchKlines(symbol, resolution, count);
     } catch (err) {
-      console.warn('[chart-datafeed] Binance history unavailable, using simulated data:', err.message);
-      return simulateHistory(symbol, resolution, lastPrice, count);
+      console.warn('[chart-datafeed] Binance history unavailable:', err.message);
+      return { candles: [], volumes: [], source: 'unavailable', error: err.message };
     }
   }
 
@@ -464,8 +421,7 @@
     };
     var socket = openKlineStream(symbol, resolution, wrappedTick, function () {
       if (liveSubs[id] && !liveSubs[id].closed && !liveSubs[id].timer) {
-        if (onSource) onSource('simulated');
-        simulateLive(id, symbol, resolution, lastCandle, lastVolume, onTick);
+        pollBars(liveSubs[id], symbol, resolution, wrappedTick, onSource);
       }
     });
     if (liveSubs[id]) liveSubs[id].socket = socket;
