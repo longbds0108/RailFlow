@@ -11,8 +11,11 @@ function BalanceChip({ address }) {
     : '—';
   return (
     <span className="wallet-equity">
-      <span className="micro-label">Wallet USDC</span>
-      <span className="mono wallet-balance-value">{text}</span>
+      <span className="wallet-token-badge" aria-hidden="true">$</span>
+      <span className="wallet-equity__copy">
+        <span className="micro-label">Wallet balance</span>
+        <span className="mono wallet-balance-value">{text} <small>USDC</small></span>
+      </span>
     </span>
   );
 }
