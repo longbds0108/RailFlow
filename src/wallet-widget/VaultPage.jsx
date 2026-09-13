@@ -350,8 +350,16 @@ export function VaultPage() {
       if (baseline && points.length === 0) points.push(baseline);
       points.push({ timestamp: event.timestamp, value: running });
     }
+    // Always include the current on-chain vault balance so the Vault Equity
+    // chart remains visible even when the selected range has no transfer
+    // event inside it. This is a real contract balance, never an estimate.
+    const currentEquity = vaultTvl ? Number(formatEther(vaultTvl.value)) : NaN;
+    if (Number.isFinite(currentEquity)) {
+      const lastPoint = points[points.length - 1];
+      if (!lastPoint || lastPoint.timestamp !== nowSeconds) points.push({ timestamp: nowSeconds, value: currentEquity });
+    }
     return points;
-  }, [globalStats.events, chartRange, chartMetric, nowSeconds]);
+  }, [globalStats.events, chartRange, chartMetric, nowSeconds, vaultTvl]);
 
   if (!VAULT_ADDRESS) {
     return <p className="collateral-note">The Railflow vault contract hasn't been deployed on Arc Testnet yet.</p>;
