@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Railflow documentation for trading, lending, vaults, portfolio tracking, and Arc Testnet workflows.">
+  <meta name="theme-color" content="#06080b">
+  <title>Docs · Railflow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/docs.css">
+  <script src="js/theme.js"></script>
+</head>
+<body class="docs-page">
+  <header class="docs-header">
+    <a href="index.html" class="header__logo" aria-label="Railflow home"><img class="logo-image" src="img/railflow-logo.png" alt="" width="34" height="34"><span class="logo-text">Railflow</span></a>
+    <div class="docs-header__right">
+      <a class="docs-enter-link" href="trade.html">Enter app <span aria-hidden="true">↗</span></a>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" title="Switch to light theme" aria-pressed="false"><svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.2"></circle><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M3.99 3.99l1.42 1.42M14.59 14.59l1.42 1.42M16.01 3.99l-1.42 1.42M5.41 14.59l-1.42 1.42"></path></svg><svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.8 12.9A6.5 6.5 0 0 1 7.1 4.2 6.5 6.5 0 1 0 15.8 12.9Z"></path></svg></button>
+    </div>
+  </header>
+
+  <div class="docs-shell">
+    <aside class="docs-sidebar" aria-label="Documentation navigation">
+      <div class="docs-sidebar__eyebrow">Documentation</div>
+      <div class="docs-sidebar__title">Railflow protocol</div>
+      <nav class="docs-nav" id="docsNav">
+        <button class="is-active" type="button" data-doc="overview">Overview</button>
+        <button type="button" data-doc="trading">Trading workspace</button>
+        <button type="button" data-doc="collateral">Collateral vault</button>
+        <button type="button" data-doc="lending">Lending</button>
+        <button type="button" data-doc="portfolio">Portfolio</button>
+        <button type="button" data-doc="faucet">Faucet &amp; Arc Testnet</button>
+        <button type="button" data-doc="data-status">Data &amp; status</button>
+        <button type="button" data-doc="risks">Risks &amp; FAQ</button>
+      </nav>
+      <div class="docs-sidebar__links">
+        <a href="https://testnet.arcscan.app" target="_blank" rel="noreferrer">ArcScan ↗</a>
+        <a href="index.html#faucet">Testnet faucet ↗</a>
+      </div>
+    </aside>
+
+    <main class="docs-main" id="docsMain">
+      <div class="docs-kicker">ARC TESTNET · RAILFLOW</div>
+      <section class="docs-section is-active" data-section="overview" tabindex="-1">
+        <div class="docs-section__number">01</div>
+        <h1>What is Railflow?</h1>
+        <p class="docs-lead">Railflow is an Arc Testnet trading workspace with on-chain USDC collateral, live market references, lending actions, vault accounting, and wallet-based portfolio history.</p>
+        <h2>What can you do on Railflow?</h2>
+        <div class="docs-feature-grid">
+          <article><span>TRADE</span><p>Review live Binance Futures reference prices, funding, market depth, and candlestick data in the trading workspace.</p></article>
+          <article><span>COLLATERAL</span><p>Deposit and withdraw USDC through the Collateral Vault using your connected Arc Testnet wallet.</p></article>
+          <article><span>LEND</span><p>Supply or borrow native USDC through the Arc Testnet money-market contract when the pool data is available.</p></article>
+          <article><span>PORTFOLIO</span><p>Review wallet balances and indexed on-chain transaction history for the connected address.</p></article>
+        </div>
+        <div class="docs-callout docs-callout--info"><strong>Network</strong><span>Arc Testnet · Chain ID 5042002 · native USDC gas environment</span></div>
+      </section>
+
+      <section class="docs-section" data-section="trading" tabindex="-1">
+        <div class="docs-section__number">02</div>
+        <h1>Trading workspace</h1>
+        <p>Trade is a wallet-connected interface for reviewing perpetual market data and managing a local trading workspace. Market references come from Binance Futures; they are not an Arc execution oracle.</p>
+        <h2>Market data</h2>
+        <p>The workspace can display mark price, 24-hour change, funding, open interest, volume, order-book depth, and live candlesticks. WebSocket streams are preferred, with REST polling used when a stream reconnects.</p>
+        <h2>Orders and position tools</h2>
+        <div class="docs-list"><div><b>01</b><span>Choose a market, side, order type, size, margin mode, and leverage.</span></div><div><b>02</b><span>Set optional take-profit and stop-loss trigger prices.</span></div><div><b>03</b><span>Review estimated margin, liquidation price, and fees before submitting.</span></div></div>
+        <div class="docs-callout docs-callout--warning"><strong>Execution status</strong><span>Futures matching, settlement, and liquidation are not connected to a live Railflow protocol engine yet. The current order ledger is explicitly marked simulated.</span></div>
+      </section>
+
+      <section class="docs-section" data-section="collateral" tabindex="-1">
+        <div class="docs-section__number">03</div>
+        <h1>Collateral Vault</h1>
+        <p>The Collateral Vault is the funding layer for the trading workspace. It moves native USDC between your connected wallet and the Railflow vault contract on Arc Testnet.</p>
+        <h2>Deposit flow</h2>
+        <div class="docs-list"><div><b>01</b><span>Connect an EVM wallet and switch to Arc Testnet.</span></div><div><b>02</b><span>Open Deposit from the trading header and enter a USDC amount.</span></div><div><b>03</b><span>Approve USDC, then confirm the vault deposit transaction.</span></div><div><b>04</b><span>Return to Trade and review the available collateral balance.</span></div></div>
+        <h2>Vault statistics</h2>
+        <p>The Vault chart is reserved for on-chain vault statistics: Cumulative PnL, Daily PnL, Daily APR, and Vault Equity. Values stay unavailable until the corresponding strategy data source is live; no return estimate is fabricated.</p>
+      </section>
+
+      <section class="docs-section" data-section="lending" tabindex="-1">
+        <div class="docs-section__number">04</div>
+        <h1>Lending</h1>
+        <p>Railflow Lending connects Supply and Borrow actions to the Arc Testnet money-market contract. The current interface focuses on native USDC.</p>
+        <h2>Supply</h2>
+        <p>Supplying USDC adds liquidity to the money market and may earn variable interest when borrowers use the pool. The wallet signs the approval and supply transactions.</p>
+        <h2>Borrow</h2>
+        <p>Borrowing requires available collateral and pool liquidity. The interface validates the entered amount and displays capacity only when the contract returns the required data.</p>
+        <div class="docs-callout docs-callout--info"><strong>Rate data</strong><span>Pool balances and utilization are read on-chain where available. Historical lending candles and APY history remain pending until a rate-history source is connected.</span></div>
+      </section>
+
+      <section class="docs-section" data-section="portfolio" tabindex="-1">
+        <div class="docs-section__number">05</div>
+        <h1>Portfolio</h1>
+        <p>Portfolio follows the connected wallet instead of inventing account values. It combines wallet balances, Arc Testnet contract reads, and indexed transaction history.</p>
+        <h2>What is shown?</h2>
+        <div class="docs-feature-grid docs-feature-grid--two"><article><span>LIVE BALANCES</span><p>Native USDC and supported wallet balances are read from the connected address.</p></article><article><span>HISTORY</span><p>Deposits, withdrawals, supplies, borrows, and other indexed transactions appear when the explorer indexer provides them.</p></article></div>
+        <div class="docs-callout docs-callout--warning"><strong>Indexer dependency</strong><span>If the ArcScan indexer is delayed or unavailable, transaction history is shown as unavailable rather than reconstructed from guesses.</span></div>
+      </section>
+
+      <section class="docs-section" data-section="faucet" tabindex="-1">
+        <div class="docs-section__number">06</div>
+        <h1>Faucet &amp; Arc Testnet</h1>
+        <p>Use testnet assets only. Railflow does not request real funds and does not treat Arc Testnet balances as real-world value.</p>
+        <h2>Getting started</h2>
+        <div class="docs-list"><div><b>01</b><span>Add Arc Testnet to your wallet: RPC <code>https://rpc.testnet.arc.network</code>.</span></div><div><b>02</b><span>Use the Circle faucet to request testnet USDC.</span></div><div><b>03</b><span>Connect the same wallet to Railflow and open the required product page.</span></div></div>
+        <div class="docs-callout docs-callout--info"><strong>Faucet source</strong><a href="https://faucet.circle.com" target="_blank" rel="noreferrer">Open Circle Faucet ↗</a></div>
+      </section>
+
+      <section class="docs-section" data-section="data-status" tabindex="-1">
+        <div class="docs-section__number">07</div>
+        <h1>Data &amp; status</h1>
+        <p>Railflow separates reference data, on-chain state, and protocol execution so the interface does not imply that a missing source is live.</p>
+        <div class="docs-status-table"><div><b>Live market data</b><span>Binance Futures WebSocket / REST fallback</span><em class="is-live">LIVE</em></div><div><b>Wallet and contract state</b><span>Arc Testnet RPC and contract reads</span><em class="is-live">ON-CHAIN</em></div><div><b>Transaction history</b><span>ArcScan testnet indexer</span><em>INDEXED</em></div><div><b>Vault strategy returns</b><span>Strategy data layer not connected</span><em>PENDING</em></div><div><b>Futures matching engine</b><span>Local simulated order ledger</span><em>PENDING</em></div></div>
+      </section>
+
+      <section class="docs-section" data-section="risks" tabindex="-1">
+        <div class="docs-section__number">08</div>
+        <h1>Risks &amp; FAQ</h1>
+        <h2>Is Railflow production-ready?</h2>
+        <p>No. Railflow is an Arc Testnet dApp. It is for testing and interface development, not for real funds.</p>
+        <h2>Are returns guaranteed?</h2>
+        <p>No. Vault returns, lending rates, and trading outcomes are variable and may be unavailable. Never treat a displayed reference price as a liquidation oracle.</p>
+        <h2>What happens if a data source stops?</h2>
+        <p>Live market panels retry through a fallback source and show an unavailable state if no current data can be verified. Protocol metrics remain pending until their source is connected.</p>
+        <div class="docs-callout docs-callout--warning"><strong>Risk reminder</strong><span>Testnet contracts may be upgraded, paused, or reset. Use only assets you are comfortable using for development and testing.</span></div>
+      </section>
+
+      <div class="docs-pager" aria-label="Documentation pagination"><button type="button" id="docsPrevious">Previous</button><span id="docsProgress">01 / 08</span><button type="button" id="docsNext">Next</button></div>
+      <p class="docs-footer-note">Railflow documentation · Arc Testnet · English interface · Last reviewed September 2026</p>
+    </main>
+  </div>
+  <script src="js/docs.js"></script>
+</body>
+</html>
