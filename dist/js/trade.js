@@ -395,7 +395,7 @@
   function error(message, input) {
     $('orderError').textContent = message;
     $('orderError').hidden = !message;
-    ['orderPrice', 'orderSize'].forEach(function (id) { $(id).removeAttribute('aria-invalid'); });
+    ['orderPrice', 'orderSize', 'takeProfit', 'stopLoss'].forEach(function (id) { $(id).removeAttribute('aria-invalid'); });
     if (input) { $(input).setAttribute('aria-invalid', 'true'); $(input).focus(); }
   }
 
@@ -434,7 +434,25 @@
   }
 
   function sideLabel(side) { return '<span class="side-badge is-' + side + '">' + side + '</span>'; }
-  function orderTypeLabel(type) { return type === 'stop' ? 'Stop market' : type === 'market' ? 'Market' : 'Limit'; }
+  function orderTypeLabel(type) {
+    if (type === 'stop') return 'Stop market';
+    if (type === 'take-profit') return 'Take profit';
+    if (type === 'stop-loss') return 'Stop loss';
+    return type === 'market' ? 'Market' : 'Limit';
+  }
+  function readRiskTargets(entryPrice) {
+    var takeProfitRaw = $('takeProfit').value.trim();
+    var stopLossRaw = $('stopLoss').value.trim();
+    var takeProfit = takeProfitRaw ? parseAmount(takeProfitRaw) : null;
+    var stopLoss = stopLossRaw ? parseAmount(stopLossRaw) : null;
+    if (takeProfitRaw && !Number.isFinite(takeProfit)) return { error: 'Enter a valid take-profit price.', input: 'takeProfit' };
+    if (stopLossRaw && !Number.isFinite(stopLoss)) return { error: 'Enter a valid stop-loss price.', input: 'stopLoss' };
+    if (takeProfit !== null && takeProfit <= 0) return { error: 'Take profit must be greater than zero.', input: 'takeProfit' };
+    if (stopLoss !== null && stopLoss <= 0) return { error: 'Stop loss must be greater than zero.', input: 'stopLoss' };
+    if (takeProfit !== null && (state.side === 'long' ? takeProfit <= entryPrice : takeProfit >= entryPrice)) return { error: 'Take profit must be ' + (state.side === 'long' ? 'above' : 'below') + ' the entry price.', input: 'takeProfit' };
+    if (stopLoss !== null && (state.side === 'long' ? stopLoss >= entryPrice : stopLoss <= entryPrice)) return { error: 'Stop loss must be ' + (state.side === 'long' ? 'below' : 'above') + ' the entry price.', input: 'stopLoss' };
+    return { takeProfit: takeProfit, stopLoss: stopLoss };
+  }
   function table(headers, rows, emptyText) {
     return '<table class="activity-table"><thead><tr>' + headers.map(function (head, index) { return '<th' + (index > 0 ? ' class="ta-r"' : '') + '>' + head + '</th>'; }).join('') + '</tr></thead><tbody>' + (rows || '<tr><td class="empty-state" colspan="' + headers.length + '">' + emptyText + '</td></tr>') + '</tbody></table>';
   }
@@ -463,16 +481,17 @@
           + '<td class="mono ta-r">' + money(p.quantity * mark) + '</td>'
           + '<td class="mono ta-r">' + format(p.entry) + '</td>'
           + '<td class="mono ta-r liq-value">' + format(liq) + '</td>'
+          + '<td class="mono ta-r risk-target-cell">' + (p.takeProfit ? 'TP ' + format(p.takeProfit) : '—') + '<br>' + (p.stopLoss ? 'SL ' + format(p.stopLoss) : '—') + '</td>'
           + '<td class="mono ta-r">' + money(p.margin) + '</td>'
           + moneyCell(p.fundingPaid)
           + moneyCell(profit, true)
           + moneyCell(0)
           + '<td><button type="button" class="small-button" data-close="' + p.id + '" aria-label="Close ' + p.market + ' ' + p.side + ' position">Close</button></td></tr>';
       }).join('');
-      $('activityPanel').innerHTML = table(['Instrument', 'Quantity', 'Mark', 'Value', 'Entry Price', 'Liq. Price', 'Margin', 'Funding', 'UPNL', 'RPNL', '<span class="sr-only">Actions</span>'], rows, 'No open positions. Place a market order to start trading.');
+      $('activityPanel').innerHTML = table(['Instrument', 'Quantity', 'Mark', 'Value', 'Entry Price', 'Liq. Price', 'TP / SL', 'Margin', 'Funding', 'UPNL', 'RPNL', '<span class="sr-only">Actions</span>'], rows, 'No open positions. Place a market order to start trading.');
     } else if (state.activity === 'orders') {
       rows = account.orders.map(function (o) {
-        return '<tr><td><span class="position-pair">' + sideLabel(o.side) + o.market + '-PERP</span></td><td class="mono ta-r">' + orderTypeLabel(o.type) + '</td><td class="mono ta-r">' + format(o.price) + '</td><td class="mono ta-r">' + money(o.size) + '</td><td class="mono ta-r">' + o.leverage + 'x · ' + (o.marginMode === 'isolated' ? 'Isolated' : 'Cross') + '</td><td><button type="button" class="small-button" data-cancel="' + o.id + '" aria-label="Cancel ' + o.market + ' order">Cancel</button></td></tr>';
+        return '<tr><td><span class="position-pair">' + sideLabel(o.side) + o.market + '-PERP</span></td><td class="mono ta-r">' + orderTypeLabel(o.type) + '</td><td class="mono ta-r">' + format(o.price) + '<small class="risk-target-cell">' + (o.takeProfit ? 'TP ' + format(o.takeProfit) : '') + (o.stopLoss ? (o.takeProfit ? ' · ' : '') + 'SL ' + format(o.stopLoss) : '') + '</small></td><td class="mono ta-r">' + money(o.size) + '</td><td class="mono ta-r">' + o.leverage + 'x · ' + (o.marginMode === 'isolated' ? 'Isolated' : 'Cross') + '</td><td><button type="button" class="small-button" data-cancel="' + o.id + '" aria-label="Cancel ' + o.market + ' order">Cancel</button></td></tr>';
       }).join('');
       $('activityPanel').innerHTML = table(['Instrument', 'Type', 'Price / trigger', 'Size', 'Leverage', '<span class="sr-only">Actions</span>'], rows, 'No open orders. Limit and stop orders will appear here.');
     } else if (state.activity === 'trades') {
@@ -571,6 +590,7 @@
       if (ticker.openInterestUsd !== undefined) markets[symbol].interest = formatCompactUsd(ticker.openInterestUsd);
       if (ticker.volumeUsd !== undefined) markets[symbol].volume = formatCompactUsd(ticker.volumeUsd);
       processPendingOrders(symbol, markets[symbol].price);
+      checkRiskTargets();
       checkLiquidations();
       if (symbol === state.market) { renderMarketStrip(symbol); syncOrderPriceLive(symbol, markets[symbol].price); updateSummary(); }
       drawActivity(); // keeps Positions' Mark/UPNL live for every open market, not just the selected one
@@ -595,6 +615,8 @@
     $('marketLogo').src = window.RailflowTokenIcons.logoUrl(symbol);
     $('marketLogo').alt = symbol;
     $('orderPrice').value = format(market.price);
+    $('takeProfit').value = '';
+    $('stopLoss').value = '';
     state.priceDirty = false;
     $('leverage').max = market.maxLev;
     state.leverage = Math.min(state.leverage, market.maxLev);
@@ -634,13 +656,36 @@
       var executionPrice = order.type === 'limit' ? order.price : mark;
       var fee = order.size * .00025;
       account.orders = account.orders.filter(function (candidate) { return candidate.id !== order.id; });
-      account.positions.push({ id: nextId++, market: order.market, side: order.side, leverage: order.leverage, quantity: order.size / executionPrice, entry: executionPrice, liquidation: estimatedLiq(executionPrice, order.side, order.leverage), margin: order.size / order.leverage, marginMode: order.marginMode, fundingPaid: 0, lastFundingEpoch: fundingEpoch(Date.now()) });
+      account.positions.push({ id: nextId++, market: order.market, side: order.side, leverage: order.leverage, quantity: order.size / executionPrice, entry: executionPrice, liquidation: estimatedLiq(executionPrice, order.side, order.leverage), margin: order.size / order.leverage, marginMode: order.marginMode, takeProfit: order.takeProfit, stopLoss: order.stopLoss, fundingPaid: 0, lastFundingEpoch: fundingEpoch(Date.now()) });
       account.cash -= fee;
       account.orderHistory.unshift({ market: order.market, side: order.side, type: order.type, price: order.price, size: order.size, status: 'Filled', time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
       recordFill(order.market, order.side, executionPrice, order.size, fee);
       notify(order.market + ' ' + order.side + ' order filled at ' + format(executionPrice) + '.');
     });
     if (pending.length) { saveAccount(); drawActivity(); updateSummary(); }
+  }
+
+  function checkRiskTargets() {
+    var triggered = account.positions.filter(function (position) {
+      var mark = markets[position.market].price;
+      if (position.takeProfit && (position.side === 'long' ? mark >= position.takeProfit : mark <= position.takeProfit)) return 'take-profit';
+      if (position.stopLoss && (position.side === 'long' ? mark <= position.stopLoss : mark >= position.stopLoss)) return 'stop-loss';
+      return false;
+    });
+    triggered.forEach(function (position) {
+      var mark = markets[position.market].price;
+      var reason = position.takeProfit && (position.side === 'long' ? mark >= position.takeProfit : mark <= position.takeProfit) ? 'take-profit' : 'stop-loss';
+      applyFundingIfDue(position);
+      var profit = positionPnl(position);
+      var fee = position.quantity * mark * .00025;
+      account.cash += profit - fee;
+      account.orderHistory.unshift({ market: position.market, side: position.side === 'long' ? 'short' : 'long', type: reason, price: mark, size: position.quantity * mark, status: 'Filled', time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
+      recordFill(position.market, position.side === 'long' ? 'short' : 'long', mark, position.quantity * mark, fee);
+      account.realizedPnl.unshift({ market: position.market, side: position.side, quantity: position.quantity, entry: position.entry, exit: mark, pnl: profit, reason: reason, time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
+      account.positions = account.positions.filter(function (candidate) { return candidate.id !== position.id; });
+      notify(position.market + ' ' + (reason === 'take-profit' ? 'take profit' : 'stop loss') + ' triggered at ' + format(mark) + '.');
+    });
+    if (triggered.length) { saveAccount(); drawActivity(); updateSummary(); }
   }
 
   function checkLiquidations() {
@@ -669,6 +714,8 @@
     if (!Number.isFinite(price) || price <= 0) return error('Enter a valid price greater than zero.', 'orderPrice');
     var mark = markets[state.market].price;
     if (state.type === 'stop' && (state.side === 'long' ? price <= mark : price >= mark)) return error('Set the trigger ' + (state.side === 'long' ? 'above' : 'below') + ' the current market price.', 'orderPrice');
+    var targets = readRiskTargets(price);
+    if (targets.error) return error(targets.error, targets.input);
     var marketable = state.type === 'market' || (state.type === 'limit' && (state.side === 'long' ? price >= mark + markets[state.market].step : price <= mark - markets[state.market].step));
     var fee = marketable ? size * .00025 : 0;
     var margin = size / state.leverage;
@@ -676,13 +723,13 @@
     error('');
     if (marketable) {
       account.cash -= fee;
-      account.positions.push({ id: nextId++, market: state.market, side: state.side, leverage: state.leverage, quantity: size / mark, entry: mark, liquidation: estimatedLiq(mark, state.side, state.leverage), margin: margin, marginMode: state.marginMode, fundingPaid: 0, lastFundingEpoch: fundingEpoch(Date.now()) });
+      account.positions.push({ id: nextId++, market: state.market, side: state.side, leverage: state.leverage, quantity: size / mark, entry: mark, liquidation: estimatedLiq(mark, state.side, state.leverage), margin: margin, marginMode: state.marginMode, takeProfit: targets.takeProfit, stopLoss: targets.stopLoss, fundingPaid: 0, lastFundingEpoch: fundingEpoch(Date.now()) });
       account.orderHistory.unshift({ market: state.market, side: state.side, type: 'market', price: mark, size: size, status: 'Filled', time: new Date().toLocaleTimeString('en-GB', { hour12: false }) });
       recordFill(state.market, state.side, mark, size, fee);
       setActivity('positions');
       notify(state.market + ' ' + state.side + ' position opened · ' + money(size) + ' simulated (' + (state.marginMode === 'isolated' ? 'isolated' : 'cross') + ' margin).');
     } else {
-      account.orders.push({ id: nextId++, market: state.market, side: state.side, type: state.type, price: price, size: size, leverage: state.leverage, margin: margin + fee, marginMode: state.marginMode });
+      account.orders.push({ id: nextId++, market: state.market, side: state.side, type: state.type, price: price, size: size, leverage: state.leverage, margin: margin + fee, marginMode: state.marginMode, takeProfit: targets.takeProfit, stopLoss: targets.stopLoss });
       setActivity('orders');
       notify(state.type === 'stop' ? 'Demo stop order placed. Cancel it in Open orders.' : 'Demo limit order placed. Margin reserved.');
     }
@@ -763,7 +810,7 @@
       updateSummary();
     });
   });
-  ['orderPrice', 'orderSize'].forEach(function (id) {
+  ['orderPrice', 'orderSize', 'takeProfit', 'stopLoss'].forEach(function (id) {
     $(id).addEventListener('input', function () { if (id === 'orderPrice') state.priceDirty = true; error(''); updateSummary(); });
     $(id).addEventListener('blur', function () { var amount = parseAmount($(id).value); if (Number.isFinite(amount) && amount > 0) $(id).value = format(amount); updateSummary(); });
   });

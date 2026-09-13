@@ -82,6 +82,11 @@
         <div class="order-field" id="priceField"><div class="field-heading"><label for="orderPrice" id="priceLabel">Price</label><button type="button" class="mid-button" id="useMid">Mid</button></div><input id="orderPrice" class="mono" type="text" inputmode="decimal" value="112,480.50" autocomplete="off" aria-describedby="orderError"></div>
         <div class="market-price-note" id="marketPriceNote" hidden>Executes at the simulated market price.</div>
         <div class="order-field"><div class="field-heading"><label for="orderSize">Size</label><span>USDC</span></div><input id="orderSize" class="mono" type="text" inputmode="decimal" value="5,000" autocomplete="off" aria-describedby="orderError"></div>
+        <div class="risk-targets" aria-label="Take profit and stop loss">
+          <div class="order-field"><div class="field-heading"><label for="takeProfit">Take profit</label><span>Optional</span></div><input id="takeProfit" class="mono" type="text" inputmode="decimal" placeholder="Price" autocomplete="off" aria-describedby="orderError"></div>
+          <div class="order-field"><div class="field-heading"><label for="stopLoss">Stop loss</label><span>Optional</span></div><input id="stopLoss" class="mono" type="text" inputmode="decimal" placeholder="Price" autocomplete="off" aria-describedby="orderError"></div>
+        </div>
+        <p class="risk-targets-note">TP/SL are simulated trigger prices and close the full position at the live mark.</p>
         <div class="size-presets" role="group" aria-label="Use percentage of available margin"><button type="button" data-size-percent="25">25%</button><button type="button" data-size-percent="50">50%</button><button type="button" data-size-percent="75">75%</button><button type="button" data-size-percent="100">Max</button></div>
         <div class="margin-mode-toggle" role="group" aria-label="Margin mode"><button type="button" class="is-active" data-margin-mode="cross" aria-pressed="true">Cross</button><button type="button" data-margin-mode="isolated" aria-pressed="false">Isolated</button></div>
         <p class="margin-mode-note" id="marginModeNote">Cross: shared margin backs every cross position, so a position's liquidation price moves with your whole account.</p>

@@ -93,6 +93,7 @@
 .activity-table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
 .activity-table th { font: 11px var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: #7f8c9b; font-weight: 400; padding: 13px 10px; background: #0b1117; border-bottom: 1px solid var(--border-mid); }
 .activity-table td { padding: 17px 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.risk-target-cell { display: block; margin-top: 3px; color: var(--text-faint); font-size: 10px; line-height: 1.5; }
 .activity-table th:first-child, .activity-table td:first-child { padding-left: 19px; }
 .activity-table th:last-child, .activity-table td:last-child { padding-right: 19px; }
 .activity-table tbody tr:last-child td { border-bottom: 0; }
@@ -184,6 +185,13 @@
 .order-field input { width: 100%; min-width: 0; height: 46px; padding: 12px 14px; border: 1px solid #23333f; border-radius: 10px; background: #0d141a; color: var(--text-3); font: 16px var(--font-mono); }
 .order-field input:focus { outline: 0; border-color: var(--accent-dim); box-shadow: 0 0 0 2px #5ee3c417; }
 .order-field input[aria-invalid="true"] { border-color: var(--down); }
+.risk-targets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.risk-targets .order-field { margin-bottom: 4px; }
+.risk-targets .field-heading { font-size: 10px; }
+.risk-targets .order-field:first-child .field-heading label { color: var(--up); }
+.risk-targets .order-field:last-child .field-heading label { color: var(--down); }
+.risk-targets input { height: 40px; padding: 9px 10px; font-size: 13px; }
+.risk-targets-note { margin: 2px 0 14px; color: var(--text-faint); font-size: 11px; line-height: 1.45; }
 .size-presets { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-top: -6px; }
 .size-presets button { padding: 7px 4px; color: var(--text-dim); border: 1px solid #1d2c37; border-radius: 7px; background: #0d141a; font: 12px var(--font-mono); }
 .size-presets button:hover, .size-presets .is-active { background: #123b33; color: var(--accent); border-color: #20564b; }
