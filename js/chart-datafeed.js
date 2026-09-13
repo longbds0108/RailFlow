@@ -281,7 +281,7 @@
   // whichever source (WS or REST) produced it.
   function subscribeMarkets(symbols, onUpdate) {
     var id = 'mkt' + marketNextId++;
-    var record = { closed: false };
+    var record = { closed: false, latest: {} };
     marketSubs[id] = record;
     var pairs = symbols.map(function (s) { return FUTURES_SYMBOL[s]; }).filter(Boolean);
     var pairToSymbol = {};

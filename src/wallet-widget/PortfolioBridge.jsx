@@ -10,7 +10,10 @@ import { arcTestnet } from './chain.js';
 export function PortfolioBridge() {
   const { address, isConnected, chainId } = useAccount();
   const onArc = isConnected && chainId === arcTestnet.id;
-  const { data: balance } = useBalance({ address, query: { enabled: onArc } });
+  const { data: balance } = useBalance({
+    address,
+    query: { enabled: onArc, refetchInterval: 10000 },
+  });
 
   useEffect(() => {
     const detail = {

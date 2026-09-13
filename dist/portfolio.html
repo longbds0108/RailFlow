@@ -54,7 +54,7 @@
         <h1>Your wallet, <span class="accent-text">at a glance.</span></h1>
         <p>Track live market references, native USDC balance, vault collateral, and your wallet's verified on-chain transaction history.</p>
       </div>
-      <div class="portfolio-hero__state" id="portfolioAccountState"><span class="portfolio-live-dot"></span> Connect a wallet to sync</div>
+      <div class="portfolio-hero__state" id="portfolioAccountState"><span class="portfolio-live-dot"></span> WALLET NOT CONNECTED</div>
     </section>
 
     <section class="portfolio-summary-grid" aria-label="Portfolio summary">
@@ -81,7 +81,7 @@
       </article>
 
       <aside class="portfolio-panel portfolio-wallet-panel">
-        <div class="portfolio-panel__head"><div><span class="micro-label">Wallet</span><h2 id="portfolioWalletTitle">Connect to sync</h2></div><span class="portfolio-network-badge">ARC</span></div>
+        <div class="portfolio-panel__head"><div><span class="micro-label">Wallet</span><h2 id="portfolioWalletTitle">Wallet status</h2></div><span class="portfolio-network-badge">ARC</span></div>
         <div class="portfolio-address-row"><span class="portfolio-address-avatar"></span><span class="mono" id="portfolioWalletAddress">Not connected</span><button type="button" id="portfolioCopyAddress" aria-label="Copy wallet address" disabled>⧉</button></div>
         <dl class="portfolio-wallet-details"><div><dt>Native asset</dt><dd class="mono">USDC</dd></div><div><dt>Price</dt><dd class="mono">$1.00</dd></div><div><dt>History source</dt><dd>Arcscan</dd></div><div><dt>Last sync</dt><dd class="mono" id="portfolioLastSync">—</dd></div></dl>
         <a class="portfolio-explorer-link" id="portfolioExplorerLink" href="https://testnet.arc-scan.org/" target="_blank" rel="noopener noreferrer">Open on Arcscan ↗</a>
@@ -91,17 +91,18 @@
     </section>
 
     <section class="portfolio-panel portfolio-history-panel">
-      <div class="portfolio-panel__head"><div><span class="micro-label">On-chain history</span><h2>Recent wallet transactions</h2></div><span class="portfolio-history-status" id="portfolioHistoryStatus">Connect wallet to load history</span></div>
+      <div class="portfolio-panel__head"><div><span class="micro-label">On-chain history</span><h2>Recent wallet transactions</h2></div><span class="portfolio-history-status" id="portfolioHistoryStatus">Wallet not connected</span></div>
       <div class="portfolio-table-wrap">
         <table class="portfolio-history-table">
           <thead><tr><th>Transaction</th><th>Type</th><th>Amount</th><th>Status</th><th>Time</th><th></th></tr></thead>
-          <tbody id="portfolioHistoryBody"><tr><td colspan="6" class="portfolio-empty-state">Connect a wallet on Arc Testnet to view verified history.</td></tr></tbody>
+          <tbody id="portfolioHistoryBody"><tr><td colspan="6" class="portfolio-empty-state">Wallet history will appear here when an Arc Testnet address is available.</td></tr></tbody>
         </table>
       </div>
     </section>
   </main>
 
   <noscript><p class="noscript-note">Enable JavaScript to load live prices and wallet history.</p></noscript>
+  <script>window.RAILFLOW_GATEWAY_URL = location.port === '8787' ? ((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/markets') : '';</script>
   <script src="js/chart-datafeed.js"></script>
   <script src="js/token-icons.js"></script>
   <script src="js/portfolio.js"></script>

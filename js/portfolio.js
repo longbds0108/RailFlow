@@ -57,7 +57,7 @@
     var refreshButton = document.getElementById('portfolioRefresh');
     var explorerLink = document.getElementById('portfolioExplorerLink');
     if (addressEl) addressEl.textContent = connected ? compactAddress(account.address) : 'Not connected';
-    if (titleEl) titleEl.textContent = onArc ? 'Connected wallet' : connected ? 'Wrong network' : 'Connect to sync';
+    if (titleEl) titleEl.textContent = onArc ? 'Connected wallet' : connected ? 'Wrong network' : 'Wallet status';
     if (balanceEl) balanceEl.textContent = account && account.balance ? formatNumber(account.balance, 4) + ' USDC' : '—';
     if (balanceMeta) balanceMeta.textContent = onArc ? 'Live native balance' : connected ? 'Switch to Arc Testnet' : 'Waiting for Arc Testnet wallet';
     if (networkMeta) networkMeta.textContent = onArc ? 'Arc Testnet · chain 5042002' : connected ? 'Wrong network' : 'Arc Testnet · chain 5042002';
@@ -65,7 +65,7 @@
     if (refreshButton) refreshButton.disabled = !onArc;
     if (explorerLink) explorerLink.href = onArc ? ARC_SCAN_EXPLORER + '/address/' + account.address : ARC_SCAN_EXPLORER;
     if (state) {
-      state.innerHTML = '<span class="portfolio-live-dot"></span>' + (onArc ? 'WALLET SYNCED' : connected ? 'SWITCH TO ARC TESTNET' : 'CONNECT A WALLET TO SYNC');
+      state.innerHTML = '<span class="portfolio-live-dot"></span>' + (onArc ? 'WALLET SYNCED' : connected ? 'SWITCH TO ARC TESTNET' : 'WALLET NOT CONNECTED');
     }
     if (onArc) {
       loadHistory();
@@ -75,7 +75,7 @@
       if (historyTimer) clearInterval(historyTimer);
       historyTimer = null;
       renderHistory([]);
-      setHistoryStatus(connected ? 'Switch wallet to Arc Testnet' : 'Connect wallet to load history');
+      setHistoryStatus(connected ? 'Switch wallet to Arc Testnet' : 'Wallet not connected');
     }
   }
 
@@ -109,7 +109,7 @@
     if (meta) meta.textContent = account && account.onArc ? 'Latest 50 from Arcscan' : 'Arcscan history';
     if (!body) return;
     if (!transactions.length) {
-      body.innerHTML = '<tr><td colspan="6" class="portfolio-empty-state">' + (account && account.onArc ? 'No indexed transactions found for this address.' : 'Connect a wallet on Arc Testnet to view verified history.') + '</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" class="portfolio-empty-state">' + (account && account.onArc ? 'No indexed transactions found for this address.' : 'Wallet history will appear here when an Arc Testnet address is available.') + '</td></tr>';
       return;
     }
     var address = account.address.toLowerCase();
@@ -179,6 +179,12 @@
       if (status) status.textContent = 'LIVE PRICES';
     });
   }
+
+  window.addEventListener('railflow:market-status', function (event) {
+    var status = document.getElementById('portfolioFeedStatus');
+    var state = event.detail && event.detail.status;
+    if (status && state) status.textContent = state === 'live' ? 'LIVE PRICES' : state.toUpperCase();
+  });
 
   document.addEventListener('railflow:portfolio-account', function (event) { setAccountState(event.detail); });
   window.addEventListener('railflow:vault-updated', updateVaultCollateral);

@@ -1,6 +1,9 @@
 import { WebSocket, WebSocketServer } from 'ws';
 
-const SYMBOLS = { BTC: 'btcusdt', ETH: 'ethusdt', SOL: 'solusdt' };
+const SYMBOLS = {
+  BTC: 'btcusdt', ETH: 'ethusdt', SOL: 'solusdt', LINK: 'linkusdt',
+  HYPE: 'hypeusdt', SUI: 'suiusdt', DOGE: 'dogeusdt',
+};
 const PAIRS = Object.fromEntries(Object.entries(SYMBOLS).map(([symbol, pair]) => [pair, symbol]));
 const BINANCE_STREAM = 'wss://fstream.binance.com/stream?streams=';
 const BINANCE_REST = 'https://fapi.binance.com/fapi/v1';
