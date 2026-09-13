@@ -7,6 +7,7 @@
   var selectedAsset = 'BTC';
   var selectedAction = 'supply';
   var account = null;
+  var marketState = null;
 
   function priceDigits(price) {
     if (price >= 100) return 2;
@@ -24,6 +25,59 @@
   function formatBalance(value) {
     if (!Number.isFinite(value)) return '—';
     return Number(value).toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' USDC';
+  }
+
+  function formatToken(value) {
+    var number = Number(value);
+    return Number.isFinite(number) ? number.toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' USDC' : '—';
+  }
+
+  function formatApy(bps) {
+    var number = Number(bps);
+    return Number.isFinite(number) ? (number / 100).toLocaleString('en-US', { maximumFractionDigits: 2 }) + '%' : '—';
+  }
+
+  function updateActionButton() {
+    var button = document.getElementById('lendingActionButton');
+    var note = document.getElementById('lendingActionNote');
+    var input = document.getElementById('lendingAmount');
+    if (!button) return;
+    var amount = input ? Number(input.value.replace(',', '.')) : NaN;
+    var connected = marketState && marketState.enabled;
+    var busy = marketState && marketState.isBusy;
+    var capacity = marketState && marketState.position ? Number(marketState.position.borrowCapacity) : NaN;
+    var balance = account && account.balance ? Number(account.balance) : NaN;
+    var valid = connected && Number.isFinite(amount) && amount > 0 && (selectedAction === 'borrow' ? (!Number.isFinite(capacity) || amount <= capacity) : (!Number.isFinite(balance) || amount <= balance));
+    button.disabled = !valid || !!busy;
+    button.textContent = busy ? 'Confirming…' : (selectedAction === 'borrow' ? 'Borrow USDC' : 'Supply USDC');
+    if (note && marketState && marketState.error) note.textContent = marketState.error;
+  }
+
+  function renderMarketState(detail) {
+    marketState = detail || null;
+    var market = marketState && marketState.market;
+    var position = marketState && marketState.position;
+    var suppliedEl = document.getElementById('lendingTotalSupplied');
+    var borrowedEl = document.getElementById('lendingTotalBorrowed');
+    var utilizationEl = document.getElementById('lendingUtilization');
+    var statusEl = document.getElementById('lendingMarketStatus');
+    var poolStateEl = document.getElementById('lendingPoolState');
+    var supplyApyEl = document.getElementById('lendingSupplyApy');
+    var borrowApyEl = document.getElementById('lendingBorrowApy');
+    var capacityEl = document.getElementById('lendingBorrowCapacity');
+    if (suppliedEl) suppliedEl.textContent = market ? formatToken(market.totalSupplied) : '—';
+    if (borrowedEl) borrowedEl.textContent = market ? formatToken(market.totalBorrowed) : '—';
+    if (utilizationEl) utilizationEl.textContent = market ? formatApy(market.utilizationBps) : '—';
+    if (supplyApyEl) supplyApyEl.textContent = market ? formatApy(market.supplyApyBps) : '—';
+    if (borrowApyEl) borrowApyEl.textContent = market ? formatApy(market.borrowApyBps) : '—';
+    if (capacityEl) capacityEl.textContent = position ? formatToken(position.borrowCapacity) : '—';
+    if (statusEl) statusEl.textContent = marketState && marketState.enabled ? 'LIVE' : 'CONNECT WALLET';
+    if (poolStateEl) poolStateEl.textContent = market ? 'On-chain money market' : 'Waiting for wallet';
+    if (marketState && marketState.isConfirmed) {
+      var note = document.getElementById('lendingActionNote');
+      if (note) note.textContent = 'Transaction confirmed on Arc Testnet.';
+    }
+    updateActionButton();
   }
 
   function renderAccount(detail) {
@@ -105,9 +159,17 @@
   var amountInput = document.getElementById('lendingAmount');
   if (amountInput) amountInput.addEventListener('input', function () {
     this.value = this.value.replace(/[^0-9.,]/g, '').replace(/(.*)\.(?=.*\.)/g, '$1');
+    updateActionButton();
+  });
+
+  var actionButton = document.getElementById('lendingActionButton');
+  if (actionButton) actionButton.addEventListener('click', function () {
+    var amount = amountInput ? amountInput.value.replace(',', '.') : '';
+    window.dispatchEvent(new CustomEvent('railflow:lending-submit', { detail: { action: selectedAction, amount: amount } }));
   });
 
   window.addEventListener('railflow:portfolio-account', function (event) { renderAccount(event.detail); });
+  window.addEventListener('railflow:lending-state', function (event) { renderMarketState(event.detail); });
   if (window.RailflowPortfolio) renderAccount(window.RailflowPortfolio);
 
   start();

@@ -8,6 +8,7 @@ import { VaultBridge } from './VaultBridge.jsx';
 import { VaultPage } from './VaultPage.jsx';
 import { TradeCollateral } from './TradeCollateral.jsx';
 import { PortfolioBridge } from './PortfolioBridge.jsx';
+import { LendingBridge } from './LendingBridge.jsx';
 
 // One bundle serves all pages. Each page only has the mount points it
 // needs, so most of these portals are no-ops on any given page. They all
@@ -28,6 +29,7 @@ function App() {
     <Providers>
       <VaultBridge />
       {(portfolioPage || lendingPage) && <PortfolioBridge />}
+      {lendingPage && <LendingBridge />}
       {home && createPortal(<HomeConnectButton />, home)}
       {tradeButton && createPortal(<TradeWalletButton />, tradeButton)}
       {connectionBar && createPortal(<ConnectionBar />, connectionBar)}
