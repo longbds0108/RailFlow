@@ -47,9 +47,17 @@
     var busy = marketState && marketState.isBusy;
     var capacity = marketState && marketState.position ? Number(marketState.position.borrowCapacity) : NaN;
     var balance = account && account.balance ? Number(account.balance) : NaN;
-    var valid = connected && Number.isFinite(amount) && amount > 0 && (selectedAction === 'borrow' ? (!Number.isFinite(capacity) || amount <= capacity) : (!Number.isFinite(balance) || amount <= balance));
-    button.disabled = !valid || !!busy;
-    button.textContent = busy ? 'Confirming…' : (selectedAction === 'borrow' ? 'Borrow USDC' : 'Supply USDC');
+    if (!account || !account.isConnected) {
+      button.disabled = !!busy;
+      button.textContent = 'Connect wallet';
+    } else if (!account.onArc) {
+      button.disabled = !!busy;
+      button.textContent = 'Switch to Arc Testnet';
+    } else {
+      var valid = connected && Number.isFinite(amount) && amount > 0 && (selectedAction === 'borrow' ? (!Number.isFinite(capacity) || amount <= capacity) : (!Number.isFinite(balance) || amount <= balance));
+      button.disabled = !valid || !!busy;
+      button.textContent = busy ? 'Confirming…' : (selectedAction === 'borrow' ? 'Borrow USDC' : 'Supply USDC');
+    }
     if (note && marketState && marketState.error) note.textContent = marketState.error;
   }
 
@@ -73,6 +81,8 @@
     if (capacityEl) capacityEl.textContent = position ? formatToken(position.borrowCapacity) : '—';
     if (statusEl) statusEl.textContent = marketState && marketState.enabled ? 'LIVE' : 'CONNECT WALLET';
     if (poolStateEl) poolStateEl.textContent = market ? 'On-chain money market' : 'Waiting for wallet';
+    var poolBadge = document.getElementById('lendingPoolBadge');
+    if (poolBadge) poolBadge.textContent = marketState && marketState.configured ? 'Pool live' : 'Pool pending';
     if (marketState && marketState.isConfirmed) {
       var note = document.getElementById('lendingActionNote');
       if (note) note.textContent = 'Transaction confirmed on Arc Testnet.';
@@ -93,6 +103,7 @@
         (account && account.isConnected ? 'Switch to Arc Testnet' : 'Not connected');
     }
     if (input) input.max = selectedAction === 'supply' && Number.isFinite(balance) ? String(balance) : '';
+    updateActionButton();
   }
 
   function renderLendingChart(symbol) {
@@ -164,6 +175,10 @@
 
   var actionButton = document.getElementById('lendingActionButton');
   if (actionButton) actionButton.addEventListener('click', function () {
+    if (!account || !account.isConnected || !account.onArc) {
+      window.dispatchEvent(new CustomEvent('railflow:lending-connect'));
+      return;
+    }
     var amount = amountInput ? amountInput.value.replace(',', '.') : '';
     window.dispatchEvent(new CustomEvent('railflow:lending-submit', { detail: { action: selectedAction, amount: amount } }));
   });
@@ -171,6 +186,7 @@
   window.addEventListener('railflow:portfolio-account', function (event) { renderAccount(event.detail); });
   window.addEventListener('railflow:lending-state', function (event) { renderMarketState(event.detail); });
   if (window.RailflowPortfolio) renderAccount(window.RailflowPortfolio);
+  updateActionButton();
 
   start();
   window.addEventListener('pagehide', function () {

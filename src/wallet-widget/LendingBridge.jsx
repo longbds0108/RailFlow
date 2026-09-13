@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useAccount, useReadContract, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
+import { useChainModal, useConnectModal } from '@rainbow-me/rainbowkit';
 import { encodeFunctionData, formatEther, parseEther } from 'viem';
 import { arcTestnet } from './chain.js';
 import { LENDING_MARKET_ADDRESS } from './lendingMarket.js';
@@ -13,6 +14,8 @@ export function LendingBridge() {
   const { address, isConnected, chainId } = useAccount();
   const onArc = isConnected && chainId === arcTestnet.id;
   const enabled = onArc && !!address && !!LENDING_MARKET_ADDRESS;
+  const { openConnectModal } = useConnectModal();
+  const { openChainModal } = useChainModal();
   const { data: market, refetch: refetchMarket } = useReadContract({
     address: LENDING_MARKET_ADDRESS,
     abi: lendingMarketAbi,
@@ -28,6 +31,15 @@ export function LendingBridge() {
   });
   const { sendTransaction, data: transactionHash, isPending: isSending, error: sendError } = useSendTransaction();
   const { isLoading: isConfirming, isSuccess: isConfirmed, error: receiptError } = useWaitForTransactionReceipt({ hash: transactionHash });
+
+  useEffect(() => {
+    const handler = () => {
+      if (!isConnected) return openConnectModal?.();
+      if (!onArc) return openChainModal?.();
+    };
+    window.addEventListener('railflow:lending-connect', handler);
+    return () => window.removeEventListener('railflow:lending-connect', handler);
+  }, [isConnected, onArc, openConnectModal, openChainModal]);
 
   useEffect(() => {
     const handler = (event) => {
