@@ -8,6 +8,10 @@
     "build": "npm run build:widget && node scripts/build-static.mjs",
     "deploy:vault": "node --env-file-if-exists=.env scripts/deploy-vault.mjs",
     "deploy:lending": "node --env-file-if-exists=.env scripts/deploy-money-market.mjs",
+    "deploy:amm": "node --env-file-if-exists=.env scripts/deploy-amm.mjs",
+    "deploy:agent": "node --env-file-if-exists=.env scripts/deploy-agent.mjs",
+    "deploy:tbill": "node --env-file-if-exists=.env scripts/deploy-tbill.mjs",
+    "deploy:yield-vault": "node --env-file-if-exists=.env scripts/deploy-yield-vault.mjs",
     "server": "node --env-file-if-exists=.env backend/server.mjs"
   },
   "dependencies": {
